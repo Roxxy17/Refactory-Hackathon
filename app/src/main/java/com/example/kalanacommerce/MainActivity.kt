@@ -1,13 +1,18 @@
-package com.example.kalanacommerce
+package com.example.kalanacommerce // Sesuaikan dengan package name baru jika berbeda
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.kalanacommerce.ui.screen.LoginScreen // Asumsi Anda punya LoginScreen
-import com.example.kalanacommerce.ui.screen.RegisterScreen
+// Import semua screen Anda
+import com.example.kalanacommerce.ui.screen.auth.FirstScreen
+import com.example.kalanacommerce.ui.screen.auth.ForgotPasswordScreen
+import com.example.kalanacommerce.ui.screen.auth.LoginScreen
+import com.example.kalanacommerce.ui.screen.auth.RegisterScreen
+// Import Theme Anda
 import com.example.kalanacommerce.ui.theme.KalanaCommerceTheme
 
 class MainActivity : ComponentActivity() {
@@ -15,41 +20,38 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             KalanaCommerceTheme {
-                // 1. Buat NavController
-                val navController = rememberNavController()
-
-                // 2. Siapkan NavHost untuk mendefinisikan rute navigasi
-                NavHost(
-                    navController = navController,
-                    startDestination = "login" // Rute awal saat aplikasi dibuka
-                ) {
-                    // Rute untuk LoginScreen
-                    composable("login") {
-                        LoginScreen(
-                            onNavigateToRegister = {
-                                navController.navigate("register")
-                            }
-                        )
-                    }
-
-                    // --- MODIFIKASI BAGIAN INI ---
-                    composable("register") {
-                        RegisterScreen(
-                            onNavigateToLogin = {
-                                navController.navigate("login") {
-                                    // Ini akan menghapus semua dari back stack hingga "login"
-                                    popUpTo("login") {
-                                        // 'inclusive = true' berarti "login" yang lama juga ikut dihapus,
-                                        // sehingga kita mendapatkan layar login yang baru dan bersih.
-                                        inclusive = true
-                                    }
-                                }
-                            }
-                        )
-                    }
-                    // -----------------------------
-                }
+                AppNavigation() // Panggil navi gasi Anda
             }
+        }
+    }
+}
+
+// --- TEMPEL AppNavigation() DARI PROYEK LAMA DI SINI ---
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "welcome") {
+        composable("welcome") {
+            FirstScreen(
+                onNavigateToLogin = { navController.navigate("login") },
+                onNavigateToRegister = { navController.navigate("register") }
+            )
+        }
+        composable("login") {
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate("register") { popUpTo("login") { inclusive = true } } },
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") }
+            )
+        }
+        composable("register") {
+            RegisterScreen(
+                onNavigateToLogin = { navController.navigate("login") { popUpTo("register") { inclusive = true } } }
+            )
+        }
+        composable("forgot_password") {
+            ForgotPasswordScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

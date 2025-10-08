@@ -1,33 +1,37 @@
-package com.example.kalanacommerce.ui.screen
+package com.example.kalanacommerce.ui.screen.auth
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,46 +42,75 @@ import com.example.kalanacommerce.R
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit
 ) {
-    // Definisi warna agar mudah diubah
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)
     val darkTextColor = Color(0xFF555555)
+    val errorColor = Color(0xFFD32F2F)
+
+    // --- State untuk UI ---
+    var fullName by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") } // PERUBAHAN 1: State diganti
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var agreeToTerms by remember { mutableStateOf(false) }
+
+    // --- State untuk Feedback Pengguna ---
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // PENINGKATAN: Untuk menutup keyboard
+    val focusManager = LocalFocusManager.current
+
+    val textFieldColors = TextFieldDefaults.colors(
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        cursorColor = primaryColor,
+        focusedContainerColor = lightGray,
+        unfocusedContainerColor = lightGray
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
+            .navigationBarsPadding()
+            // PENINGKATAN: Menambahkan scroll jika layar terlalu kecil
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(64.dp))
 
-        // --- Logo ---
         Image(
             painter = painterResource(id = R.drawable.ic_logo_panjang),
             contentDescription = "Kalana Logo",
-            modifier = Modifier.fillMaxWidth(0.7f) // Mengisi 70% lebar layar
+            modifier = Modifier.fillMaxWidth(0.6f)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Subtitle ---
         Text(
             text = "Create Your Account",
             style = MaterialTheme.typography.titleLarge,
             color = darkTextColor
         )
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
+        // PENINGKATAN: Tempat untuk pesan error
+        AnimatedVisibility(visible = errorMessage != null) {
+            Text(
+                text = errorMessage ?: "",
+                color = errorColor,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
-        // --- State untuk input fields ---
-        var fullName by remember { mutableStateOf("") }
-        var address by remember { mutableStateOf("") }
-        var email by remember { mutableStateOf("") }
-        var password by remember { mutableStateOf("") }
-        var passwordVisible by remember { mutableStateOf(false) }
-        var rememberMe by remember { mutableStateOf(false) }
-
-        // --- Input Nama Lengkap ---
+        // --- Form Pendaftaran ---
         TextField(
             value = fullName,
             onValueChange = { fullName = it },
@@ -85,37 +118,27 @@ fun RegisterScreen(
             placeholder = { Text("Nama Lengkap", color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray) },
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = primaryColor,
-                focusedContainerColor = lightGray,
-                unfocusedContainerColor = lightGray
-            )
+            colors = textFieldColors,
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Input Alamat ---
+        // PERUBAHAN 1: Input Alamat diganti menjadi No. Telepon
         TextField(
-            value = address,
-            onValueChange = { address = it },
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Alamat", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Place, contentDescription = null, tint = Color.Gray) },
+            placeholder = { Text("No. Telepon", color = Color.Gray) },
+            leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = Color.Gray) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // Keyboard khusus telepon
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = primaryColor,
-                focusedContainerColor = lightGray,
-                unfocusedContainerColor = lightGray
-            )
+            colors = textFieldColors,
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Input Email ---
         TextField(
             value = email,
             onValueChange = { email = it },
@@ -124,18 +147,12 @@ fun RegisterScreen(
             leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = Color.Gray) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = primaryColor,
-                focusedContainerColor = lightGray,
-                unfocusedContainerColor = lightGray
-            )
+            colors = textFieldColors,
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Input Password ---
         TextField(
             value = password,
             onValueChange = { password = it },
@@ -143,64 +160,53 @@ fun RegisterScreen(
             placeholder = { Text("Password", color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = Color.Gray) },
             shape = RoundedCornerShape(12.dp),
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                cursorColor = primaryColor,
-                focusedContainerColor = lightGray,
-                unfocusedContainerColor = lightGray
-            ),
+            colors = textFieldColors,
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(color = darkTextColor),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                val description = if (passwordVisible) "Hide password" else "Show password"
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, description, tint = Color.Gray)
+                    Icon(imageVector = image, contentDescription = "Toggle password visibility", tint = Color.Gray)
                 }
             }
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Checkbox "Remember me" ---
+        // PENINGKATAN: Mengganti "Remember me" menjadi "Terms and Conditions"
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
-                checked = rememberMe,
-                onCheckedChange = { rememberMe = it },
+                checked = agreeToTerms,
+                onCheckedChange = { agreeToTerms = it },
                 colors = CheckboxDefaults.colors(checkedColor = primaryColor)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Remember me", color = darkTextColor)
+            Text("Saya setuju dengan Syarat & Ketentuan", color = darkTextColor, style = MaterialTheme.typography.bodySmall)
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Tombol Sign Up ---
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = primaryColor)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         Button(
             onClick = { /* TODO: Aksi untuk register */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
+            modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+            enabled = !isLoading
         ) {
-            Text("Sign up", fontSize = 16.sp)
+            Text("Sign up", fontSize = 16.sp, color = Color.White) // Teks dibuat putih
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Versi BARU yang sudah diperbaiki
-        val interactionSource = remember { MutableInteractionSource() }
+        Spacer(modifier = Modifier.weight(1f)) // Mendorong link ke bawah
 
         Text(
-            modifier = Modifier.clickable(
-                interactionSource = interactionSource,
-                indication = rememberRipple(bounded = true),
-                onClick = onNavigateToLogin
-            ),
+            modifier = Modifier.clickable(onClick = onNavigateToLogin).padding(8.dp),
             text = buildAnnotatedString {
                 append("Already have an account? ")
                 withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
@@ -208,6 +214,7 @@ fun RegisterScreen(
                 }
             }
         )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
