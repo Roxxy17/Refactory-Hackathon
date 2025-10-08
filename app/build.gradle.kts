@@ -79,8 +79,10 @@ dependencies {
 
     // Kotlinx Serialization & Converter
     // PENINGKATAN: Menggunakan versi terbaru yang lebih kompatibel
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0") // Ganti versi jika perlu
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3") // Gunakan versi terbaru
+
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")

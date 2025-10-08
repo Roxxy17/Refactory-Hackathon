@@ -1,5 +1,6 @@
 package com.example.kalanacommerce.ui.screen.auth
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,19 +40,46 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.ui.viewmodel.RegisterViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     // --- PERBAIKAN 1: Tambahkan parameter onContinue di sini ---
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    viewModel: RegisterViewModel = koinViewModel() // 1. Inject ViewModel
+
 ) {
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)
     val darkTextColor = Color(0xFF555555)
     val errorColor = Color(0xFFD32F2F)
 
+    val context = LocalContext.current
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+
+    // 3. Efek Samping untuk penanganan status Registrasi (sukses/gagal)
+    LaunchedEffect(uiState.isRegistered, uiState.error) {
+        when {
+            uiState.isRegistered -> {
+                // Tampilkan Toast Sukses
+                Toast.makeText(context, "✅ Registrasi Berhasil!", Toast.LENGTH_LONG).show()
+                // Navigasi ke layar Login setelah sukses
+                onNavigateToLogin()
+                viewModel.resetState() // Bersihkan state setelah navigasi
+            }
+            uiState.error != null -> {
+                // Tampilkan Toast Error
+                Toast.makeText(context, "❌ Gagal: ${uiState.error}", Toast.LENGTH_LONG).show()
+                viewModel.resetState() // Bersihkan state error
+            }
+        }
+    }
     // --- State untuk UI ---
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -195,8 +224,12 @@ fun RegisterScreen(
         // --- PERBAIKAN 2: Pindahkan onContinue() ke dalam onClick ---
         Button(
             onClick = {
-                // TODO: Validasi input sebelum melanjutkan
-                // Jika validasi berhasil:
+                viewModel.register(
+                    fullName = fullName,
+                    email = email,
+                    password = password,
+                    phoneNumber = phoneNumber // Menggunakan state phoneNumber
+                )
                 onContinue()
             },
             modifier = Modifier
@@ -229,7 +262,6 @@ fun RegisterScreen(
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreenPreview() {
-    // --- PERBAIKAN 3: Sediakan fungsi kosong untuk onContinue di preview ---
     RegisterScreen(
         onNavigateToLogin = {},
         onContinue = {}

@@ -39,11 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.ui.viewmodel.SignInViewModel
+import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
+    onSignInSuccess: (token: String) -> Unit, // Callback baru untuk sukses login
+    viewModel: SignInViewModel = koinViewModel() // 1. Inject ViewModel menggunakan Koin
 ) {
     val primaryColor = Color(0xFF069C6F)
     val darkTextColor = Color(0xFF555555)
@@ -57,7 +61,24 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val focusManager = LocalFocusManager.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // State lokal untuk input fields
+
+
+    // Efek Samping untuk penanganan status login (sukses/gagal)
+    LaunchedEffect(uiState.isAuthenticated, uiState.error) {
+        if (uiState.isAuthenticated) {
+            // Panggil callback navigasi sukses
+            uiState.token?.let(onSignInSuccess)
+        }
+        if (uiState.error != null) {
+            // Tampilkan Toast/Snackbar untuk error
+            // Karena tidak ada SnackbarHostState yang diakses di sini, kita anggap ini adalah tempat penanganan error.
+            // Di implementasi nyata, gunakan SnackbarHostState atau Toast.
+            println("LOGIN ERROR: ${uiState.error}")
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -160,7 +181,10 @@ fun LoginScreen(
             }
 
             Button(
-                onClick = { /* TODO: Aksi untuk login */ },
+                onClick = {
+                    // Panggil fungsi signIn di ViewModel dengan data input lokal
+                    viewModel.signIn(email, password)
+                },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
@@ -242,5 +266,5 @@ fun AuthTextField(
 @Preview(showBackground = true, device = "id:pixel_5")
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen(onNavigateToRegister = {}, onNavigateToForgotPassword = {})
+    LoginScreen(onNavigateToRegister = {}, onSignInSuccess = {}, onNavigateToForgotPassword = { })
 }
