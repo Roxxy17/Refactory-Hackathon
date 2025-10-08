@@ -10,4 +10,9 @@ sealed class Screen(val route: String) {
     // Tambahkan rute untuk layar utama aplikasi Anda nanti di sini
     // object Home : Screen("home")
     object Dashboard : Screen("dashboard")
+    object Explore : Screen("explore")
+    object History: Screen("history")
+    object Profile: Screen("profile")
+    object Search: Screen("search")
+
 }
