@@ -18,6 +18,8 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,7 +42,9 @@ import com.example.kalanacommerce.R
 
 @Composable
 fun RegisterScreen(
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    // --- PERBAIKAN 1: Tambahkan parameter onContinue di sini ---
+    onContinue: () -> Unit
 ) {
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)
@@ -49,7 +53,7 @@ fun RegisterScreen(
 
     // --- State untuk UI ---
     var fullName by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") } // PERUBAHAN 1: State diganti
+    var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -59,7 +63,6 @@ fun RegisterScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // PENINGKATAN: Untuk menutup keyboard
     val focusManager = LocalFocusManager.current
 
     val textFieldColors = TextFieldDefaults.colors(
@@ -74,7 +77,6 @@ fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize()
             .navigationBarsPadding()
-            // PENINGKATAN: Menambahkan scroll jika layar terlalu kecil
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
             .pointerInput(Unit) {
@@ -99,7 +101,6 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        // PENINGKATAN: Tempat untuk pesan error
         AnimatedVisibility(visible = errorMessage != null) {
             Text(
                 text = errorMessage ?: "",
@@ -124,14 +125,13 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // PERUBAHAN 1: Input Alamat diganti menjadi No. Telepon
         TextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("No. Telepon", color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = Color.Gray) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // Keyboard khusus telepon
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             shape = RoundedCornerShape(12.dp),
             colors = textFieldColors,
             singleLine = true,
@@ -173,7 +173,6 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // PENINGKATAN: Mengganti "Remember me" menjadi "Terms and Conditions"
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -193,20 +192,29 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        // --- PERBAIKAN 2: Pindahkan onContinue() ke dalam onClick ---
         Button(
-            onClick = { /* TODO: Aksi untuk register */ },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            onClick = {
+                // TODO: Validasi input sebelum melanjutkan
+                // Jika validasi berhasil:
+                onContinue()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
             enabled = !isLoading
         ) {
-            Text("Sign up", fontSize = 16.sp, color = Color.White) // Teks dibuat putih
+            Text("Sign up", fontSize = 16.sp, color = Color.White)
         }
 
-        Spacer(modifier = Modifier.weight(1f)) // Mendorong link ke bawah
+        Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            modifier = Modifier.clickable(onClick = onNavigateToLogin).padding(8.dp),
+            modifier = Modifier
+                .clickable(onClick = onNavigateToLogin)
+                .padding(8.dp),
             text = buildAnnotatedString {
                 append("Already have an account? ")
                 withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
@@ -221,5 +229,9 @@ fun RegisterScreen(
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreenPreview() {
-    RegisterScreen(onNavigateToLogin = {})
+    // --- PERBAIKAN 3: Sediakan fungsi kosong untuk onContinue di preview ---
+    RegisterScreen(
+        onNavigateToLogin = {},
+        onContinue = {}
+    )
 }
