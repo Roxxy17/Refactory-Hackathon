@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kalanacommerce.ui.dashboard.HistoryScreen
 import com.example.kalanacommerce.ui.screen.auth.*
 
 @Composable
@@ -19,15 +20,16 @@ fun AppNavGraph() {
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )
         }
+        composable(route = Screen.History.route){
+            HistoryScreen()
+        }
 
         // Rute ke Login Screen
         composable(route = Screen.Login.route) {
             LoginScreen(
               onSignInSuccess = {
                     // Setelah login berhasil, arahkan ke Welcome
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
-                    }
+                  navController.navigate(Screen.History.route)
                 },
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route) {

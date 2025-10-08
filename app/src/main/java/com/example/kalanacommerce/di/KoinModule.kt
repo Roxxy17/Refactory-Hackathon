@@ -1,7 +1,12 @@
 package com.example.kalanacommerce.di
 
+import android.util.Log
 import com.example.kalanacommerce.data.AuthService
 import com.example.kalanacommerce.data.AuthServiceImpl
+import com.example.kalanacommerce.data.TokenManager
+import com.example.kalanacommerce.data.repository.OrderRepository
+import com.example.kalanacommerce.data.repository.OrderRepositoryImpl
+import com.example.kalanacommerce.ui.viewmodel.OrderViewModel
 import com.example.kalanacommerce.ui.viewmodel.RegisterViewModel
 import com.example.kalanacommerce.ui.viewmodel.SignInViewModel
 import io.ktor.client.*
@@ -21,10 +26,24 @@ import javax.net.ssl.HostnameVerifier
 import io.ktor.client.plugins.logging.* // Wajib diimpor!
 import io.ktor.client.plugins.cookies.* // Wajib diimpor
 import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage // <---
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
+import io.ktor.http.URLProtocol
+import org.koin.android.ext.koin.androidContext
 
 val appModule = module {
     // Ktor HttpClient
     single {
+        TokenManager(androidContext())
+    }
+    single<OrderRepository> {
+        OrderRepositoryImpl(get()) // Membutuhkan HttpClient
+    }
+    single {
+
+        val tokenManager: TokenManager = get()
+
         HttpClient(Android) { // Gunakan Android engine untuk performa terbaik di Android
             install(ContentNegotiation) {
                 json(Json {
@@ -50,6 +69,12 @@ val appModule = module {
             install(HttpCookies) {
                 storage = AcceptAllCookiesStorage()
             }
+            defaultRequest {
+                val token = tokenManager.getToken() // <-- Membaca dari penyimpanan lokal
+                if (token != null) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
             engine {
                 // Konfigurasi ini hanya berfungsi jika Anda menggunakan Android engine
                 // Menonaktifkan pemeriksaan SSL, sehingga sertifikat kustom akan diterima
@@ -66,14 +91,19 @@ val appModule = module {
     single<AuthService> {
         AuthServiceImpl(client = get())
     }
+    viewModel {
+        // OrderViewModel membutuhkan OrderRepository (get())
+        OrderViewModel(repository = get())
+    }
 
     // SignInViewModel
     viewModel {
-        SignInViewModel(authService = get())
+        SignInViewModel(authService = get(), tokenManager =   get())
     }
 
     // 4. RegisterViewModel (BARU)
     viewModel {
+        // RegisterViewModel hanya membutuhkan AuthService
         RegisterViewModel(authService = get())
     }
 }

@@ -35,8 +35,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.ui.theme.KalanaCommerceTheme
+import com.example.kalanacommerce.ui.viewmodel.AddressViewModel
+import com.example.kalanacommerce.ui.viewmodel.SignInViewModel
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -45,17 +49,24 @@ import java.util.Locale
 @Composable
 fun FillAccountScreen(
     onNavigateBack: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    // ✅ INJEKSI KOIN VIEW MODEL
+    addressViewModel: AddressViewModel = koinViewModel(),
+    signInViewModel: SignInViewModel = koinViewModel()
 ) {
+
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)
     val darkTextColor = Color(0xFF555555)
     val errorColor = Color(0xFFD32F2F)
 
-    var fullName by remember { mutableStateOf("") }
+    val signInUiState by signInViewModel.uiState.collectAsStateWithLifecycle()
+    val addressUiState by addressViewModel.uiState.collectAsStateWithLifecycle()
+
+    var fullName by remember { mutableStateOf(signInUiState.user?.full_name ?: "") }
     var dateOfBirth by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
+    var addressLine by remember { mutableStateOf("") }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -177,8 +188,8 @@ fun FillAccountScreen(
                 )
 
                 OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it },
+                    value = addressLine,
+                    onValueChange = { addressLine = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Alamat", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
@@ -194,7 +205,21 @@ fun FillAccountScreen(
             }
 
             Button(
-                onClick = { /* TODO: Aksi, contoh: isLoading = true */ },
+                onClick = {if (addressLine.isNotBlank()) {
+                    // Catatan: city dan postal_code dikirim sebagai dummy,
+                    // karena UI ini hanya menangani addressLine.
+                    addressViewModel.createAddress(
+                        addressLine = addressLine,
+                        city = "Jakarta", // Dummy value
+                        postalCode = "10001", // Dummy value
+                        isPrimary = false
+                    )
+                    addressLine = "" // Clear field setelah submit
+                    focusManager.clearFocus()
+                } else {
+                    // Di sini Anda bisa menambahkan logika validasi jika fields lain kosong
+                }
+                    onContinue() },
                 modifier = Modifier.fillMaxWidth().height(55.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),

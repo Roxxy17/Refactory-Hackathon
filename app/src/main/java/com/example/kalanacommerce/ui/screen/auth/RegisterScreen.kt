@@ -51,7 +51,6 @@ fun RegisterScreen(
     // --- PERBAIKAN 1: Tambahkan parameter onContinue di sini ---
     onContinue: () -> Unit,
     viewModel: RegisterViewModel = koinViewModel() // 1. Inject ViewModel
-
 ) {
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)

@@ -7,11 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.data.AuthService
 import com.example.kalanacommerce.data.SignInRequest
 import com.example.kalanacommerce.data.SignInUiState
+import com.example.kalanacommerce.data.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class SignInViewModel(private val authService: AuthService) : ViewModel() {
+class SignInViewModel(private val authService: AuthService,    private val tokenManager: TokenManager // <-- TokenManager di-inject
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignInUiState())
     val uiState: StateFlow<SignInUiState> = _uiState
@@ -36,13 +38,15 @@ class SignInViewModel(private val authService: AuthService) : ViewModel() {
                     - ID Pengguna: ${response.user.id}
                     - Token (sebagian): ${response.token.take(15)}...
                 """.trimIndent()
+                tokenManager.saveToken(response.token)
 
                 // Mencetak ke Logcat dengan level INFORMASI (I)
                 Log.i(TAG, "✅ [SUCCESS] $logMessage")
                 _uiState.value = SignInUiState(
                     isLoading = false,
                     isAuthenticated = true,
-                    token = response.token
+                    token = response.token,
+                    user = response.user
                 )
             }.onFailure { exception ->
                 _uiState.value = SignInUiState(

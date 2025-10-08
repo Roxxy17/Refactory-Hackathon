@@ -7,6 +7,7 @@ import com.example.kalanacommerce.navigation.AppNavGraph // Import file navigasi
 import com.example.kalanacommerce.ui.theme.KalanaCommerceTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

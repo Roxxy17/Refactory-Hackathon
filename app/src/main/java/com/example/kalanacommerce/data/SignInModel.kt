@@ -38,5 +38,6 @@ data class SignInUiState(
     val isLoading: Boolean = false,
     val isAuthenticated: Boolean = false,
     val error: String? = null,
-    val token: String? = null
+    val token: String? = null,
+    val user: User? = null
 )
