@@ -1,8 +1,10 @@
 package com.example.kalanacommerce.data
 
+import android.annotation.SuppressLint
 import kotlinx.serialization.Serializable
 
 // Payload yang dikirim ke API
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class SignInRequest(
     val email: String,
@@ -10,6 +12,7 @@ data class SignInRequest(
 )
 
 // Bagian 'user' dari respons
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class User(
     val id: Int,
@@ -21,6 +24,7 @@ data class User(
 )
 
 // Respons lengkap dari API
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class SignInResponse(
     val status: String,

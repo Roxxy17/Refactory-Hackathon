@@ -23,12 +23,12 @@ fun AppNavGraph() {
         // Rute ke Login Screen
         composable(route = Screen.Login.route) {
             LoginScreen(
-//                onSignInSuccess = {
-//                    // Setelah login berhasil, arahkan ke Welcome
-//                    navController.navigate(Screen.Welcome.route) {
-//                        popUpTo(Screen.Register.route) { inclusive = true }
-//                    }
-//                },
+              onSignInSuccess = {
+                    // Setelah login berhasil, arahkan ke Welcome
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
