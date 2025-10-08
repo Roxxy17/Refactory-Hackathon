@@ -1,6 +1,11 @@
 package com.example.kalanacommerce.ui.screen.auth
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,39 +51,33 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onSignInSuccess: (token: String) -> Unit, // Callback baru untuk sukses login
-    viewModel: SignInViewModel = koinViewModel() // 1. Inject ViewModel menggunakan Koin
+    onSignInSuccess: (token: String) -> Unit,
+    viewModel: SignInViewModel = koinViewModel()
 ) {
     val primaryColor = Color(0xFF069C6F)
     val darkTextColor = Color(0xFF555555)
     val errorColor = Color(0xFFD32F2F)
 
+    // State Input Lokal
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val focusManager = LocalFocusManager.current
+
+    // Ambil State dari ViewModel (Sumber Kebenaran Tunggal)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // State lokal untuk input fields
-
+    // uiState.error dan uiState.isLoading dari ViewModel yang digunakan.
 
     // Efek Samping untuk penanganan status login (sukses/gagal)
-    LaunchedEffect(uiState.isAuthenticated, uiState.error) {
+    LaunchedEffect(uiState.isAuthenticated) {
         if (uiState.isAuthenticated) {
-            // Panggil callback navigasi sukses
             uiState.token?.let(onSignInSuccess)
         }
-        if (uiState.error != null) {
-            // Tampilkan Toast/Snackbar untuk error
-            // Karena tidak ada SnackbarHostState yang diakses di sini, kita anggap ini adalah tempat penanganan error.
-            // Di implementasi nyata, gunakan SnackbarHostState atau Toast.
-            println("LOGIN ERROR: ${uiState.error}")
-        }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -99,7 +98,6 @@ fun LoginScreen(
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            // PENINGKATAN: Menggunakan spacedBy untuk jarak yang konsisten
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
         ) {
 
@@ -123,16 +121,20 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                AnimatedVisibility(visible = errorMessage != null) {
+                // PERBAIKAN UTAMA: Tambahkan Enter/Exit Transition yang eksplisit
+                AnimatedVisibility(
+                    visible = uiState.error != null,
+                    enter = fadeIn(tween(150)) + expandVertically(expandFrom = Alignment.Top),
+                    exit = fadeOut(tween(150)) + shrinkVertically(shrinkTowards = Alignment.Top)
+                ) {
                     Text(
-                        text = errorMessage ?: "",
+                        text = uiState.error ?: "",
                         color = errorColor,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
                 }
 
-                // PENINGKATAN: Menggunakan komponen AuthTextField yang bisa dipakai ulang
                 AuthTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -176,19 +178,20 @@ fun LoginScreen(
                 )
             }
 
-            if (isLoading) {
+            // Gunakan uiState.isLoading
+            if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(32.dp), color = primaryColor)
             }
 
             Button(
                 onClick = {
-                    // Panggil fungsi signIn di ViewModel dengan data input lokal
                     viewModel.signIn(email, password)
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                enabled = !isLoading
+                // Gunakan uiState.isLoading untuk menonaktifkan tombol
+                enabled = !uiState.isLoading
             ) {
                 Text(stringResource(id = R.string.sign_in), fontSize = 16.sp, color = Color.White)
             }
@@ -226,7 +229,7 @@ fun LoginScreen(
     }
 }
 
-// PENINGKATAN: Komponen TextField yang bisa dipakai ulang (Reusable Component)
+// Komponen TextField yang bisa dipakai ulang (Reusable Component)
 @Composable
 fun AuthTextField(
     value: String,
