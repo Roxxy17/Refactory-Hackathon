@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.kalanacommerce"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.kalanacommerce"
         minSdk = 27
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -38,6 +38,7 @@ android {
         compose = true
     }
 }
+val nav_version = "2.7.7"
 
 dependencies {
 
@@ -56,4 +57,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("androidx.navigation:navigation-compose:${nav_version}")
+    implementation("androidx.compose.material:material-icons-extended-android:1.6.5")
+
 }
