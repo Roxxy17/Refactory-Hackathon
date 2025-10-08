@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences.core)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.compose.ui.geometry)
 
     // Compose Bill of Materials (BOM) - Sumber kebenaran versi Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.05.00")
@@ -105,4 +106,5 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
 }

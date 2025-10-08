@@ -74,11 +74,13 @@ fun DashboardNavGraph(
         startDestination = BottomBarScreen.Eksplor.route,
         modifier = modifier
     ) {
+        // --- Kode yang Diperbaiki ---
         composable(BottomBarScreen.Eksplor.route) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Halaman Eksplor")
-            }
+            // TIDAK PERLU meneruskan containerColor.
+            // ExploreScreen sudah menggunakan Scaffold di dalamnya untuk mengatur warna latar belakang.
+            ExploreScreen(modifier = Modifier.fillMaxSize())
         }
+
         composable(BottomBarScreen.Pencarian.route) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Halaman Pencarian")
@@ -90,7 +92,6 @@ fun DashboardNavGraph(
             }
         }
         composable(BottomBarScreen.Profile.route) {
-            // Halaman Profile sekarang menerima fungsi onLogout
             ProfileContent(onLogout = onLogout)
         }
     }
