@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,50 +20,53 @@ import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.navigation.BottomBarScreen
 import com.example.kalanacommerce.ui.components.AppBottomNavigationBar
 
+/**
+ * Layar utama setelah login, yang menampung bottom navigation dan konten halaman.
+ */
 @Composable
 fun DashboardScreen(
-    // PERUBAHAN 1: Tambahkan parameter onLogout
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
-    val primaryColor = Color(0xFF069C6F)
 
+    // HANYA ADA SATU SCAFFOLD DI SINI
     Scaffold(
+        // Semua logika Bottom Bar dan FAB sekarang ada di dalam komponen ini
         bottomBar = {
             AppBottomNavigationBar(navController = navController) { screen ->
+                // Kode BARU
                 navController.navigate(screen.route) {
-                    popUpTo(navController.graph.startDestinationId)
+                    // Properti ini adalah bagian dari NavOptionsBuilder (blok navigate), bukan popUpTo
                     launchSingleTop = true
+                    restoreState = true
+
+                    popUpTo(navController.graph.startDestinationId) {
+                        // Opsi 'saveState' ada di dalam blok popUpTo
+                        saveState = true
+                    }
                 }
+
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* TODO: Aksi untuk tombol tengah */ },
-                containerColor = primaryColor,
-                contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.ChatBubble, contentDescription = "Pesan")
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center
-    ) { innerPadding ->
-        // PERUBAHAN 2: Teruskan onLogout ke NavGraph internal
-        DashboardNavGraph(
-            navController = navController,
-            modifier = Modifier.padding(innerPadding),
-            onLogout = onLogout
-        )
-    }
+        // FloatingActionButton dan posisinya sudah tidak didefinisikan di sini lagi
+        content = { innerPadding ->
+            // Navigasi untuk konten-konten di dalam Dashboard (Eksplor, Profil, dll.)
+            DashboardNavGraph(
+                navController = navController,
+                modifier = Modifier.padding(innerPadding),
+                onLogout = onLogout // Teruskan fungsi onLogout ke NavGraph
+            )
+        }
+    )
 }
 
-// Ini adalah NavHost untuk halaman-halaman di dalam dashboard
+/**
+ * NavHost untuk halaman-halaman yang diakses dari Bottom Navigation Bar.
+ */
 @Composable
 fun DashboardNavGraph(
     navController: NavHostController,
     modifier: Modifier,
-    // PERUBAHAN 3: Terima onLogout di sini juga
     onLogout: () -> Unit
 ) {
     NavHost(
@@ -90,15 +90,14 @@ fun DashboardNavGraph(
             }
         }
         composable(BottomBarScreen.Profile.route) {
-            // PERUBAHAN 4: Buat halaman Profile dan tambahkan tombol Logout
+            // Halaman Profile sekarang menerima fungsi onLogout
             ProfileContent(onLogout = onLogout)
         }
     }
 }
 
 /**
- * Composable baru untuk isi Halaman Profile.
- * Ini membuat kode lebih bersih.
+ * Composable untuk isi dari Halaman Profile, termasuk tombol Logout.
  */
 @Composable
 fun ProfileContent(onLogout: () -> Unit) {
@@ -111,7 +110,7 @@ fun ProfileContent(onLogout: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = onLogout, // Panggil fungsi logout saat tombol diklik
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)) // Warna merah untuk aksi berbahaya
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)) // Warna merah
             ) {
                 Text("Logout")
             }
@@ -119,10 +118,8 @@ fun ProfileContent(onLogout: () -> Unit) {
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun DashboardScreenPreview() {
-    // PERUBAHAN 5: Sediakan fungsi kosong untuk onLogout di preview
     DashboardScreen(onLogout = {})
 }

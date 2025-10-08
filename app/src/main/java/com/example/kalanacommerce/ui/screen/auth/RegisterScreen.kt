@@ -28,7 +28,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -48,10 +47,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    // --- PERBAIKAN 1: Tambahkan parameter onContinue di sini ---
     onContinue: () -> Unit,
-    viewModel: RegisterViewModel = koinViewModel() // 1. Inject ViewModel
-
+    viewModel: RegisterViewModel = koinViewModel()
 ) {
     val primaryColor = Color(0xFF069C6F)
     val lightGray = Color(0xFFF1F1F1)
@@ -59,27 +56,22 @@ fun RegisterScreen(
     val errorColor = Color(0xFFD32F2F)
 
     val context = LocalContext.current
-
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-
-    // 3. Efek Samping untuk penanganan status Registrasi (sukses/gagal)
     LaunchedEffect(uiState.isRegistered, uiState.error) {
         when {
             uiState.isRegistered -> {
-                // Tampilkan Toast Sukses
                 Toast.makeText(context, "✅ Registrasi Berhasil!", Toast.LENGTH_LONG).show()
-                // Navigasi ke layar Login setelah sukses
-                onNavigateToLogin()
-                viewModel.resetState() // Bersihkan state setelah navigasi
+                onContinue()
+                viewModel.resetState()
             }
             uiState.error != null -> {
-                // Tampilkan Toast Error
                 Toast.makeText(context, "❌ Gagal: ${uiState.error}", Toast.LENGTH_LONG).show()
-                viewModel.resetState() // Bersihkan state error
+                viewModel.resetState()
             }
         }
     }
+
     // --- State untuk UI ---
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -88,8 +80,8 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var agreeToTerms by remember { mutableStateOf(false) }
 
-    // --- State untuk Feedback Pengguna ---
-    var isLoading by remember { mutableStateOf(false) }
+    // --- PERBAIKAN 1: Hapus `isLoading` yang terpisah ---
+    // val isLoading by viewModel.isLoading.collectAsStateWithLifecycle() // HAPUS BARIS INI
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val focusManager = LocalFocusManager.current
@@ -216,28 +208,28 @@ fun RegisterScreen(
         }
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (isLoading) {
+        // --- PERBAIKAN 2: Gunakan uiState.isLoading di sini ---
+        if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(32.dp), color = primaryColor)
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- PERBAIKAN 2: Pindahkan onContinue() ke dalam onClick ---
         Button(
             onClick = {
                 viewModel.register(
                     fullName = fullName,
                     email = email,
                     password = password,
-                    phoneNumber = phoneNumber // Menggunakan state phoneNumber
+                    phoneNumber = phoneNumber
                 )
-                onContinue()
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-            enabled = !isLoading
+            // --- PERBAIKAN 3: Gunakan uiState.isLoading di sini juga ---
+            enabled = !uiState.isLoading
         ) {
             Text("Sign up", fontSize = 16.sp, color = Color.White)
         }

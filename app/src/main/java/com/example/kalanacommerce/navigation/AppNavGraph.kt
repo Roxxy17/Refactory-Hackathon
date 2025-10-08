@@ -63,38 +63,32 @@ fun AppNavGraph(
             )
         }
 
-        // Rute ke Register Screen
+        // Kode BARU
         composable(route = Screen.Register.route) {
             RegisterScreen(
-                onNavigateToLogin = {
+                onNavigateToLogin = {// Aksi jika user sudah punya akun dan klik "Login"
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                        // Hapus RegisterScreen dari backstack
+                        popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
-                // Setelah registrasi berhasil, arahkan ke FillAccount
-                onContinue = { navController.navigate(Screen.FillAccount.route) }
+                // PERUBAHAN DI SINI: Setelah registrasi berhasil (onContinue),
+                // arahkan ke LoginScreen.
+                onContinue = {
+                    navController.navigate(Screen.Login.route) {
+                        // Hapus RegisterScreen dari backstack agar user tidak bisa kembali
+                        // ke halaman registrasi dengan menekan tombol back dari halaman login.
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                }
             )
         }
+
 
         // Rute ke Forgot Password Screen
         composable(route = Screen.ForgotPassword.route) {
             ForgotPasswordScreen(
                 onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // Rute ke Fill Account Screen
-        composable(route = Screen.FillAccount.route) {
-            FillAccountScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onContinue = {
-                    // Arahkan ke Dashboard dan hapus semua riwayat navigasi sebelumnya
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
-                    }
-                }
             )
         }
 

@@ -276,5 +276,4 @@ fun AuthTextField(
 fun LoginScreenPreview() {
     // Preview BARU
     LoginScreen(onNavigateToRegister = {}, onSignInSuccess = { /* do nothing in preview */ }, onNavigateToForgotPassword = { })
-
 }

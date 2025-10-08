@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.ui.screen.auth
+package com.example.kalanacommerce.ui.dashboard
 
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.AnimatedVisibility
