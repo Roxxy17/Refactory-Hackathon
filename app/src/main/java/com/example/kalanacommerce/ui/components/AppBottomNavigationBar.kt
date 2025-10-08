@@ -96,7 +96,7 @@ fun AppBottomNavigationBar(
                             18.dp.toPx(),      // Radius blur bayangan
                             0f,               // Offset X
                             -6f,              // Offset Y (negatif agar bayangan ke atas)
-                            Color.Black.copy(alpha = 0.3f).toArgb() // Warna bayangan
+                            Color.Green.copy(alpha = 0.3f).toArgb() // Warna bayangan
                         )
                         canvas.drawPath(shadowPath, paint)
                     }
@@ -203,7 +203,7 @@ fun AppBottomNavigationBar(
                             // Di dalam drawBehind, kita punya akses ke 'size'
                             drawCircle(
                                 brush = Brush.radialGradient(
-                                    colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent),
+                                    colors = listOf(Color.Green.copy(alpha = 0.3f), Color.Transparent),
                                     radius = size.width / 2.0f // Ini sekarang valid
                                 )
                             )
