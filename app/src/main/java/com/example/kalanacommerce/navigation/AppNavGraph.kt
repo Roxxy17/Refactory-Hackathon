@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kalanacommerce.ui.dashboard.DashboardScreen
 import com.example.kalanacommerce.ui.screen.auth.*
 
 @Composable
@@ -63,12 +64,17 @@ fun AppNavGraph() {
             FillAccountScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onContinue = {
-                    // TODO: Arahkan ke halaman utama aplikasi setelah mengisi akun
-                    // Contoh: navController.navigate(Screen.Home.route) {
-                    //     popUpTo(Screen.Welcome.route)
-                    // }
+                    // Arahkan ke Dashboard dan hapus semua riwayat navigasi sebelumnya
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
                 }
             )
+        }
+
+        // Rute ke Dashboard Screen
+        composable(route = Screen.Dashboard.route) {
+            DashboardScreen() // Panggil Composable Dashboard Anda di sini
         }
     }
 }

@@ -9,4 +9,5 @@ sealed class Screen(val route: String) {
     object FillAccount : Screen("fill_account")
     // Tambahkan rute untuk layar utama aplikasi Anda nanti di sini
     // object Home : Screen("home")
+    object Dashboard : Screen("dashboard")
 }

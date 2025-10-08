@@ -1,5 +1,6 @@
 package com.example.kalanacommerce.ui.screen.auth
 
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.ui.theme.KalanaCommerceTheme
 import java.text.SimpleDateFormat
@@ -56,42 +56,44 @@ fun FillAccountScreen(
     var dateOfBirth by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
-
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
-
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
     val focusManager = LocalFocusManager.current
 
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
+    val textFieldColors = TextFieldDefaults.colors(
         focusedContainerColor = lightGray,
         unfocusedContainerColor = lightGray,
-        unfocusedBorderColor = Color.Transparent,
-        focusedBorderColor = primaryColor,
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        cursorColor = primaryColor,
+        disabledTextColor = darkTextColor,
         focusedTextColor = darkTextColor,
         unfocusedTextColor = darkTextColor
     )
 
     Scaffold(
-        // PERBAIKAN 1: Buat Scaffold menjadi transparan
-        containerColor = Color.Transparent,
+        // PERBAIKAN 1: Kembalikan warna Scaffold menjadi putih
+        containerColor = Color.White,
         topBar = {
             TopAppBar(
                 title = { Text("Fill Your Account", color = primaryColor, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
-                // PERBAIKAN 2: Buat TopAppBar juga transparan
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // PERBAIKAN 2: Background gradasi sekarang di Column, di bawah TopAppBar
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color.White, primaryColor.copy(alpha = 0.05f))
+                        colors = listOf(
+                            Color.White,
+                            primaryColor.copy(alpha = 0.05f)
+                        )
                     )
                 )
                 .padding(innerPadding)
@@ -105,7 +107,7 @@ fun FillAccountScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Box(
-                modifier = Modifier.size(120.dp).clickable { /* TODO: Aksi untuk memilih gambar */ },
+                modifier = Modifier.size(120.dp).clickable { /* TODO: Aksi pilih gambar */ },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -135,36 +137,48 @@ fun FillAccountScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
+                TextField(
                     value = fullName,
                     onValueChange = { fullName = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Full Name", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
                     colors = textFieldColors,
-                    singleLine = true
+                    singleLine = true,
                 )
 
-                OutlinedTextField(
-                    value = dateOfBirth,
-                    onValueChange = {},
-                    modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
-                    placeholder = { Text("Date of Birth", color = Color.Gray) },
-                    trailingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = "Calendar") },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = lightGray,
-                        unfocusedContainerColor = lightGray,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = primaryColor,
-                        focusedTextColor = darkTextColor,
-                        unfocusedTextColor = darkTextColor,
-                        disabledTextColor = darkTextColor
-                    ),
-                    readOnly = true
-                )
+                Box(modifier = Modifier.clickable { showDatePicker = true }) {
+                    TextField(
+                        value = dateOfBirth,
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Date of Birth") }, // Hapus warna dari sini
+                        trailingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = "Calendar") },
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = false, // Tetap dinonaktifkan
+                        colors = TextFieldDefaults.colors(
+                            // Warna untuk container
+                            disabledContainerColor = lightGray,
 
-                OutlinedTextField(
+                            // --- PERBAIKAN UTAMA DI SINI ---
+                            // Tentukan warna placeholder saat disabled
+                            disabledPlaceholderColor = Color.Gray,
+                            // Tentukan warna teks saat disabled (agar konsisten jika ada isinya)
+                            disabledTextColor = darkTextColor,
+                            // ------------------------------------
+
+                            // Tetap definisikan warna untuk state lain agar tidak berubah
+                            focusedContainerColor = lightGray,
+                            unfocusedContainerColor = lightGray,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = primaryColor,
+                            disabledTrailingIconColor = Color.Gray // Bonus: Buat ikon kalender juga jadi abu-abu
+                        ),
+                    )
+                }
+
+                TextField(
                     value = phoneNumber,
                     onValueChange = { phoneNumber = it },
                     modifier = Modifier.fillMaxWidth(),
@@ -173,17 +187,17 @@ fun FillAccountScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = textFieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
+                    singleLine = true,
                 )
 
-                OutlinedTextField(
+                TextField(
                     value = address,
                     onValueChange = { address = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Alamat", color = Color.Gray) },
                     shape = RoundedCornerShape(12.dp),
                     colors = textFieldColors,
-                    minLines = 3
+                    minLines = 3,
                 )
             }
 
@@ -194,7 +208,8 @@ fun FillAccountScreen(
             }
 
             Button(
-                onClick = { /* TODO: Aksi, contoh: isLoading = true */ },
+                // PERBAIKAN 3: Hubungkan tombol ini dengan navigasi
+                onClick = onContinue,
                 modifier = Modifier.fillMaxWidth().height(55.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
