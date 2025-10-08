@@ -1,13 +1,18 @@
 package com.example.kalanacommerce.data
 
 
+
+import android.annotation.SuppressLint
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.POST
 
+
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class LoginRequest(val email: String, val password: String)
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class UserData(
     val id: Int,
@@ -17,6 +22,7 @@ data class UserData(
     val role: String
 )
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class LoginResponse(
     val status: String,

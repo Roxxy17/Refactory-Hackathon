@@ -1,8 +1,10 @@
 package com.example.kalanacommerce.data
 
+import android.annotation.SuppressLint
 import kotlinx.serialization.Serializable
 
 // Payload yang dikirim ke /auth/register
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class RegisterRequest(
     val full_name: String,
@@ -13,6 +15,7 @@ data class RegisterRequest(
 )
 
 // Respons pendaftaran (kita bisa menggunakan User dari model SignIn, tapi dibuat baru untuk kejelasan)
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class RegisterResponse(
     val status: String,
@@ -21,6 +24,7 @@ data class RegisterResponse(
 )
 
 // Model untuk Error (sesuai format server: {"status":"Gagal", "error":"..."})
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class ServerErrorResponse(
     val status: String,
