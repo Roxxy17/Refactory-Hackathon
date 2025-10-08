@@ -1,18 +1,33 @@
 package com.example.kalanacommerce.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kalanacommerce.data.local.SessionManager
 import com.example.kalanacommerce.ui.dashboard.DashboardScreen
 import com.example.kalanacommerce.ui.screen.auth.*
+import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.get
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AppNavGraph() {
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = Screen.Welcome.route) {
-
+fun AppNavGraph(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    // startDestination akan menentukan layar mana yang pertama kali ditampilkan
+    startDestination: String
+) {
+    // HANYA ADA SATU NAVHOST DI SINI
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier
+    ) {
         // Rute ke Welcome / First Screen
         composable(route = Screen.Welcome.route) {
             FirstScreen(
@@ -23,17 +38,26 @@ fun AppNavGraph() {
 
         // Rute ke Login Screen
         composable(route = Screen.Login.route) {
+            // PERBAIKAN: Gunakan get() untuk mendapatkan SessionManager
+            val sessionManager: SessionManager = get()
+            val scope = rememberCoroutineScope()
+
+            // Praktik terbaik: Gunakan ViewModel untuk logika login
+            val authViewModel: AuthViewModel = koinViewModel()
+
             LoginScreen(
-              onSignInSuccess = {
-                    // Setelah login berhasil, arahkan ke Welcome
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                // Teruskan ViewModel ke layar login
+                viewModel = authViewModel,
+                onSignInSuccess = {
+                    // Arahkan ke Dashboard setelah login berhasil
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = true
+                        }
                     }
                 },
                 onNavigateToRegister = {
-                    navController.navigate(Screen.Register.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
+                    navController.navigate(Screen.Register.route)
                 },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
@@ -44,7 +68,7 @@ fun AppNavGraph() {
             RegisterScreen(
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
                 },
                 // Setelah registrasi berhasil, arahkan ke FillAccount
@@ -66,7 +90,9 @@ fun AppNavGraph() {
                 onContinue = {
                     // Arahkan ke Dashboard dan hapus semua riwayat navigasi sebelumnya
                     navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = true
+                        }
                     }
                 }
             )
@@ -74,7 +100,23 @@ fun AppNavGraph() {
 
         // Rute ke Dashboard Screen
         composable(route = Screen.Dashboard.route) {
-            DashboardScreen() // Panggil Composable Dashboard Anda di sini
+            // PERBAIKAN DI SINI: Gunakan get() bukan koinViewModel()
+            val sessionManager: SessionManager = get()
+            val scope = rememberCoroutineScope()
+
+            DashboardScreen(
+                onLogout = {
+                    scope.launch {
+                        sessionManager.clearAuthData()
+                        // Navigasi kembali ke Welcome dan hapus semua history
+                        navController.navigate(Screen.Welcome.route) {
+                            popUpTo(navController.graph.id) {
+                                inclusive = true
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 }

@@ -46,13 +46,15 @@ import com.example.kalanacommerce.R
 import com.example.kalanacommerce.ui.viewmodel.SignInViewModel
 import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kalanacommerce.data.SignInRequest
+import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onSignInSuccess: (token: String) -> Unit,
-    viewModel: SignInViewModel = koinViewModel()
+    onSignInSuccess: () -> Unit,
+    viewModel: AuthViewModel = koinViewModel()
 ) {
     val primaryColor = Color(0xFF069C6F)
     val darkTextColor = Color(0xFF555555)
@@ -72,9 +74,10 @@ fun LoginScreen(
     // uiState.error dan uiState.isLoading dari ViewModel yang digunakan.
 
     // Efek Samping untuk penanganan status login (sukses/gagal)
-    LaunchedEffect(uiState.isAuthenticated) {
-        if (uiState.isAuthenticated) {
-            uiState.token?.let(onSignInSuccess)
+    LaunchedEffect(uiState.signInSuccess) {
+        if (uiState.signInSuccess) {
+            // Panggil onSignInSuccess tanpa parameter
+            onSignInSuccess()
         }
     }
 
@@ -185,7 +188,9 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    viewModel.signIn(email, password)
+                    // Buat objek SignInRequest sebelum memanggil ViewModel
+                    val request = SignInRequest(email = email, password = password)
+                    viewModel.signIn(request)
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
@@ -269,5 +274,7 @@ fun AuthTextField(
 @Preview(showBackground = true, device = "id:pixel_5")
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen(onNavigateToRegister = {}, onSignInSuccess = {}, onNavigateToForgotPassword = { })
+    // Preview BARU
+    LoginScreen(onNavigateToRegister = {}, onSignInSuccess = { /* do nothing in preview */ }, onNavigateToForgotPassword = { })
+
 }

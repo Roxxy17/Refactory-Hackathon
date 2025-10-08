@@ -49,6 +49,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
     implementation("androidx.activity:activity-compose:1.9.0")
+    implementation(libs.androidx.datastore.core)
+    implementation(libs.androidx.datastore.preferences.core)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Compose Bill of Materials (BOM) - Sumber kebenaran versi Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.05.00")
