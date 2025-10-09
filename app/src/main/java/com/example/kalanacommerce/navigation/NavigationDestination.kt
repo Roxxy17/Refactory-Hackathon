@@ -6,13 +6,14 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
     object ForgotPassword : Screen("forgot_password")
-    object FillAccount : Screen("fill_account")
     // Tambahkan rute untuk layar utama aplikasi Anda nanti di sini
     // object Home : Screen("home")
     object Dashboard : Screen("dashboard")
+    object TransactionScreen : Screen("transaction_screen")
     object Explore : Screen("explore")
     object History: Screen("history")
     object Profile: Screen("profile")
     object Search: Screen("search")
+    object Chat : Screen("chat")
 
 }

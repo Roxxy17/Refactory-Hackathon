@@ -42,7 +42,6 @@ android {
     }
 
 }
-val nav_version = "2.7.7"
 
 dependencies {
     // Dependensi inti Android (versi stabil)
@@ -52,6 +51,7 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences.core)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 
     // Compose Bill of Materials (BOM) - Sumber kebenaran versi Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.05.00")

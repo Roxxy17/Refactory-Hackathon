@@ -7,15 +7,23 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp // Pastikan dp diimpor
 
 /**
  * Shape untuk BottomAppBar yang memiliki lekukan ke atas (convex) di tengah.
  * Shape ini tidak lagi "melubangi" bar, melainkan membentuk tonjolan ke atas.
+ *
+ * @param fabSize Ukuran FAB.
+ * @param fabPadding Jarak antara FAB dan lekukan.
+ * @param cornerRadius Radius sudut untuk bar.
+ * @param extraHeight Ketinggian ekstra untuk membuat tonjolan lebih tinggi.
  */
 fun convexBottomBarShape(
     fabSize: Dp,
     fabPadding: Dp,
-    cornerRadius: Dp
+    cornerRadius: Dp,
+    // --- PERUBAHAN 1: Tambahkan parameter ini ---
+    extraHeight: Dp = 0.dp
 ): Shape = object : Shape {
     override fun createOutline(
         size: Size,
@@ -26,9 +34,12 @@ fun convexBottomBarShape(
             val fabSizePx = with(density) { fabSize.toPx() }
             val fabPaddingPx = with(density) { fabPadding.toPx() }
             val cornerRadiusPx = with(density) { cornerRadius.toPx() }
+            // --- PERUBAHAN 2: Konversi extraHeight ke Px ---
+            val extraHeightPx = with(density) { extraHeight.toPx() }
 
             val cutoutRadius = (fabSizePx / 2f) + fabPaddingPx
-            val cutoutHeight = cutoutRadius
+            // --- PERUBAHAN 3: Tambahkan extraHeightPx ke cutoutHeight ---
+            val cutoutHeight = cutoutRadius + extraHeightPx
             // Kontrol untuk kelembutan kurva transisi
             val handleWidth = cutoutRadius / 1.5f
 

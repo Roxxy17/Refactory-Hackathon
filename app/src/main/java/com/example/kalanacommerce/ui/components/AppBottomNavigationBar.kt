@@ -37,6 +37,7 @@ import com.example.kalanacommerce.navigation.BottomBarScreen
 @Composable
 fun AppBottomNavigationBar(
     navController: NavController,
+    mainNavController: NavController,
     onItemClick: (BottomBarScreen) -> Unit
 ) {
     var isFabMenuExpanded by remember { mutableStateOf(false) }
@@ -50,19 +51,30 @@ fun AppBottomNavigationBar(
     val fabPadding = 12.dp
     val cornerRadius = 16.dp
 
+    // --- PERUBAHAN 1: Definisikan extraHeight di sini agar bisa digunakan di kalkulasi lain ---
+    val extraHeightForCutout = 20.dp
+
     val fabAnimationSpec = spring<Float>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
         stiffness = Spring.StiffnessLow
     )
-    val rotation by animateFloatAsState(targetValue = if (isFabMenuExpanded) 45f else 0f, label = "rotation")
-    val fabMenuScale by animateFloatAsState(targetValue = if (isFabMenuExpanded) 1f else 0f, fabAnimationSpec, label = "scale")
+    val rotation by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 45f else 0f,
+        animationSpec = spring(),
+        label = "fabRotation"
+    )
+    val fabMenuScale by animateFloatAsState(
+        targetValue = if (isFabMenuExpanded) 1f else 0f,
+        animationSpec = fabAnimationSpec,
+        label = "fabMenuScale"
+    )
 
+    // --- PERUBAHAN 2: Naikkan tinggi Box pembungkus agar FAB yang lebih tinggi tidak terpotong ---
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(bottomBarHeight + fabSize / 2 + 16.dp) // Beri ruang ekstra untuk shadow
+            .height(bottomBarHeight + fabSize / 2 + extraHeightForCutout + 16.dp)
     ) {
-        // --- BottomAppBar dengan Lekukan dan BAYANGAN KUSTOM ---
         BottomAppBar(
             modifier = Modifier
                 .fillMaxWidth()
@@ -70,11 +82,15 @@ fun AppBottomNavigationBar(
                 .drawBehind {
                     val fabSizePx = fabSize.toPx()
                     val fabPaddingPx = fabPadding.toPx()
+                    val extraHeightPx = extraHeightForCutout.toPx() // Gunakan variabel
+
                     val cutoutRadius = (fabSizePx / 2f) + fabPaddingPx
-                    val cutoutHeight = cutoutRadius
+                    // --- Gunakan extraHeightPx di sini ---
+                    val cutoutHeight = cutoutRadius + extraHeightPx
                     val handleWidth = cutoutRadius / 1.5f
 
                     val shadowPath = Path().apply {
+                        // Path untuk shadow harus mengikuti shape lekukan yang lebih tinggi
                         moveTo((size.width / 2) - cutoutRadius - handleWidth, 0f)
                         cubicTo(
                             x1 = (size.width / 2) - cutoutRadius, y1 = 0f,
@@ -93,18 +109,27 @@ fun AppBottomNavigationBar(
                         val frameworkPaint = paint.asFrameworkPaint()
                         frameworkPaint.color = Color.Transparent.toArgb()
                         frameworkPaint.setShadowLayer(
-                            18.dp.toPx(),      // Radius blur bayangan
-                            0f,               // Offset X
-                            -6f,              // Offset Y (negatif agar bayangan ke atas)
-                            Color.Green.copy(alpha = 0.3f).toArgb() // Warna bayangan
+                            18.dp.toPx(),
+                            0f,
+                            -6f, // Offset Y bayangan mungkin perlu disesuaikan
+                            primaryColor.copy(alpha = 0.5f).toArgb()
                         )
                         canvas.drawPath(shadowPath, paint)
                     }
                 }
-                .clip(convexBottomBarShape(fabSize, fabPadding, cornerRadius)),
+                .clip(
+                    convexBottomBarShape(
+                        fabSize = fabSize,
+                        fabPadding = fabPadding,
+                        cornerRadius = cornerRadius,
+                        // Gunakan variabel di sini
+                        extraHeight = extraHeightForCutout
+                    )
+                ),
             containerColor = Color.White,
             tonalElevation = 0.dp
         ) {
+            // ... (Row dan NavigationBarItem tidak berubah)
             val items = listOf(
                 BottomBarScreen.Eksplor,
                 BottomBarScreen.Pencarian,
@@ -118,7 +143,6 @@ fun AppBottomNavigationBar(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Item 1 & 2 (Kiri)
                 NavigationBarItem(
                     selected = currentRoute == items[0].route,
                     onClick = { onItemClick(items[0]) },
@@ -139,7 +163,7 @@ fun AppBottomNavigationBar(
                         unselectedIconColor = Color.Gray, indicatorColor = Color.Transparent
                     )
                 )
-                Spacer(modifier = Modifier.width(fabSize))
+                Spacer(modifier = Modifier.width(fabSize + 8.dp))
                 NavigationBarItem(
                     selected = currentRoute == items[2].route,
                     onClick = { onItemClick(items[2]) },
@@ -163,63 +187,79 @@ fun AppBottomNavigationBar(
             }
         }
 
-        // --- FAB dan Sub-Menu ---
+        // --- PERUBAHAN 3: Naikkan posisi Box FAB dengan offset baru ---
+        val fabVerticalOffset = -(bottomBarHeight - fabPadding) / 2 - extraHeightForCutout
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .offset(y = -(fabSize / 2) - 24.dp)
+                // Gunakan offset vertikal yang sudah dihitung
+                .offset(y = fabVerticalOffset)
         ) {
+            // ... (Sub-FAB tidak berubah)
             FloatingActionButton(
-                onClick = { /* TODO: Aksi Chat */ },
-                modifier = Modifier.size(56.dp).align(Alignment.Center).scale(fabMenuScale)
+                onClick = {
+                    mainNavController.navigate("chat_screen")
+                    isFabMenuExpanded = false
+                },
+                modifier = Modifier
+                    .size(56.dp)
+                    .align(Alignment.Center)
+                    .scale(fabMenuScale)
                     .offset(x = (-80).dp, y = (-20).dp),
-                shape = CircleShape, containerColor = Color.White
+                shape = CircleShape,
+                containerColor = Color.White
             ) {
                 Icon(Icons.Default.Chat, contentDescription = "Pesan", tint = primaryColor)
             }
+
             FloatingActionButton(
-                onClick = { /* TODO: Aksi Keranjang */ },
-                modifier = Modifier.size(56.dp).align(Alignment.Center).scale(fabMenuScale)
+                onClick = {
+                    mainNavController.navigate("transaction_screen")
+                    isFabMenuExpanded = false
+                },
+                modifier = Modifier
+                    .size(56.dp)
+                    .align(Alignment.Center)
+                    .scale(fabMenuScale)
                     .offset(x = 80.dp, y = (-20).dp),
-                shape = CircleShape, containerColor = Color.White
+                shape = CircleShape,
+                containerColor = Color.White
             ) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = "Keranjang", tint = primaryColor)
             }
 
-            // Tumpukan komponen untuk FAB dan bayangannya
+            // ... (Tumpukan FAB utama tidak berubah)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(fabSize)
                     .align(Alignment.Center)
             ) {
-                // LAPISAN 1: Bayangan Gradasi Hitam ke Transparan
                 Spacer(
                     modifier = Modifier
                         .fillMaxSize()
-                        // --- PERBAIKAN DI SINI ---
                         .drawBehind {
-                            // Di dalam drawBehind, kita punya akses ke 'size'
                             drawCircle(
                                 brush = Brush.radialGradient(
-                                    colors = listOf(Color.Green.copy(alpha = 0.3f), Color.Transparent),
-                                    radius = size.width / 2.0f // Ini sekarang valid
+                                    colors = listOf(
+                                        primaryColor.copy(alpha = 0.5f),
+                                        Color.Transparent
+                                    ),
+                                    radius = size.width / 2.0f
                                 )
                             )
                         }
                 )
-
-                // LAPISAN 2: FAB Utama dengan Gradasi Hijau
                 FloatingActionButton(
                     onClick = { isFabMenuExpanded = !isFabMenuExpanded },
                     modifier = Modifier.fillMaxSize(),
                     shape = CircleShape,
-                    containerColor = Color.Transparent, // Biarkan transparan agar gradasi hijau terlihat
+                    containerColor = Color.Transparent,
                     contentColor = Color.White,
                     elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
                 ) {
-                    // Box ini sekarang bertanggung jawab untuk gradasi hijau
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -244,13 +284,21 @@ fun AppBottomNavigationBar(
     }
 }
 
+// Pastikan fungsi 'convexBottomBarShape' didefinisikan di file lain
+// dan menerima parameter 'extraHeight'
+
 @Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
 @Composable
 fun AppBottomNavigationBarPreview() {
-    val navController = rememberNavController()
+    val dashboardNavController = rememberNavController()
+    val mainNavController = rememberNavController()
     Scaffold(
         bottomBar = {
-            AppBottomNavigationBar(navController = navController) { /* do nothing */ }
+            AppBottomNavigationBar(
+                navController = dashboardNavController,
+                mainNavController = mainNavController,
+                onItemClick = { /* do nothing */ }
+            )
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues))

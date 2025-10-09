@@ -19,46 +19,54 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.navigation.BottomBarScreen
 import com.example.kalanacommerce.ui.components.AppBottomNavigationBar
+// Impor ini sekarang akan merujuk ke fungsi yang benar dari file lain,
+// karena kita akan menghapus duplikatnya dari file ini.
+// Pastikan path package-nya benar jika Anda meletakkannya di tempat lain.
+import com.example.kalanacommerce.ui.dashboard.ExploreScreen
 
 /**
  * Layar utama setelah login, yang menampung bottom navigation dan konten halaman.
  */
 @Composable
 fun DashboardScreen(
+    mainNavController: NavHostController,
     onLogout: () -> Unit
 ) {
-    val navController = rememberNavController()
+    // NavController ini hanya untuk navigasi internal dashboard (Eksplor, Profil, dll)
+    val dashboardNavController = rememberNavController()
 
-    // HANYA ADA SATU SCAFFOLD DI SINI
     Scaffold(
-        // Semua logika Bottom Bar dan FAB sekarang ada di dalam komponen ini
+        containerColor = Color(0xFFF7F7F7),
         bottomBar = {
-            AppBottomNavigationBar(navController = navController) { screen ->
-                // Kode BARU
-                navController.navigate(screen.route) {
-                    // Properti ini adalah bagian dari NavOptionsBuilder (blok navigate), bukan popUpTo
-                    launchSingleTop = true
-                    restoreState = true
-
-                    popUpTo(navController.graph.startDestinationId) {
-                        // Opsi 'saveState' ada di dalam blok popUpTo
-                        saveState = true
+            // --- PERBAIKAN KUNCI 1: Teruskan KEDUA NavController ---
+            AppBottomNavigationBar(
+                navController = dashboardNavController,       // Untuk navigasi item bar
+                mainNavController = mainNavController,      // Untuk navigasi FAB (ke keranjang/transaksi)
+                onItemClick = { screen ->
+                    dashboardNavController.navigate(screen.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(dashboardNavController.graph.startDestinationId) {
+                            saveState = true
+                        }
                     }
                 }
-
-            }
+            )
         },
-        // FloatingActionButton dan posisinya sudah tidak didefinisikan di sini lagi
         content = { innerPadding ->
-            // Navigasi untuk konten-konten di dalam Dashboard (Eksplor, Profil, dll.)
             DashboardNavGraph(
-                navController = navController,
+                navController = dashboardNavController,
                 modifier = Modifier.padding(innerPadding),
-                onLogout = onLogout // Teruskan fungsi onLogout ke NavGraph
+                onLogout = onLogout
             )
         }
     )
 }
+
+// --- PERBAIKAN KUNCI 2: HAPUS FUNGSI ExploreScreen PALSU DARI SINI ---
+// Composable ExploreScreen sudah ada di filenya sendiri dan telah diimpor di atas.
+// Tidak boleh ada dua definisi fungsi dengan nama yang sama.
+
 
 /**
  * NavHost untuk halaman-halaman yang diakses dari Bottom Navigation Bar.
@@ -74,25 +82,29 @@ fun DashboardNavGraph(
         startDestination = BottomBarScreen.Eksplor.route,
         modifier = modifier
     ) {
-        // --- Kode yang Diperbaiki ---
         composable(BottomBarScreen.Eksplor.route) {
-            // TIDAK PERLU meneruskan containerColor.
-            // ExploreScreen sudah menggunakan Scaffold di dalamnya untuk mengatur warna latar belakang.
+            // Sekarang ini akan memanggil ExploreScreen yang benar dari filenya sendiri.
             ExploreScreen(modifier = Modifier.fillMaxSize())
         }
-
         composable(BottomBarScreen.Pencarian.route) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Halaman Pencarian")
-            }
+            // Ganti Box placeholder dengan SearchingScreen yang sebenarnya
+            SearchingScreen(
+                onBack = {
+                    // Kembali ke layar sebelumnya di dalam dashboard (biasanya Eksplor)
+                    navController.popBackStack()
+                }
+            )
         }
         composable(BottomBarScreen.Riwayat.route) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Halaman Riwayat")
-            }
+            HistoryScreen(
+                onBack = {
+                    // Kembali ke layar sebelumnya di dalam dashboard (biasanya Eksplor)
+                    navController.popBackStack()
+                }
+            )
         }
         composable(BottomBarScreen.Profile.route) {
-            ProfileContent(onLogout = onLogout)
+            ProfileScreen(onLogout = onLogout)
         }
     }
 }
@@ -100,27 +112,12 @@ fun DashboardNavGraph(
 /**
  * Composable untuk isi dari Halaman Profile, termasuk tombol Logout.
  */
-@Composable
-fun ProfileContent(onLogout: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Halaman Profile")
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onLogout, // Panggil fungsi logout saat tombol diklik
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)) // Warna merah
-            ) {
-                Text("Logout")
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
 fun DashboardScreenPreview() {
-    DashboardScreen(onLogout = {})
+    DashboardScreen(
+        mainNavController = rememberNavController(),
+        onLogout = {}
+    )
 }

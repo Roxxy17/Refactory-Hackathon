@@ -9,6 +9,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.data.local.SessionManager
 import com.example.kalanacommerce.ui.dashboard.DashboardScreen
+import com.example.kalanacommerce.ui.screen.TransactionScreen
+import com.example.kalanacommerce.ui.dashboard.ChatScreen
+import com.example.kalanacommerce.ui.dashboard.ProfileScreen
+// Import yang ditambahkan
 import com.example.kalanacommerce.ui.screen.auth.*
 import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -19,10 +23,8 @@ import org.koin.androidx.compose.koinViewModel
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    // startDestination akan menentukan layar mana yang pertama kali ditampilkan
     startDestination: String
 ) {
-    // HANYA ADA SATU NAVHOST DI SINI
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -84,6 +86,10 @@ fun AppNavGraph(
             )
         }
 
+        composable(route = "chat_screen") {
+            ChatScreen() // ChatScreen tidak butuh NavController untuk saat ini
+        }
+
 
         // Rute ke Forgot Password Screen
         composable(route = Screen.ForgotPassword.route) {
@@ -92,17 +98,42 @@ fun AppNavGraph(
             )
         }
 
+        // --- BLOK BARU YANG ANDA TAMBAHKAN ---
+        composable(route = "transaction_screen") {
+            TransactionScreen(
+                navController = navController
+            )
+        }
+
+        // --- BLOK BARU UNTUK PROFILE SCREEN ---
+        // Ini ditambahkan sesuai permintaan Anda
+        composable(BottomBarScreen.Profile.route) {
+            val sessionManager: SessionManager = get()
+            val scope = rememberCoroutineScope()
+            // Panggil ProfileScreen yang baru dan teruskan onLogout
+            ProfileScreen(onLogout = {
+                scope.launch {
+                    sessionManager.clearAuthData()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(navController.graph.id) {
+                            inclusive = true
+                        }
+                    }
+                }
+            })
+        }
+
         // Rute ke Dashboard Screen
         composable(route = Screen.Dashboard.route) {
-            // PERBAIKAN DI SINI: Gunakan get() bukan koinViewModel()
             val sessionManager: SessionManager = get()
             val scope = rememberCoroutineScope()
 
             DashboardScreen(
+                // 1. TERUSKAN NavController UTAMA INI
+                mainNavController = navController,
                 onLogout = {
                     scope.launch {
                         sessionManager.clearAuthData()
-                        // Navigasi kembali ke Welcome dan hapus semua history
                         navController.navigate(Screen.Welcome.route) {
                             popUpTo(navController.graph.id) {
                                 inclusive = true
