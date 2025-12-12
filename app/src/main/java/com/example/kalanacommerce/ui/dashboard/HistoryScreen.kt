@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun HistoryScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}) {
+fun HistoryScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {},
+
+                  ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Dalam Proses", "Selesai", "Terjadwal")
 

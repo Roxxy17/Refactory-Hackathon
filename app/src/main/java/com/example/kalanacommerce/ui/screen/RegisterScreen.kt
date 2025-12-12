@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.ui.screen.auth
+package com.example.kalanacommerce.ui.screen
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -73,7 +73,7 @@ fun RegisterScreen(
     }
 
     // --- State untuk UI ---
-    var fullName by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -134,8 +134,8 @@ fun RegisterScreen(
 
         // --- Form Pendaftaran ---
         TextField(
-            value = fullName,
-            onValueChange = { fullName = it },
+            value = name,
+            onValueChange = { name = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Nama Lengkap", color = Color.Gray) },
             leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray) },
@@ -217,7 +217,7 @@ fun RegisterScreen(
         Button(
             onClick = {
                 viewModel.register(
-                    fullName = fullName,
+                    name = name,
                     email = email,
                     password = password,
                     phoneNumber = phoneNumber

@@ -24,7 +24,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R // Pastikan R.drawable.ic_chat ada
+import com.example.kalanacommerce.ui.viewmodel.ChatViewModel
+import org.koin.androidx.compose.koinViewModel
 
 // --- Palet Warna Gojek ---
 val GojekGreen = Color(0xFF00AA13) // Hijau Gojek Asli
@@ -36,24 +39,17 @@ val BackgroundColor = Color(0xFFF6F6F6) // Latar belakang abu-abu muda
 // MAIN CHAT SCREEN
 // =======================================================
 @Composable
-fun ChatScreen() {
-    var message by remember { mutableStateOf(TextFieldValue("")) }
+fun ChatScreen(
+    viewModel: ChatViewModel = koinViewModel() // 1. Inject ViewModel
+) {
+    // Ambil state dari ViewModel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val messages = listOf(
-        Message("Halo kak, Gojek di sini 🚗", isUser = false),
-        Message("Halo, saya mau pesan GoFood nih.", isUser = true),
-        Message("Siap kak! Mau pesan dari resto mana?", isUser = false),
-        Message("Resto Ayam Geprek Joss ya.", isUser = true),
-        Message("Oke kak, pesanan sedang diproses 🙌", isUser = false),
-        Message("Haloo Broo", isUser = true),
-        Message("Ngopi yok broooo", isUser = true),
-        Message("Oke Oke Boss Ngopii Carkit 🙌", isUser = false),
-        Message("Gaa, Nuri Aja", isUser = true),
-        Message("Gaa, Nuri Aja", isUser = true),
-        Message("Gaa, Nuri Aja", isUser = true),
-        Message("Gaa, Nuri Aja", isUser = true),
-        Message("Gaa, Nuri Aja", isUser = true),
-    )
+    // State lokal untuk input pesan pengguna
+    var messageInput by remember { mutableStateOf(TextFieldValue("")) }
+
+    // Dapatkan daftar pesan dari UI State
+    val messages = uiState.messages
 
     Scaffold(
         topBar = {
@@ -65,17 +61,16 @@ fun ChatScreen() {
         },
         bottomBar = {
             ChatInputGojek(
-                message = message,
-                onMessageChange = { message = it },
+                message = messageInput,
+                onMessageChange = { messageInput = it },
                 onSendClick = {
                     // Logika kirim pesan (misalnya menambahkan ke daftar pesan dan mereset input)
-                    if (message.text.isNotBlank()) {
-                        // Implementasi daftar pesan sebenarnya perlu menggunakan State List
-                        // untuk memicu compose. Untuk contoh ini, kita biarkan saja aksinya kosong.
-                        // messages.add(Message(message.text, true))
-                        message = TextFieldValue("")
+                    if (messageInput.text.isNotBlank() && !uiState.isLoading) {
+                        viewModel.sendMessage(messageInput.text) // 2. Panggil ViewModel
+                        messageInput = TextFieldValue("") // Bersihkan input
                     }
-                }
+                },
+                isSending = uiState.isLoading // Menampilkan indikator loading jika sedang mengirim
             )
         },
         containerColor = BackgroundColor // Menggunakan warna latar belakang khusus
@@ -194,7 +189,8 @@ fun ChatHeaderGojek(contactName: String, status: String, profileImage: Int) {
 fun ChatInputGojek(
     message: TextFieldValue,
     onMessageChange: (TextFieldValue) -> Unit,
-    onSendClick: () -> Unit
+    onSendClick: () -> Unit,
+    isSending:Boolean
 ) {
     Surface(
         color = Color.White,

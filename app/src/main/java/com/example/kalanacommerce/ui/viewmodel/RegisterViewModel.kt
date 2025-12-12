@@ -20,16 +20,15 @@ class RegisterViewModel(private val authService: AuthService) : ViewModel() {
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow() // <-- PERBAIKAN 2: Gunakan asStateFlow()
 
-    fun register(fullName: String, email: String, password: String, phoneNumber: String) {
+    fun register(name: String, email: String, password: String, phoneNumber: String) {
         // PERBAIKAN 3: Gunakan .update agar lebih aman dan ringkas
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         val request = RegisterRequest(
-            full_name = fullName,
+            name = name,
             email = email,
             password = password,
-            phone_number = phoneNumber,
-            role = "buyer"
+            phoneNumber = phoneNumber
         )
 
         viewModelScope.launch {
@@ -37,7 +36,7 @@ class RegisterViewModel(private val authService: AuthService) : ViewModel() {
             val result = authService.register(request)
 
             result.onSuccess { response ->
-                Log.i(TAG, "✅ [REGISTER SUCCESS] Pengguna baru terdaftar: Email: ${response.user.email}")
+                Log.i(TAG, "✅ [REGISTER SUCCESS] Pengguna baru terdaftar: Email: ${response.data?.email}")
                 _uiState.update {
                     it.copy(
                         isLoading = false,

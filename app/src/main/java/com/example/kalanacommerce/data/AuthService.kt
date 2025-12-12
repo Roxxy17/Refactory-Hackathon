@@ -16,7 +16,7 @@ interface AuthService {
 
 class AuthServiceImpl(private val client: HttpClient) : AuthService {
 
-    private val BASE_URL = "https://cipta-works.hackathon.sev-2.com"
+    private val BASE_URL = "http://202.155.14.40/api"
     private val REGISTER_ENDPOINT = "/auth/register/"
     private val SIGN_IN_ENDPOINT = "/auth/login/"
     private val TAG = "AuthService"
@@ -33,11 +33,12 @@ class AuthServiceImpl(private val client: HttpClient) : AuthService {
         var errorMessage = "Kesalahan: ${response.status.value}. Silakan coba lagi."
 
         try {
-            // Menggunakan decodeFromString pada String errorBodyText
-            val errorResponse: ServerErrorResponse = jsonParser.decodeFromString(errorBodyText)
+            // 1. Ganti ServerErrorResponse dengan model respons utama Anda (RegisterResponse)
+            val errorResponse: RegisterResponse = jsonParser.decodeFromString(errorBodyText)
 
-            // Mengambil pesan error dari properti 'error' atau 'status'
-            errorMessage = errorResponse.error ?: errorResponse.status
+            // 2. Ambil pesan error dari properti 'message'
+            // Properti 'message' berisi pesan error seperti "Nomor telepon harus berupa angka."
+            errorMessage = errorResponse.message
 
         } catch (e: SerializationException) {
             Log.w(TAG, "Gagal mengurai body error JSON. ${e.message}")

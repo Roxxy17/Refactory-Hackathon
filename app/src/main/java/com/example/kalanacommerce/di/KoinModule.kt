@@ -4,15 +4,28 @@ import com.example.kalanacommerce.data.AuthRepository
 import com.example.kalanacommerce.data.AuthRepositoryImpl
 import com.example.kalanacommerce.data.AuthService
 import com.example.kalanacommerce.data.AuthServiceImpl
+import com.example.kalanacommerce.data.TokenManager
 import com.example.kalanacommerce.data.local.SessionManager
+import com.example.kalanacommerce.data.repository.OrderRepository
+import com.example.kalanacommerce.data.repository.OrderRepositoryImpl
+import com.example.kalanacommerce.data.repository.ProductRepository
+import com.example.kalanacommerce.data.repository.ProductRepositoryImpl
+import com.example.kalanacommerce.data.service.ChatService
+import com.example.kalanacommerce.data.service.ChatServiceImpl
 import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
+import com.example.kalanacommerce.ui.viewmodel.ChatViewModel
+import com.example.kalanacommerce.ui.viewmodel.OrderViewModel
+import com.example.kalanacommerce.ui.viewmodel.ProductViewModel
 import com.example.kalanacommerce.ui.viewmodel.RegisterViewModel
 import com.example.kalanacommerce.ui.viewmodel.SignInViewModel
 import io.ktor.client.*
 import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.cookies.*
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
@@ -30,6 +43,18 @@ import javax.net.ssl.X509TrustManager
  */
 val networkModule = module {
     single {
+        TokenManager(androidContext())
+    }
+    single<OrderRepository> {
+        OrderRepositoryImpl(get()) // Membutuhkan HttpClient
+    }
+    single<ProductRepository> {
+        ProductRepositoryImpl(client = get()) // ProductRepositoryImpl membutuhkan HttpClient (get())
+    }
+    single<ChatService> { ChatServiceImpl(client = get()) }
+    single {
+
+        val tokenManager: TokenManager = get()
         HttpClient(Android) {
             // Install ContentNegotiation untuk parsing JSON (HANYA SEKALI)
             install(ContentNegotiation) {
@@ -50,6 +75,12 @@ val networkModule = module {
             // Install Cookies jika diperlukan oleh API Anda
             install(HttpCookies) {
                 storage = AcceptAllCookiesStorage()
+            }
+            defaultRequest {
+                val token = tokenManager.getToken() // <-- Membaca dari penyimpanan lokal
+                if (token != null) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             }
 
             // Konfigurasi engine untuk menonaktifkan pemeriksaan SSL (HATI-HATI: HANYA UNTUK DEVELOPMENT)
@@ -92,8 +123,21 @@ val viewModelModule = module {
     viewModel { AuthViewModel(get(), get()) }
 
     // ViewModel lama Anda (jika masih digunakan)
-    viewModel { SignInViewModel(authService = get()) }
+    viewModel { SignInViewModel(authService = get(), tokenManager = get()) }
     viewModel { RegisterViewModel(authService = get()) }
+
+    viewModel {
+        // OrderViewModel membutuhkan OrderRepository (get())
+        OrderViewModel(repository = get())
+    }
+    viewModel { ChatViewModel(chatService = get()) }
+
+    // SignInViewModel
+
+    viewModel {
+        // ProductViewModel membutuhkan ProductRepository (get())
+        ProductViewModel(repository = get())
+    }
 }
 
 

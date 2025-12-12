@@ -1,6 +1,7 @@
 package com.example.kalanacommerce.data
 
 import android.annotation.SuppressLint
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // Payload yang dikirim ke API
@@ -15,12 +16,15 @@ data class SignInRequest(
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class User(
-    val id: Int,
-    val full_name: String,
-    val email: String,
-    val phone_number: String,
-    val role: String,
-    // created_at dan updated_at bisa diabaikan atau diserialisasi
+    // Asumsi properti ini wajib, tapi mungkin TIDAK dikirim saat sukses atau di respons lain.
+    // Jadikan semua properti di sini nullable dan berikan default value.
+    val id: String? = null,
+    val name: String? = null,
+    val email: String? = null,
+    @SerialName("phone_number")
+    val phoneNumber: String? = null,
+    // Field 'message' yang juga disebut di error log mungkin seharusnya tidak ada di sini,
+    // jika 'message' adalah properti tingkat atas. Hapus 'message' dari User jika memang begitu.
 )
 
 // Respons lengkap dari API

@@ -11,9 +11,14 @@ import com.example.kalanacommerce.data.local.SessionManager
 import com.example.kalanacommerce.ui.dashboard.DashboardScreen
 import com.example.kalanacommerce.ui.screen.TransactionScreen
 import com.example.kalanacommerce.ui.dashboard.ChatScreen
-import com.example.kalanacommerce.ui.dashboard.ProfileScreen
-// Import yang ditambahkan
-import com.example.kalanacommerce.ui.screen.auth.*
+// Import Composable untuk halaman-halaman profil baru (asumsi sudah Anda buat)
+import com.example.kalanacommerce.ui.dashboard.Profile.EditProfilePage
+import com.example.kalanacommerce.ui.dashboard.Profile.AddressPage
+import com.example.kalanacommerce.ui.dashboard.Profile.SettingsPage
+import com.example.kalanacommerce.ui.screen.FirstScreen
+import com.example.kalanacommerce.ui.screen.ForgotPasswordScreen
+import com.example.kalanacommerce.ui.screen.LoginScreen
+import com.example.kalanacommerce.ui.screen.RegisterScreen
 import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.get
@@ -25,122 +30,114 @@ fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String
 ) {
+    val sessionManager: SessionManager = get()
+    val scope = rememberCoroutineScope()
+
+    // Fungsi helper untuk logout dan navigasi ke Welcome
+    val onLogout: () -> Unit = {
+        scope.launch {
+            sessionManager.clearAuthData()
+            navController.navigate(Screen.Welcome.route) {
+                // Hapus seluruh backstack
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+    }
+
+    // Fungsi helper untuk navigasi keluar dari Dashboard
+    val navigateTo: (Screen) -> Unit = { screen ->
+        navController.navigate(screen.route)
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        // Rute ke Welcome / First Screen
+
+        // --- AUTH FLOW ---
+
         composable(route = Screen.Welcome.route) {
             FirstScreen(
-                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                onNavigateToRegister = { navController.navigate(Screen.Register.route) }
+                onNavigateToLogin = { navigateTo(Screen.Login) },
+                onNavigateToRegister = { navigateTo(Screen.Register) }
             )
         }
 
-        // Rute ke Login Screen
         composable(route = Screen.Login.route) {
-            // PERBAIKAN: Gunakan get() untuk mendapatkan SessionManager
-            val sessionManager: SessionManager = get()
-            val scope = rememberCoroutineScope()
-
-            // Praktik terbaik: Gunakan ViewModel untuk logika login
             val authViewModel: AuthViewModel = koinViewModel()
-
             LoginScreen(
-                // Teruskan ViewModel ke layar login
                 viewModel = authViewModel,
                 onSignInSuccess = {
-                    // Arahkan ke Dashboard setelah login berhasil
                     navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 },
-                onNavigateToRegister = {
-                    navController.navigate(Screen.Register.route)
-                },
-                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
+                onNavigateToRegister = { navigateTo(Screen.Register) },
+                onNavigateToForgotPassword = { navigateTo(Screen.ForgotPassword) }
             )
         }
 
-        // Kode BARU
         composable(route = Screen.Register.route) {
             RegisterScreen(
-                onNavigateToLogin = {// Aksi jika user sudah punya akun dan klik "Login"
+                onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
-                        // Hapus RegisterScreen dari backstack
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
-                // PERUBAHAN DI SINI: Setelah registrasi berhasil (onContinue),
-                // arahkan ke LoginScreen.
                 onContinue = {
                     navController.navigate(Screen.Login.route) {
-                        // Hapus RegisterScreen dari backstack agar user tidak bisa kembali
-                        // ke halaman registrasi dengan menekan tombol back dari halaman login.
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable(route = "chat_screen") {
-            ChatScreen() // ChatScreen tidak butuh NavController untuk saat ini
-        }
-
-
-        // Rute ke Forgot Password Screen
         composable(route = Screen.ForgotPassword.route) {
             ForgotPasswordScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
-        // --- BLOK BARU YANG ANDA TAMBAHKAN ---
+        // --- CHAT & TRANSAKSI (Destinasi Langsung) ---
+
+        composable(route = "chat_screen") {
+            ChatScreen()
+        }
+
         composable(route = "transaction_screen") {
+
             TransactionScreen(
+
                 navController = navController
+
             )
         }
-
-        // --- BLOK BARU UNTUK PROFILE SCREEN ---
-        // Ini ditambahkan sesuai permintaan Anda
-        composable(BottomBarScreen.Profile.route) {
-            val sessionManager: SessionManager = get()
-            val scope = rememberCoroutineScope()
-            // Panggil ProfileScreen yang baru dan teruskan onLogout
-            ProfileScreen(onLogout = {
-                scope.launch {
-                    sessionManager.clearAuthData()
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(navController.graph.id) {
-                            inclusive = true
-                        }
-                    }
-                }
-            })
+        // Ganti placeholder dengan halaman EditProfilePage yang sebenarnya
+        composable(route = Screen.EditProfile.route) {
+            EditProfilePage(onBack = { navController.popBackStack() })
         }
 
-        // Rute ke Dashboard Screen
-        composable(route = Screen.Dashboard.route) {
-            val sessionManager: SessionManager = get()
-            val scope = rememberCoroutineScope()
+        // Ganti placeholder dengan halaman AddressPage yang sebenarnya
+        composable(route = Screen.Address.route) {
+            AddressPage(onBack = { navController.popBackStack() })
+        }
 
+        // Ganti placeholder dengan halaman SettingsPage yang sebenarnya
+        composable(route = Screen.Settings.route) {
+            SettingsPage(onBack = { navController.popBackStack() })
+        }
+
+        // --- DESTINASI BARU DARI PROFILE SCREEN (Sub-screens) ---
+
+
+        // --- DASHBOARD (NESTED NAVIGATION HOST) ---
+
+        composable(route = Screen.Dashboard.route) {
             DashboardScreen(
-                // 1. TERUSKAN NavController UTAMA INI
+                // NavController utama disalurkan ke Dashboard untuk navigasi keluar (ke Profile sub-screens atau Logout)
                 mainNavController = navController,
-                onLogout = {
-                    scope.launch {
-                        sessionManager.clearAuthData()
-                        navController.navigate(Screen.Welcome.route) {
-                            popUpTo(navController.graph.id) {
-                                inclusive = true
-                            }
-                        }
-                    }
-                }
+                onLogout = onLogout
             )
         }
     }

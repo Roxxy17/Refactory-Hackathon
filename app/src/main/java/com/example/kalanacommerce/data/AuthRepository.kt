@@ -1,5 +1,4 @@
 package com.example.kalanacommerce.data
-
 import com.example.kalanacommerce.data.RegisterRequest
 import com.example.kalanacommerce.data.RegisterResponse
 import com.example.kalanacommerce.data.SignInRequest

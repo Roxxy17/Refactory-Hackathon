@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.ui.screen.auth
+package com.example.kalanacommerce.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*

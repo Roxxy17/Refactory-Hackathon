@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.navigation.BottomBarScreen
+import com.example.kalanacommerce.navigation.Screen
 import com.example.kalanacommerce.ui.components.AppBottomNavigationBar
 // Impor ini sekarang akan merujuk ke fungsi yang benar dari file lain,
 // karena kita akan menghapus duplikatnya dari file ini.
@@ -56,6 +57,7 @@ fun DashboardScreen(
         content = { innerPadding ->
             DashboardNavGraph(
                 navController = dashboardNavController,
+                mainNavController = mainNavController,
                 modifier = Modifier.padding(innerPadding),
                 onLogout = onLogout
             )
@@ -74,6 +76,7 @@ fun DashboardScreen(
 @Composable
 fun DashboardNavGraph(
     navController: NavHostController,
+    mainNavController: NavHostController,
     modifier: Modifier,
     onLogout: () -> Unit
 ) {
@@ -105,6 +108,21 @@ fun DashboardNavGraph(
         }
         composable(BottomBarScreen.Profile.route) {
             ProfileScreen(onLogout = onLogout)
+        }
+
+        composable(BottomBarScreen.Profile.route) {
+            ProfileScreen(
+                onLogout = onLogout,
+                onNavigateToEditProfile = {
+                    mainNavController.navigate(Screen.EditProfile.route)
+                },
+                onNavigateToAddress = {
+                    mainNavController.navigate(Screen.Address.route)
+                },
+                onNavigateToSettings = {
+                    mainNavController.navigate(Screen.Settings.route)
+                }
+            )
         }
     }
 }
