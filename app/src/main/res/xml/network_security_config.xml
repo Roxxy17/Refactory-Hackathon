@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">http://202.155.14.40/docs/</domain>
         <domain includeSubdomains="true">202.155.14.40</domain>
     </domain-config>
 

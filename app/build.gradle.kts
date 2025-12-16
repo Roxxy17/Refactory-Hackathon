@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,7 +8,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
 
-
 android {
     namespace = "com.example.kalanacommerce"
     compileSdk = 36 // DIUBAH: Gunakan SDK stabil terbaru, yaitu 34
@@ -14,13 +15,20 @@ android {
     defaultConfig {
         applicationId = "com.example.kalanacommerce"
         minSdk = 27
-        targetSdk = 36 // DIUBAH: Sesuaikan dengan compileSdk
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
 
+        // --- KODE YANG DIPERBAIKI UNTUK MEMBACA local.properties ---
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+
+        val apiKeyUrl = properties.getProperty("API_BASE_URL") ?: "URL_DEFAULT_JIKA_HILANG"
+        buildConfigField("String", "API_BASE_URL", "\"$apiKeyUrl\"")
+        // ---------------------------------------------------------
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -39,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
 }
@@ -51,6 +60,7 @@ android {
         implementation(libs.androidx.datastore.core)
         implementation(libs.androidx.datastore.preferences.core)
         implementation("androidx.datastore:datastore-preferences:1.1.1")
+        implementation(libs.androidx.room.ktx)
 
 
         // Compose Bill of Materials (BOM) - Sumber kebenaran versi Compose

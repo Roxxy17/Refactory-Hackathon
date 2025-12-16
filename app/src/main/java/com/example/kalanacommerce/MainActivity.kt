@@ -8,8 +8,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.example.kalanacommerce.navigation.AppNavGraph
 import com.example.kalanacommerce.navigation.Screen
-import com.example.kalanacommerce.ui.theme.KalanaCommerceTheme
-import com.example.kalanacommerce.data.local.SessionManager
+import com.example.kalanacommerce.front.theme.KalanaCommerceTheme
+import com.example.kalanacommerce.back.data.local.datastore.SessionManager
 import org.koin.androidx.compose.get
 
 class MainActivity : ComponentActivity() {

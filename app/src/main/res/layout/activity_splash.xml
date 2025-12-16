@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.screen.splash.SplashActivity">
+    tools:context=".front.screen.splash.SplashActivity">
 
     <!-- 1. Gambar Latar Belakang (Wallpaper) -->
 

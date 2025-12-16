@@ -7,19 +7,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.kalanacommerce.data.local.SessionManager
-import com.example.kalanacommerce.ui.dashboard.DashboardScreen
-import com.example.kalanacommerce.ui.screen.TransactionScreen
-import com.example.kalanacommerce.ui.dashboard.ChatScreen
+import com.example.kalanacommerce.back.data.local.datastore.SessionManager
+import com.example.kalanacommerce.front.dashboard.DashboardScreen
+import com.example.kalanacommerce.front.screen.TransactionScreen
+import com.example.kalanacommerce.front.dashboard.ChatScreen
 // Import Composable untuk halaman-halaman profil baru (asumsi sudah Anda buat)
-import com.example.kalanacommerce.ui.dashboard.Profile.EditProfilePage
-import com.example.kalanacommerce.ui.dashboard.Profile.AddressPage
-import com.example.kalanacommerce.ui.dashboard.Profile.SettingsPage
-import com.example.kalanacommerce.ui.screen.FirstScreen
-import com.example.kalanacommerce.ui.screen.ForgotPasswordScreen
-import com.example.kalanacommerce.ui.screen.LoginScreen
-import com.example.kalanacommerce.ui.screen.RegisterScreen
-import com.example.kalanacommerce.ui.viewmodel.AuthViewModel
+import com.example.kalanacommerce.front.dashboard.Profile.EditProfilePage
+import com.example.kalanacommerce.front.dashboard.Profile.AddressPage
+import com.example.kalanacommerce.front.dashboard.Profile.SettingsPage
+import com.example.kalanacommerce.front.screen.start.FirstScreen
+import com.example.kalanacommerce.front.screen.start.ForgotPasswordScreen
+import com.example.kalanacommerce.front.screen.auth.login.LoginScreen
+import com.example.kalanacommerce.front.screen.auth.register.RegisterScreen
+import com.example.kalanacommerce.front.screen.auth.login.SignInViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
@@ -65,7 +65,7 @@ fun AppNavGraph(
         }
 
         composable(route = Screen.Login.route) {
-            val authViewModel: AuthViewModel = koinViewModel()
+            val authViewModel: SignInViewModel = koinViewModel()
             LoginScreen(
                 viewModel = authViewModel,
                 onSignInSuccess = {
