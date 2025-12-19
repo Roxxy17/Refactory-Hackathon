@@ -1,23 +1,47 @@
+// File: D:/My-Project/KalanaCommerce/app/src/main/java/com/example/kalanacommerce/navigation/Screen.kt
+
 package com.example.kalanacommerce.navigation
 
-// Sealed class untuk menyimpan semua rute/tujuan navigasi kita
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.graphics.vector.ImageVector
+
+// Objek untuk merepresentasikan nama grafik navigasi bersarang (nested graph)
+object Graph {
+    const val Auth = "auth_graph"
+}
+
+// ! Navigation diluar bottom bar screen
+
+// Sealed class untuk menyimpan semua rute layar (screen routes)
 sealed class Screen(val route: String) {
-    object Welcome : Screen("welcome")
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object ForgotPassword : Screen("forgot_password")
-    // Tambahkan rute untuk layar utama aplikasi Anda nanti di sini
-    // object Home : Screen("home")
-    object Dashboard : Screen("dashboard")
-    object TransactionScreen : Screen("transaction_screen")
-    object Explore : Screen("explore")
-    object History: Screen("history")
-    object Profile: Screen("profile")
-    object Search: Screen("search")
-    object Chat : Screen("chat")
+    // Rute untuk layar-layar di dalam Auth Graph
+    data object Welcome : Screen("welcome_screen")
+    data object Login : Screen("login_screen")
+    data object Register : Screen("register_screen")
+    data object ForgotPassword : Screen("forgot_password_screen")
 
-    object EditProfile : Screen("edit_profile_screen")
-    object Address : Screen("address_screen")
-    object Settings : Screen("settings_screen")
+    // Rute untuk layar utama
+    data object Dashboard : Screen("dashboard_screen")
 
+    // Rute untuk layar profil dan turunannya
+    data object Settings : Screen("settings_screen")
+    data object EditProfile : Screen("edit_profile_screen")
+    data object Address : Screen("address_screen")
+}
+
+// ! Navigation Bottom Bar Screen
+
+sealed class BottomBarScreen(
+    val route: String,
+    val title: String,
+    val icon: ImageVector
+) {
+    object Eksplor : BottomBarScreen("eksplor", "Eksplor", Icons.Default.Home)
+    object Pencarian : BottomBarScreen("pencarian", "Pencarian", Icons.Default.Search)
+    object Riwayat : BottomBarScreen("riwayat", "Riwayat", Icons.Default.History)
+    object Profile : BottomBarScreen("profile", "Profile", Icons.Default.Person)
 }

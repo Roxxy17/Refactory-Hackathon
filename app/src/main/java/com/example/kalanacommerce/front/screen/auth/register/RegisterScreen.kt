@@ -2,12 +2,16 @@ package com.example.kalanacommerce.front.screen.auth.register
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,11 +23,11 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -31,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -42,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
 import org.koin.androidx.compose.koinViewModel
+import com.example.kalanacommerce.front.theme.*
 
 @Composable
 fun RegisterScreen(
@@ -49,24 +55,12 @@ fun RegisterScreen(
     onContinue: () -> Unit,
     viewModel: RegisterViewModel = koinViewModel()
 ) {
-    val primaryColor = Color(0xFF069C6F)
-    val lightGray = Color(0xFFF1F1F1)
-    val darkTextColor = Color(0xFF555555)
-    val errorColor = Color(0xFFD32F2F)
-
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
 
-    LaunchedEffect(uiState.isRegistered, uiState.message) {
-        when {
-            uiState.isRegistered -> {
-                Toast.makeText(context, "✅ Registrasi Berhasil!", Toast.LENGTH_LONG).show()
-                onContinue()
-            }
-        }
-    }
-
-    // --- State untuk UI ---
+    // --- State Form ---
     var name by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -74,183 +68,305 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var agreeToTerms by remember { mutableStateOf(false) }
 
-    // --- PERBAIKAN 1: Hapus `isLoading` yang terpisah ---
-    // val isLoading by viewModel.isLoading.collectAsStateWithLifecycle() // HAPUS BARIS INI
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // --- Validasi ---
+    val isFormValid = remember(name, phoneNumber, email, password, agreeToTerms) {
+        name.isNotBlank() && phoneNumber.isNotBlank() && email.isNotBlank() &&
+                password.length >= 6 && agreeToTerms
+    }
 
-    val focusManager = LocalFocusManager.current
+    LaunchedEffect(uiState.isRegistered) {
+        if (uiState.isRegistered) {
+            Toast.makeText(context, "✅ Registrasi Berhasil!", Toast.LENGTH_SHORT).show()
+            onContinue()
+        }
+    }
 
-    val textFieldColors = TextFieldDefaults.colors(
-        focusedIndicatorColor = Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent,
-        cursorColor = primaryColor,
-        focusedContainerColor = lightGray,
-        unfocusedContainerColor = lightGray
-    )
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    focusManager.clearFocus()
-                })
-            },
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color.White)
+            .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
-
-        Image(
-            painter = painterResource(id = R.drawable.ic_logo_panjang),
-            contentDescription = "Kalana Logo",
-            modifier = Modifier.fillMaxWidth(0.6f)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Create Your Account",
-            style = MaterialTheme.typography.titleLarge,
-            color = darkTextColor
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        // --- Form Pendaftaran ---
-        TextField(
-            value = name,
-            onValueChange = { name = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Nama Lengkap", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = Color.Gray) },
-            shape = RoundedCornerShape(12.dp),
-            colors = textFieldColors,
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextField(
-            value = phoneNumber,
-            onValueChange = { phoneNumber = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("No. Telepon", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = Color.Gray) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            shape = RoundedCornerShape(12.dp),
-            colors = textFieldColors,
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Email", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = Color.Gray) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            shape = RoundedCornerShape(12.dp),
-            colors = textFieldColors,
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(color = darkTextColor)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Password", color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = Color.Gray) },
-            shape = RoundedCornerShape(12.dp),
-            colors = textFieldColors,
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(color = darkTextColor),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle password visibility", tint = Color.Gray)
-                }
-            }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .imePadding(), // Penting agar input tidak tertutup keyboard
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Checkbox(
-                checked = agreeToTerms,
-                onCheckedChange = { agreeToTerms = it },
-                colors = CheckboxDefaults.colors(checkedColor = primaryColor)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Saya setuju dengan Syarat & Ketentuan", color = darkTextColor, style = MaterialTheme.typography.bodySmall)
-        }
-        Spacer(modifier = Modifier.height(24.dp))
 
-        AnimatedVisibility(visible = uiState.message != null) {
-            Text(
-                text = uiState.message ?: "",
-                color = if (uiState.isError) errorColor else primaryColor,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
+            // 1. HEADER SECTION
+            HeaderSection()
 
-        // --- PERBAIKAN 2: Gunakan uiState.isLoading di sini ---
-        if (uiState.isLoading) {
-            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = primaryColor)
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 2. FORM SECTION
+            RegisterTextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = "Full Name",
+                icon = Icons.Outlined.Person,
+                imeAction = ImeAction.Next,
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
-        }
 
-        Button(
-            onClick = {
-                viewModel.register(
-                    name = name,
-                    email = email,
-                    password = password,
-                    phone = phoneNumber
+            RegisterTextField(
+                value = phoneNumber,
+                onValueChange = { if (it.all { char -> char.isDigit() }) phoneNumber = it },
+                placeholder = "Phone Number",
+                icon = Icons.Outlined.Phone,
+                keyboardType = KeyboardType.Phone,
+                imeAction = ImeAction.Next,
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            RegisterTextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = "Email Address",
+                icon = Icons.Outlined.Email,
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            RegisterTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = "Password",
+                icon = Icons.Outlined.Lock,
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+                onDone = { focusManager.clearFocus() },
+                isPassword = true,
+                passwordVisible = passwordVisible,
+                onTogglePassword = { passwordVisible = !passwordVisible }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 3. TERMS & CONDITIONS
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { agreeToTerms = !agreeToTerms },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = agreeToTerms,
+                    onCheckedChange = { agreeToTerms = it },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = PrimaryColor,
+                        uncheckedColor = HintColor
+                    )
                 )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-            // --- PERBAIKAN 3: Gunakan uiState.isLoading di sini juga ---
-            enabled = !uiState.isLoading
-        ) {
-            Text("Sign up", fontSize = 16.sp, color = Color.White)
-        }
+                Text(
+                    text = "I agree to the Terms & Conditions",
+                    color = if (agreeToTerms) DarkTextColor else HintColor,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            modifier = Modifier
-                .clickable(onClick = onNavigateToLogin)
-                .padding(8.dp),
-            text = buildAnnotatedString {
-                append("Already have an account? ")
-                withStyle(style = SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
-                    append("Sign in")
+            // 4. ERROR MESSAGE & BUTTON
+            AnimatedVisibility(
+                visible = uiState.message != null && uiState.isError,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = uiState.message ?: "",
+                    color = ErrorColor,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+
+            Button(
+                onClick = { viewModel.register(name, email, password, phoneNumber) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryColor,
+                    disabledContainerColor = PrimaryColor.copy(alpha = 0.5f)
+                ),
+                enabled = !uiState.isLoading && isFormValid
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 5. SOCIAL LOGIN
+            SocialLoginSection()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 6. FOOTER
+            FooterSection(onNavigateToLogin)
+        }
     }
 }
 
-@Preview(showBackground = true)
+// --- SUB-COMPONENTS (Agar kode utama bersih) ---
+
+@Composable
+private fun HeaderSection() {
+    Image(
+        painter = painterResource(id = R.drawable.ic_logo_panjang),
+        contentDescription = "Kalana Logo",
+        modifier = Modifier.width(180.dp)
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    Text(
+        text = "Create Account",
+        style = MaterialTheme.typography.headlineMedium.copy(
+            fontWeight = FontWeight.Bold,
+            color = DarkTextColor
+        )
+    )
+    Text(
+        text = "Sign up to get started!",
+        style = MaterialTheme.typography.bodyMedium,
+        color = HintColor,
+        modifier = Modifier.padding(top = 8.dp)
+    )
+}
+
+@Composable
+private fun SocialLoginSection() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            Text(
+                text = "or continue with",
+                modifier = Modifier.padding(horizontal = 12.dp),
+                color = HintColor,
+                fontSize = 12.sp
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Google Button Container
+        IconButton(
+            onClick = { /* TODO: Google Login */ },
+            modifier = Modifier
+                .size(50.dp)
+                .background(Color.White, shape = RoundedCornerShape(50))
+                // Menambahkan border tipis agar terlihat rapi
+                .then(Modifier.background(LightGray, RoundedCornerShape(50)))
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_google),
+                contentDescription = "Google Login",
+                modifier = Modifier.size(24.dp) // Ukuran icon Google standar
+            )
+        }
+    }
+}
+
+@Composable
+private fun FooterSection(onLoginClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Already have an account? ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = HintColor
+        )
+        Text(
+            text = "Sign in",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = PrimaryColor,
+            modifier = Modifier.clickable { onLoginClick() }
+        )
+    }
+}
+
+// --- REUSABLE TEXT FIELD (Kunci Kode Rapi) ---
+@Composable
+private fun RegisterTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    icon: ImageVector,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction,
+    onNext: (() -> Unit)? = null,
+    onDone: (() -> Unit)? = null,
+    isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onTogglePassword: (() -> Unit)? = null
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text(placeholder, color = HintColor) },
+        leadingIcon = { Icon(icon, null, tint = HintColor) },
+        textStyle = LocalTextStyle.current.copy(
+            color = DarkTextColor,
+            fontSize = 16.sp
+        ),
+        shape = RoundedCornerShape(16.dp),
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            cursorColor = PrimaryColor,
+            focusedContainerColor = LightGray,
+            unfocusedContainerColor = LightGray,
+            disabledContainerColor = LightGray,
+            errorIndicatorColor = Color.Transparent
+        ),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = keyboardType,
+            imeAction = imeAction
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { onNext?.invoke() },
+            onDone = { onDone?.invoke() }
+        ),
+        visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+        trailingIcon = if (isPassword) {
+            {
+                IconButton(onClick = { onTogglePassword?.invoke() }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = "Toggle Password",
+                        tint = HintColor
+                    )
+                }
+            }
+        } else null
+    )
+}
+
+@Preview(showBackground = true, heightDp = 900)
 @Composable
 fun RegisterScreenPreview() {
-    RegisterScreen(
-        onNavigateToLogin = {},
-        onContinue = {}
-    )
+    RegisterScreen(onNavigateToLogin = {}, onContinue = {})
 }

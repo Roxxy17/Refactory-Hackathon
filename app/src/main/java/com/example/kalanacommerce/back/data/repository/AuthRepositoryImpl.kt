@@ -4,8 +4,10 @@ import android.util.Log
 import com.example.kalanacommerce.back.data.local.datastore.SessionManager
 import com.example.kalanacommerce.back.data.remote.dto.auth.login.SignInRequest
 import com.example.kalanacommerce.back.data.remote.dto.auth.register.RegisterRequest
+import com.example.kalanacommerce.back.data.remote.dto.auth.register.RegisterResponse
 import com.example.kalanacommerce.back.data.remote.service.AuthService
 import com.example.kalanacommerce.back.domain.repository.AuthRepository
+import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 
 class AuthRepositoryImpl(
@@ -30,17 +32,32 @@ class AuthRepositoryImpl(
                 )
             )
 
+            // 1. Cek status sukses dari backend
             if (response.status) {
                 Result.success(Unit)
             } else {
-                Result.failure(IllegalStateException(response.message))
+                // 2. Jika status false, gunakan pesan dari backend (misal: "Nomor telepon wajib diisi")
+                Result.failure(Exception(response.message))
             }
 
         } catch (e: ClientRequestException) {
-            Result.failure(Exception("Request tidak valid"))
+            // 3. Menangani error 4xx (400, 401, 409, 422)
+            // Coba ambil body error jika ada, jika tidak gunakan pesan default
+            val errorBody = try {
+                e.response.body<RegisterResponse>().message
+            } catch (_: Exception) {
+                "Data yang dikirim tidak valid"
+            }
+            Result.failure(Exception(errorBody))
+
+        } catch (e: io.ktor.client.plugins.ServerResponseException) {
+            // 4. Menangani error 5xx (Server Crash)
+            Result.failure(Exception("Server sedang dalam perbaikan, silakan coba lagi nanti"))
+
         } catch (e: Exception) {
-            Log.e("AUTH_ERROR", "Exception Detail: ${e.message}") // Jika Anda punya Logcat
-            Result.failure(Exception("Kesalahan Jaringan (Detail: ${e.localizedMessage})"))
+            // 5. Menangani kesalahan koneksi (Timeout, No Internet)
+            Log.e("AUTH_ERROR", "Exception Detail: ${e.message}")
+            Result.failure(Exception("Gagal terhubung ke server. Periksa koneksi internet Anda."))
         }
     }
 
@@ -74,7 +91,7 @@ class AuthRepositoryImpl(
         } catch (e: ClientRequestException) {
             Result.failure(Exception("Gagal terhubung ke server (4xx)"))
         } catch (e: Exception) {
-            Result.failure(Exception("Gagal Login: ${e.localizedMessage}"))
+            Result.failure(Exception("Gagal Login: ${e.message}"))
         }
     }
 

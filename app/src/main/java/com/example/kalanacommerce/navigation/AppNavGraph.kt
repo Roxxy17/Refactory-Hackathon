@@ -1,66 +1,141 @@
 package com.example.kalanacommerce.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
 import com.example.kalanacommerce.back.data.local.datastore.SessionManager
-import com.example.kalanacommerce.front.dashboard.DashboardScreen
-import com.example.kalanacommerce.front.screen.TransactionScreen
 import com.example.kalanacommerce.front.dashboard.ChatScreen
-// Import Composable untuk halaman-halaman profil baru (asumsi sudah Anda buat)
-import com.example.kalanacommerce.front.dashboard.Profile.EditProfilePage
 import com.example.kalanacommerce.front.dashboard.Profile.AddressPage
+import com.example.kalanacommerce.front.dashboard.Profile.EditProfilePage
 import com.example.kalanacommerce.front.dashboard.Profile.SettingsPage
-import com.example.kalanacommerce.front.screen.start.FirstScreen
-import com.example.kalanacommerce.front.screen.start.ForgotPasswordScreen
+import com.example.kalanacommerce.front.screen.TransactionScreen
+import com.example.kalanacommerce.front.screen.auth.forgotpassword.ForgotPasswordStepEmailScreen
 import com.example.kalanacommerce.front.screen.auth.login.LoginScreen
-import com.example.kalanacommerce.front.screen.auth.register.RegisterScreen
 import com.example.kalanacommerce.front.screen.auth.login.SignInViewModel
+import com.example.kalanacommerce.front.screen.auth.register.RegisterScreen
+import com.example.kalanacommerce.front.screen.start.FirstScreen
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
 
+// "Middleware" atau "Penjaga" Otentikasi
+@Composable
+fun RequireAuth(
+    sessionManager: SessionManager,
+    navController: NavHostController,
+    content: @Composable () -> Unit
+) {
+    val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
+
+    if (isLoggedIn) {
+        content() // Pengguna sudah login, tampilkan kontennya.
+    } else {
+        // Pengguna belum login, arahkan ke alur otentikasi.
+        LaunchedEffect(key1 = Unit) {
+            navController.navigate(Graph.Auth)
+        }
+    }
+}
+
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
-    startDestination: String
+    navController: NavHostController = rememberNavController()
 ) {
     val sessionManager: SessionManager = get()
     val scope = rememberCoroutineScope()
 
-    // Fungsi helper untuk logout dan navigasi ke Welcome
-    val onLogout: () -> Unit = {
-        scope.launch {
-            sessionManager.clearAuthData()
-            navController.navigate(Screen.Welcome.route) {
-                // Hapus seluruh backstack
-                popUpTo(navController.graph.id) { inclusive = true }
-            }
-        }
-    }
-
-    // Fungsi helper untuk navigasi keluar dari Dashboard
-    val navigateTo: (Screen) -> Unit = { screen ->
-        navController.navigate(screen.route)
-    }
-
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Screen.Dashboard.route, // SELALU MULAI DARI DASHBOARD
         modifier = modifier
     ) {
 
-        // --- AUTH FLOW ---
+        // =====================================================================
+        // === DEFINISI RUTE-RUTE UTAMA ========================================
+        // =====================================================================
 
+        // --- RUTE UTAMA: DASHBOARD (Pintu Masuk Aplikasi) ---
+        composable(route = Screen.Dashboard.route) {
+            // 1. Ambil status login di sini, sebagai sumber kebenaran.
+            val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
+
+            // 2. Teruskan state dan event handler ke DashboardNavigation.
+            DashboardNavigation(
+                mainNavController = navController,
+                isLoggedIn = isLoggedIn,
+                onAuthAction = {
+                    if (isLoggedIn) {
+                        // Jika sudah login, lakukan logout
+                        scope.launch {
+                            sessionManager.clearAuthData()
+                            // Tetap di dashboard setelah logout
+                            navController.popBackStack(Screen.Dashboard.route, inclusive = false)
+                        }
+                    } else {
+                        // Jika belum login, arahkan ke alur otentikasi
+                        navController.navigate(Graph.Auth)
+                    }
+                }
+            )
+        }
+
+        // --- RUTE-RUTE YANG DIPROTEKSI (Butuh Login) ---
+        composable(route = "transaction_screen") { // Ganti dengan Screen.Transaction.route jika ada
+            RequireAuth(sessionManager = sessionManager, navController = navController) {
+                TransactionScreen(navController = navController)
+            }
+        }
+        composable(route = "chat_screen") { // Ganti dengan Screen.Chat.route jika ada
+            RequireAuth(sessionManager = sessionManager, navController = navController) {
+                ChatScreen()
+            }
+        }
+        composable(route = Screen.EditProfile.route) {
+            RequireAuth(sessionManager = sessionManager, navController = navController) {
+                EditProfilePage(onBack = { navController.popBackStack() })
+            }
+        }
+        composable(route = Screen.Address.route) {
+            RequireAuth(sessionManager = sessionManager, navController = navController) {
+                AddressPage(onBack = { navController.popBackStack() })
+            }
+        }
+        composable(route = Screen.Settings.route) {
+            // Contoh SettingsPage yang mungkin perlu login
+            RequireAuth(sessionManager = sessionManager, navController = navController) {
+                // Asumsi SettingsPage hanya berisi pengaturan teknis
+                // Jika ingin ada Login/Logout, logikanya harus seperti ProfileScreen
+                SettingsPage(onBack = { navController.popBackStack() })
+            }
+        }
+
+
+        // --- GRAFIK NAVIGASI OTENTIKASI ---
+        authGraph(navController = navController)
+    }
+}
+
+// Fungsi ekstensi untuk merapikan NavGraphBuilder
+fun NavGraphBuilder.authGraph(navController: NavHostController) {
+    // Definisikan nested graph baru
+    navigation(
+        startDestination = Screen.Welcome.route,
+        route = Graph.Auth
+    ) {
         composable(route = Screen.Welcome.route) {
             FirstScreen(
-                onNavigateToLogin = { navigateTo(Screen.Login) },
-                onNavigateToRegister = { navigateTo(Screen.Register) }
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )
         }
 
@@ -69,75 +144,37 @@ fun AppNavGraph(
             LoginScreen(
                 viewModel = authViewModel,
                 onSignInSuccess = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    // Setelah sukses login, tutup auth graph & kembali ke layar sebelumnya
+                    navController.popBackStack(Graph.Auth, inclusive = true)
+                },
+                onNavigateToRegister = {
+                    // Tukar layar Login dengan Register
+                    navController.navigate(Screen.Register.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onNavigateToRegister = { navigateTo(Screen.Register) },
-                onNavigateToForgotPassword = { navigateTo(Screen.ForgotPassword) }
+                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
         }
 
         composable(route = Screen.Register.route) {
             RegisterScreen(
                 onNavigateToLogin = {
+                    // Tukar layar Register dengan Login
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
                 onContinue = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
-                    }
+                    // Setelah sukses register, tutup auth graph & kembali ke layar sebelumnya
+                    navController.popBackStack(Graph.Auth, inclusive = true)
                 }
             )
         }
 
         composable(route = Screen.ForgotPassword.route) {
-            ForgotPasswordScreen(
+            ForgotPasswordStepEmailScreen(
                 onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // --- CHAT & TRANSAKSI (Destinasi Langsung) ---
-
-        composable(route = "chat_screen") {
-            ChatScreen()
-        }
-
-        composable(route = "transaction_screen") {
-
-            TransactionScreen(
-
-                navController = navController
-
-            )
-        }
-        // Ganti placeholder dengan halaman EditProfilePage yang sebenarnya
-        composable(route = Screen.EditProfile.route) {
-            EditProfilePage(onBack = { navController.popBackStack() })
-        }
-
-        // Ganti placeholder dengan halaman AddressPage yang sebenarnya
-        composable(route = Screen.Address.route) {
-            AddressPage(onBack = { navController.popBackStack() })
-        }
-
-        // Ganti placeholder dengan halaman SettingsPage yang sebenarnya
-        composable(route = Screen.Settings.route) {
-            SettingsPage(onBack = { navController.popBackStack() })
-        }
-
-        // --- DESTINASI BARU DARI PROFILE SCREEN (Sub-screens) ---
-
-
-        // --- DASHBOARD (NESTED NAVIGATION HOST) ---
-
-        composable(route = Screen.Dashboard.route) {
-            DashboardScreen(
-                // NavController utama disalurkan ke Dashboard untuk navigasi keluar (ke Profile sub-screens atau Logout)
-                mainNavController = navController,
-                onLogout = onLogout
             )
         }
     }
