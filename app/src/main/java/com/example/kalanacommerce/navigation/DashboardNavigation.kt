@@ -4,30 +4,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kalanacommerce.back.data.local.datastore.SessionManager
 import com.example.kalanacommerce.front.components.AppBottomNavigationBar
 import com.example.kalanacommerce.front.dashboard.ExploreScreen
 import com.example.kalanacommerce.front.dashboard.HistoryScreen
 import com.example.kalanacommerce.front.screen.dashboard.profile.ProfileScreen
 import com.example.kalanacommerce.front.dashboard.SearchingScreen
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.get
 
-/**
- * Layar utama yang menampung bottom navigation.
- * --- PERBAIKAN PARAMETER ---
- * Menerima semua parameter navigasi dan state dari AppNavGraph
- */
 @Composable
 fun DashboardNavigation(
     mainNavController: NavHostController,
-    isLoggedIn: Boolean,
-    onAuthAction: () -> Unit
 ) {
     val dashboardNavController = rememberNavController()
+    val sessionManager: SessionManager = get()
+    val scope = rememberCoroutineScope()
+
+    // Pantau status login untuk bottom bar atau logic lain jika perlu
+    val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
 
     Scaffold(
         containerColor = Color(0xFFF7F7F7),
@@ -44,22 +48,33 @@ fun DashboardNavigation(
                 }
             )
         },
-        content = { innerPadding ->
-            // Teruskan semua parameter ke DashboardNavGraph
-            DashboardNavGraph(
-                modifier = Modifier.padding(innerPadding),
-                dashboardNavController = dashboardNavController,
-                mainNavController = mainNavController,
-                isLoggedIn = isLoggedIn,
-                onAuthAction = onAuthAction
-            )
-        }
-    )
+    ) { innerPadding ->
+        DashboardNavGraph(
+            modifier = Modifier.padding(innerPadding),
+            dashboardNavController = dashboardNavController,
+            mainNavController = mainNavController,
+            isLoggedIn = isLoggedIn,
+
+            // LOGIC PENTING DI SINI:
+            onAuthAction = {
+                if (isLoggedIn) {
+                    // JIKA MEMBER KLIK LOGOUT:
+                    scope.launch {
+                        sessionManager.clearAuthData() // 1. Hapus Sesi
+                        // 2. User tetap di Dashboard, tapi UI Profile otomatis berubah jadi Guest
+                        // Opsional: pindah ke Home biar fresh
+                        dashboardNavController.navigate(BottomBarScreen.Eksplor.route)
+                    }
+                } else {
+                    // JIKA GUEST KLIK LOGIN:
+                    // Arahkan ke Navigasi Auth (Login/Register)
+                    mainNavController.navigate(Graph.Auth)
+                }
+            }
+        )
+    }
 }
 
-/**
- * NavHost untuk halaman-halaman yang diakses dari Bottom Navigation Bar.
- */
 @Composable
 fun DashboardNavGraph(
     modifier: Modifier,
@@ -83,12 +98,14 @@ fun DashboardNavGraph(
             HistoryScreen(onBack = { dashboardNavController.popBackStack() })
         }
         composable(BottomBarScreen.Profile.route) {
-            // --- PERBAIKAN UTAMA ---
-            // Teruskan parameter yang relevan ke ProfileScreen
+            // ProfileScreen sudah pintar, dia akan berubah tampilan sendiri
+            // berdasarkan data dari ViewModel (User ada atau null).
             ProfileScreen(
-                isLoggedIn = isLoggedIn,
-                onAuthAction = onAuthAction,
-                onNavigateToEditProfile = { mainNavController.navigate(Screen.EditProfile.route) },
+                onAuthAction = onAuthAction, // Memanggil logic di atas
+                onNavigateToEditProfile = {
+                    // Navigasi ke Edit Profile (akan dicek RequireAuth di AppNavGraph)
+                    mainNavController.navigate(Screen.EditProfile.route)
+                },
                 onNavigateToAddress = { mainNavController.navigate(Screen.Address.route) },
                 onNavigateToSettings = { mainNavController.navigate(Screen.Settings.route) }
             )

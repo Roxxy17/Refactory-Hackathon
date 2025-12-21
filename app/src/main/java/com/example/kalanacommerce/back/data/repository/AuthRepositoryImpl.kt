@@ -1,8 +1,12 @@
+// In D:/My-Project/KalanaCommerce/app/src/main/java/com/example/kalanacommerce/back/data/repository/AuthRepositoryImpl.kt
+
 package com.example.kalanacommerce.back.data.repository
 
 import android.util.Log
 import com.example.kalanacommerce.back.data.local.datastore.SessionManager
+import com.example.kalanacommerce.back.data.remote.dto.auth.UserDto
 import com.example.kalanacommerce.back.data.remote.dto.auth.login.SignInRequest
+import com.example.kalanacommerce.back.data.remote.dto.auth.login.SignInResponse // <-- Tambahkan import ini
 import com.example.kalanacommerce.back.data.remote.dto.auth.register.RegisterRequest
 import com.example.kalanacommerce.back.data.remote.dto.auth.register.RegisterResponse
 import com.example.kalanacommerce.back.data.remote.service.AuthService
@@ -15,7 +19,7 @@ class AuthRepositoryImpl(
     private val sessionManager: SessionManager
 ) : AuthRepository {
 
-    // --- REGISTER ---
+    // --- REGISTER (Tidak ada perubahan) ---
     override suspend fun register(
         name: String,
         email: String,
@@ -32,17 +36,13 @@ class AuthRepositoryImpl(
                 )
             )
 
-            // 1. Cek status sukses dari backend
             if (response.status) {
                 Result.success(Unit)
             } else {
-                // 2. Jika status false, gunakan pesan dari backend (misal: "Nomor telepon wajib diisi")
                 Result.failure(Exception(response.message))
             }
 
         } catch (e: ClientRequestException) {
-            // 3. Menangani error 4xx (400, 401, 409, 422)
-            // Coba ambil body error jika ada, jika tidak gunakan pesan default
             val errorBody = try {
                 e.response.body<RegisterResponse>().message
             } catch (_: Exception) {
@@ -51,54 +51,55 @@ class AuthRepositoryImpl(
             Result.failure(Exception(errorBody))
 
         } catch (e: io.ktor.client.plugins.ServerResponseException) {
-            // 4. Menangani error 5xx (Server Crash)
             Result.failure(Exception("Server sedang dalam perbaikan, silakan coba lagi nanti"))
 
         } catch (e: Exception) {
-            // 5. Menangani kesalahan koneksi (Timeout, No Internet)
             Log.e("AUTH_ERROR", "Exception Detail: ${e.message}")
             Result.failure(Exception("Gagal terhubung ke server. Periksa koneksi internet Anda."))
         }
     }
 
-    override suspend fun signIn(
-        email: String,
-        password: String
-    ): Result<String> {
+    // --- SIGN IN (Perbaikan di sini) ---
+    override suspend fun signIn(email: String, password: String): Result<Pair<String, UserDto>> {
         return try {
-            val response = authService.signIn(
-                SignInRequest(email = email, password = password)
-            )
+            val request = SignInRequest(email = email, password = password)
+            // 1. Berikan tipe eksplisit pada response
+            val response: SignInResponse = authService.signIn(request)
 
-            // 1. CEK STATUS DULU
             if (response.status) {
-                // Jika sukses, baru ambil token
+                // 2. Akses token dan user dari dalam properti 'data'
                 val token = response.data?.token
+                val user = response.data?.user
 
-                if (token != null) {
-                    // 2. SIMPAN SESSION
-                    sessionManager.saveAuthData(token, true)
-                    Result.success(token)
+                // 3. Validasi bahwa keduanya tidak null
+                if (token != null && user != null) {
+                    // SUKSES: Kembalikan keduanya sebagai Pasangan (Pair)
+                    Result.success(Pair(token, user))
                 } else {
-                    Result.failure(Exception("Login sukses tapi token kosong"))
+                    Result.failure(Exception("Login berhasil tapi data user/token kosong dari server"))
                 }
             } else {
-                // 3. JIKA GAGAL, TAMPILKAN PESAN DARI BACKEND
-                // Ini yang akan memunculkan "Email harus diisi" atau "Password salah"
                 Result.failure(Exception(response.message))
             }
-
         } catch (e: ClientRequestException) {
-            Result.failure(Exception("Gagal terhubung ke server (4xx)"))
-        } catch (e: Exception) {
+            // Tangani error spesifik dari client (misal: email/password salah)
+            val errorBody = try {
+                e.response.body<SignInResponse>().message
+            } catch (_: Exception) {
+                "Email atau password salah"
+            }
+            Result.failure(Exception(errorBody))
+        }
+        catch (e: Exception) {
+            // Tangani error umum lainnya
             Result.failure(Exception("Gagal Login: ${e.message}"))
         }
     }
 
-    // --- LOGOUT ---
+    // --- LOGOUT (Tidak ada perubahan) ---
     override suspend fun logout(): Result<Unit> {
         return try {
-            // sessionManager.clearAuthData()
+            sessionManager.clearAuthData()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

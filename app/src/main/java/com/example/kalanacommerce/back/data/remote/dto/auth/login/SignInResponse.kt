@@ -10,5 +10,6 @@ data class SignInResponse( // Bungkus Luar (Envelope)
     val status: Boolean,
     val statusCode: Int,
     val message: String,
-    val data: AuthData? = null // Isi Paket (Data Utama)
+    val data: AuthData? = null, // Isi Paket (Data Utama)
+    val token: String? = null
 )
