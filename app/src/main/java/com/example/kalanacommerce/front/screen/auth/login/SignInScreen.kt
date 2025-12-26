@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
@@ -41,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
 import org.koin.androidx.compose.koinViewModel
-import com.example.kalanacommerce.front.theme.*
+import com.example.kalanacommerce.front.theme.* // Import tetap ada untuk akses Typography jika perlu
 
 @Composable
 fun LoginScreen(
@@ -60,6 +61,9 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
 
+    // Warna Dinamis
+    val backgroundColor = MaterialTheme.colorScheme.background
+
     // Validasi sederhana
     val isFormValid = remember(email, password) {
         email.isNotBlank() && password.isNotEmpty()
@@ -74,7 +78,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(backgroundColor) // MENGGUNAKAN WARNA TEMA
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
         Column(
@@ -120,8 +124,7 @@ fun LoginScreen(
                 onTogglePassword = { passwordVisible = !passwordVisible }
             )
 
-            // 3. REMEMBER ME & FORGOT PASSWORD (STANDARD)
-            // Tetap ada untuk user yang memang lupa password sebelum mencoba login
+            // 3. REMEMBER ME & FORGOT PASSWORD
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,20 +140,20 @@ fun LoginScreen(
                         checked = rememberMe,
                         onCheckedChange = { rememberMe = it },
                         colors = CheckboxDefaults.colors(
-                            checkedColor = PrimaryColor,
-                            uncheckedColor = HintColor
+                            checkedColor = MaterialTheme.colorScheme.primary, // MENGGUNAKAN WARNA TEMA
+                            uncheckedColor = MaterialTheme.colorScheme.outline
                         )
                     )
                     Text(
                         text = stringResource(id = R.string.remember_me),
-                        color = DarkTextColor,
+                        color = MaterialTheme.colorScheme.onBackground, // MENGGUNAKAN WARNA TEMA
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
 
                 Text(
                     text = stringResource(id = R.string.forgot_password),
-                    color = PrimaryColor,
+                    color = MaterialTheme.colorScheme.primary, // MENGGUNAKAN WARNA TEMA
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.clickable(onClick = onNavigateToForgotPassword)
@@ -159,8 +162,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. ERROR MESSAGE & CONDITIONAL FORGOT PASSWORD
-            // INI BAGIAN YANG DIUBAH
+            // 4. ERROR MESSAGE
             AnimatedVisibility(
                 visible = uiState.error != null,
                 enter = fadeIn(),
@@ -170,24 +172,22 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    // Teks Error
                     Text(
                         text = uiState.error ?: "",
-                        color = ErrorColor,
+                        color = MaterialTheme.colorScheme.error, // MENGGUNAKAN WARNA TEMA
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Teks Forgot Password Tambahan (Muncul saat error)
                     Text(
-                        text = "Forgot your password?", // Bisa diganti stringResource
-                        color = PrimaryColor, // Warna Hijau agar terlihat sebagai solusi
+                        text = "Forgot your password?",
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier
                             .clickable(onClick = onNavigateToForgotPassword)
-                            .padding(4.dp) // Touch target area
+                            .padding(4.dp)
                     )
                 }
             }
@@ -200,19 +200,20 @@ fun LoginScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryColor,
-                    disabledContainerColor = PrimaryColor.copy(alpha = 0.5f)
+                    containerColor = MaterialTheme.colorScheme.primary, // MENGGUNAKAN WARNA TEMA
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 ),
                 enabled = !uiState.isLoading && isFormValid
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
                     Text(
                         text = stringResource(id = R.string.sign_in),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -235,23 +236,26 @@ fun LoginScreen(
 @Composable
 private fun HeaderSection() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Logo mungkin perlu filter warna jika transparan, atau biarkan original jika berwarna
         Image(
             painter = painterResource(id = R.drawable.ic_logo_panjang),
             contentDescription = "Kalana Logo",
             modifier = Modifier.width(180.dp)
+            // Opsional: Jika logo Anda hitam pekat dan hilang di Dark Mode, tambahkan ini:
+            // colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(id = R.string.login_welcome_back),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
-                color = DarkTextColor
+                color = MaterialTheme.colorScheme.onBackground // MENGGUNAKAN WARNA TEMA
             )
         )
         Text(
             text = "Please sign in to your account",
             style = MaterialTheme.typography.bodyMedium,
-            color = HintColor,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, // MENGGUNAKAN WARNA TEMA
             modifier = Modifier.padding(top = 8.dp)
         )
     }
@@ -264,29 +268,31 @@ private fun SocialLoginSection() {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             Text(
                 text = stringResource(id = R.string.or_continue_with),
                 modifier = Modifier.padding(horizontal = 12.dp),
-                color = HintColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
-            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        IconButton(
+        // Google Button
+        Surface(
             onClick = { /* TODO: Google Login */ },
-            modifier = Modifier
-                .size(50.dp)
-                .background(Color.White, shape = RoundedCornerShape(50))
-                .then(Modifier.background(LightGray, RoundedCornerShape(50)))
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh, // Container warna terang/gelap sesuai tema
+            modifier = Modifier.size(50.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_google),
-                contentDescription = "Google Login",
-                modifier = Modifier.size(24.dp)
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_google),
+                    contentDescription = "Google Login",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
@@ -300,12 +306,12 @@ private fun FooterSection(onRegisterClick: () -> Unit) {
         Text(
             text = stringResource(id = R.string.dont_have_account) + " ",
             style = MaterialTheme.typography.bodyMedium,
-            color = HintColor
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = stringResource(id = R.string.sign_up),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = PrimaryColor,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable { onRegisterClick() }
         )
     }
@@ -325,24 +331,27 @@ private fun LoginTextField(
     passwordVisible: Boolean = false,
     onTogglePassword: (() -> Unit)? = null
 ) {
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant // Warna isian TextField (Abu muda di Light, Abu tua di Dark)
+    val contentColor = MaterialTheme.colorScheme.onSurface
+
     TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(placeholder, color = HintColor) },
-        leadingIcon = { Icon(icon, null, tint = HintColor) },
+        placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         textStyle = LocalTextStyle.current.copy(
-            color = DarkTextColor,
+            color = contentColor,
             fontSize = 16.sp
         ),
         shape = RoundedCornerShape(16.dp),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = PrimaryColor,
-            focusedContainerColor = LightGray,
-            unfocusedContainerColor = LightGray,
-            disabledContainerColor = LightGray,
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
+            disabledContainerColor = containerColor,
             errorIndicatorColor = Color.Transparent
         ),
         singleLine = true,
@@ -361,7 +370,7 @@ private fun LoginTextField(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                         contentDescription = "Toggle Password",
-                        tint = HintColor
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -372,9 +381,11 @@ private fun LoginTextField(
 @Preview(showBackground = true, heightDp = 800)
 @Composable
 fun LoginScreenPreview() {
-    LoginScreen(
-        onNavigateToRegister = {},
-        onNavigateToForgotPassword = {},
-        onSignInSuccess = {}
-    )
+    KalanaCommerceTheme(darkTheme = false) { // Coba ganti true/false
+        LoginScreen(
+            onNavigateToRegister = {},
+            onNavigateToForgotPassword = {},
+            onSignInSuccess = {}
+        )
+    }
 }

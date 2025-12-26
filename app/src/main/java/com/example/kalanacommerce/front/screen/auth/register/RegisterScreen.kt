@@ -32,22 +32,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
 import org.koin.androidx.compose.koinViewModel
-import com.example.kalanacommerce.front.theme.*
+import com.example.kalanacommerce.front.theme.* // Import tetap ada untuk akses Typography jika perlu
 
 @Composable
 fun RegisterScreen(
@@ -68,6 +65,9 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var agreeToTerms by remember { mutableStateOf(false) }
 
+    // Warna Dinamis
+    val backgroundColor = MaterialTheme.colorScheme.background
+
     // --- Validasi ---
     val isFormValid = remember(name, phoneNumber, email, password, agreeToTerms) {
         name.isNotBlank() && phoneNumber.isNotBlank() && email.isNotBlank() &&
@@ -84,7 +84,7 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(backgroundColor) // MENGGUNAKAN WARNA TEMA
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
         Column(
@@ -92,7 +92,7 @@ fun RegisterScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp, vertical = 32.dp)
-                .imePadding(), // Penting agar input tidak tertutup keyboard
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -164,13 +164,13 @@ fun RegisterScreen(
                     checked = agreeToTerms,
                     onCheckedChange = { agreeToTerms = it },
                     colors = CheckboxDefaults.colors(
-                        checkedColor = PrimaryColor,
-                        uncheckedColor = HintColor
+                        checkedColor = MaterialTheme.colorScheme.primary, // MENGGUNAKAN WARNA TEMA
+                        uncheckedColor = MaterialTheme.colorScheme.outline
                     )
                 )
                 Text(
                     text = "I agree to the Terms & Conditions",
-                    color = if (agreeToTerms) DarkTextColor else HintColor,
+                    color = if (agreeToTerms) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant, // MENGGUNAKAN WARNA TEMA
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 4.dp)
                 )
@@ -186,7 +186,7 @@ fun RegisterScreen(
             ) {
                 Text(
                     text = uiState.message ?: "",
-                    color = ErrorColor,
+                    color = MaterialTheme.colorScheme.error, // MENGGUNAKAN WARNA TEMA
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -200,15 +200,16 @@ fun RegisterScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryColor,
-                    disabledContainerColor = PrimaryColor.copy(alpha = 0.5f)
+                    containerColor = MaterialTheme.colorScheme.primary, // MENGGUNAKAN WARNA TEMA
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 ),
                 enabled = !uiState.isLoading && isFormValid
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
 
@@ -233,19 +234,21 @@ private fun HeaderSection() {
         painter = painterResource(id = R.drawable.ic_logo_panjang),
         contentDescription = "Kalana Logo",
         modifier = Modifier.width(180.dp)
+        // Opsional: Jika logo Anda hitam pekat dan hilang di Dark Mode:
+        // colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
     )
     Spacer(modifier = Modifier.height(16.dp))
     Text(
         text = "Create Account",
         style = MaterialTheme.typography.headlineMedium.copy(
             fontWeight = FontWeight.Bold,
-            color = DarkTextColor
+            color = MaterialTheme.colorScheme.onBackground // MENGGUNAKAN WARNA TEMA
         )
     )
     Text(
         text = "Sign up to get started!",
         style = MaterialTheme.typography.bodyMedium,
-        color = HintColor,
+        color = MaterialTheme.colorScheme.onSurfaceVariant, // MENGGUNAKAN WARNA TEMA
         modifier = Modifier.padding(top = 8.dp)
     )
 }
@@ -257,31 +260,31 @@ private fun SocialLoginSection() {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             Text(
                 text = "or continue with",
                 modifier = Modifier.padding(horizontal = 12.dp),
-                color = HintColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
-            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         // Google Button Container
-        IconButton(
+        Surface(
             onClick = { /* TODO: Google Login */ },
-            modifier = Modifier
-                .size(50.dp)
-                .background(Color.White, shape = RoundedCornerShape(50))
-                // Menambahkan border tipis agar terlihat rapi
-                .then(Modifier.background(LightGray, RoundedCornerShape(50)))
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh, // Container warna terang/gelap sesuai tema
+            modifier = Modifier.size(50.dp)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_google),
-                contentDescription = "Google Login",
-                modifier = Modifier.size(24.dp) // Ukuran icon Google standar
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_google),
+                    contentDescription = "Google Login",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
@@ -295,12 +298,12 @@ private fun FooterSection(onLoginClick: () -> Unit) {
         Text(
             text = "Already have an account? ",
             style = MaterialTheme.typography.bodyMedium,
-            color = HintColor
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = "Sign in",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = PrimaryColor,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable { onLoginClick() }
         )
     }
@@ -321,24 +324,27 @@ private fun RegisterTextField(
     passwordVisible: Boolean = false,
     onTogglePassword: (() -> Unit)? = null
 ) {
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant // Warna isian TextField
+    val contentColor = MaterialTheme.colorScheme.onSurface
+
     TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(placeholder, color = HintColor) },
-        leadingIcon = { Icon(icon, null, tint = HintColor) },
+        placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         textStyle = LocalTextStyle.current.copy(
-            color = DarkTextColor,
+            color = contentColor,
             fontSize = 16.sp
         ),
         shape = RoundedCornerShape(16.dp),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = PrimaryColor,
-            focusedContainerColor = LightGray,
-            unfocusedContainerColor = LightGray,
-            disabledContainerColor = LightGray,
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
+            disabledContainerColor = containerColor,
             errorIndicatorColor = Color.Transparent
         ),
         singleLine = true,
@@ -357,7 +363,7 @@ private fun RegisterTextField(
                     Icon(
                         imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                         contentDescription = "Toggle Password",
-                        tint = HintColor
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -368,5 +374,7 @@ private fun RegisterTextField(
 @Preview(showBackground = true, heightDp = 900)
 @Composable
 fun RegisterScreenPreview() {
-    RegisterScreen(onNavigateToLogin = {}, onContinue = {})
+    KalanaCommerceTheme(darkTheme = false) {
+        RegisterScreen(onNavigateToLogin = {}, onContinue = {})
+    }
 }

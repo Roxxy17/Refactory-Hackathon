@@ -31,6 +31,7 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings_screen")
     data object EditProfile : Screen("edit_profile_screen")
     data object Address : Screen("address_screen")
+    data object TermsAndConditions : Screen("terms_conditions")
 }
 
 // ! Navigation Bottom Bar Screen

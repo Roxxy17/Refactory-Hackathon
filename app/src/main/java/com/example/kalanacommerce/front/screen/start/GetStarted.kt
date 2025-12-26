@@ -18,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,12 +39,18 @@ fun FirstScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    // Definisi Warna
-    val primaryColor = Color(0xFF069C6F)
-    val secondaryColor = Color(0xFF8FD694) // Hijau lebih muda untuk aksen
-    val darkTextColor = Color(0xFF333333)
+    // --- 1. AMBIL WARNA DARI TEMA (DYNAMIC) ---
+    // Warna ini otomatis berubah sesuai Light/Dark mode dari Theme.kt
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
 
-    // --- 1. ENTRY TRANSITION CONFIG ---
+    // Variasi warna untuk blob (dekorasi)
+    val blobColor1 = MaterialTheme.colorScheme.primary
+    // Menggunakan secondary atau primaryContainer agar tetap senada dengan tema
+    val blobColor2 = MaterialTheme.colorScheme.secondary
+
+    // --- 2. ENTRY TRANSITION CONFIG ---
     var currentState by remember { mutableStateOf(ScreenState.Idle) }
     val transition = updateTransition(targetState = currentState, label = "Screen Entry")
 
@@ -88,7 +93,7 @@ fun FirstScreen(
     ) { if (it == ScreenState.Entered) 0.dp else 50.dp }
 
 
-    // --- 2. INFINITE ANIMATION (Breathing Background) ---
+    // --- 3. INFINITE ANIMATION (Breathing Background) ---
     val infiniteTransition = rememberInfiniteTransition(label = "Infinite BG")
 
     // Animasi posisi/skala background blob 1
@@ -115,14 +120,14 @@ fun FirstScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Dasar Putih Bersih
+            .background(backgroundColor) // MENGGUNAKAN WARNA TEMA
     ) {
-        // --- 3. BACKGROUND DECORATION (Modern Blobs) ---
+        // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Blob Atas Kiri (Hijau Utama Pudar)
+            // Blob Atas Kiri
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(primaryColor.copy(alpha = 0.2f), Color.Transparent),
+                    colors = listOf(blobColor1.copy(alpha = 0.15f), Color.Transparent),
                     center = Offset(0f, 0f),
                     radius = size.width * 0.8f * blob1Scale
                 ),
@@ -130,10 +135,10 @@ fun FirstScreen(
                 radius = size.width * 0.8f * blob1Scale
             )
 
-            // Blob Bawah Kanan (Hijau Muda/Kuning Pudar)
+            // Blob Bawah Kanan
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(secondaryColor.copy(alpha = 0.3f), Color.Transparent),
+                    colors = listOf(blobColor2.copy(alpha = 0.2f), Color.Transparent),
                     center = Offset(size.width, size.height),
                     radius = size.width * 0.9f
                 ),
@@ -142,7 +147,7 @@ fun FirstScreen(
             )
         }
 
-        // --- 4. MAIN CONTENT ---
+        // --- 5. MAIN CONTENT ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -173,6 +178,9 @@ fun FirstScreen(
                         painter = painterResource(id = R.drawable.ic_logo_panjang),
                         contentDescription = "Kalana Logo",
                         modifier = Modifier.width(220.dp)
+                        // Opsional: Jika logo Anda hitam pekat dan hilang di dark mode,
+                        // Anda bisa menambahkan colorFilter untuk mengubah warnanya:
+                        // colorFilter = ColorFilter.tint(textColor)
                     )
                 }
 
@@ -189,23 +197,20 @@ fun FirstScreen(
                         text = "Freshness You Can Trust",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = darkTextColor
+                            color = textColor // MENGGUNAKAN WARNA TEMA
                         ),
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // --- PERBAIKAN DI SINI ---
                     Text(
-                        // Menggunakan \n untuk memaksa baris baru sesuai gambar
                         text = "Experience the best quality products directly\nfrom nature to your doorstep.",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = darkTextColor.copy(alpha = 0.6f),
+                            color = textColor.copy(alpha = 0.7f), // MENGGUNAKAN WARNA TEMA
                             fontWeight = FontWeight.Normal,
-                            lineHeight = 24.sp // Sedikit dinaikkan agar jarak antar baris enak dibaca
+                            lineHeight = 24.sp
                         ),
                         textAlign = TextAlign.Center,
-                        // Padding dikurangi dari 16.dp ke 4.dp agar teks tidak terlalu sempit
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
@@ -225,10 +230,11 @@ fun FirstScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .padding(horizontal = 8.dp), // Sedikit padding kiri kanan
-                    shape = RoundedCornerShape(16.dp), // Rounded modern
+                        .padding(horizontal = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryColor
+                        containerColor = primaryColor, // MENGGUNAKAN WARNA TEMA
+                        contentColor = MaterialTheme.colorScheme.onPrimary // Text contrast
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp,
@@ -239,13 +245,13 @@ fun FirstScreen(
                         "Get Started",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -259,7 +265,7 @@ fun FirstScreen(
                 ) {
                     Text(
                         text = "Already have an account?",
-                        color = darkTextColor.copy(alpha = 0.6f),
+                        color = textColor.copy(alpha = 0.6f), // MENGGUNAKAN WARNA TEMA
                         fontSize = 14.sp
                     )
                     TextButton(
@@ -268,14 +274,14 @@ fun FirstScreen(
                     ) {
                         Text(
                             text = "Sign In",
-                            color = primaryColor,
+                            color = primaryColor, // MENGGUNAKAN WARNA TEMA
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp)) // Jarak aman dari bawah
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -284,7 +290,7 @@ fun FirstScreen(
 @Preview(showBackground = true, heightDp = 800)
 @Composable
 fun FirstScreenPreview() {
-    KalanaCommerceTheme {
+    KalanaCommerceTheme(darkTheme = false) { // Coba ganti true untuk preview dark mode
         FirstScreen(
             onNavigateToLogin = {},
             onNavigateToRegister = {}

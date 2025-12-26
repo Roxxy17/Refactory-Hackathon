@@ -21,6 +21,7 @@ import com.example.kalanacommerce.front.screen.auth.forgotpassword.ForgotPasswor
 import com.example.kalanacommerce.front.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.front.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.front.screen.auth.register.RegisterScreen
+import com.example.kalanacommerce.front.screen.auth.terms.TermsAndConditionsScreen
 import com.example.kalanacommerce.front.screen.start.FirstScreen
 import org.koin.androidx.compose.koinViewModel
 
@@ -96,6 +97,13 @@ fun AppNavGraph(
         // Settings mungkin boleh guest, tapi kita proteksi untuk contoh ini
         composable(route = Screen.Settings.route) {
             SettingsPage(onBack = { navController.popBackStack() })
+        }
+
+        // Terms & Conditions mungkin boleh guest, tapi kita proteksi untuk contoh ini
+        composable(route = Screen.TermsAndConditions.route) {
+            TermsAndConditionsScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // --- AUTH GRAPH (Login, Register, dll) ---

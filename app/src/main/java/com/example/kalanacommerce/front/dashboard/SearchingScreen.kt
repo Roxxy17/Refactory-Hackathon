@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +32,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
+// HAPUS IMPORT YANG SALAH INI
+// import com.example.kalanacommerce.front.screen.dashboard.home.WhiteSurface
 import com.example.kalanacommerce.front.theme.KalanaCommerceTheme
 
 // Warna Putih Khusus dan Abu Terang
@@ -312,7 +316,7 @@ fun SearchTopBar(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = WhiteSurface, // Latar belakang TopBar PUTIH
+        color = WhiteSurface1, // <<--- GANTI DI SINI
         shadowElevation = 4.dp
     ) {
         Row(

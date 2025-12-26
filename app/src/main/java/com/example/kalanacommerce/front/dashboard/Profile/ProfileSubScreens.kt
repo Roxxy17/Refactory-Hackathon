@@ -238,12 +238,6 @@ fun SettingsPage(onBack: () -> Unit) {
                 checked = isNotificationEnabled,
                 onCheckedChange = { isNotificationEnabled = it }
             )
-            SettingsToggleItem(
-                title = "Mode Gelap",
-                subtitle = "Aktifkan tema gelap untuk kenyamanan mata.",
-                checked = isDarkModeEnabled,
-                onCheckedChange = { isDarkModeEnabled = it }
-            )
             SettingsLinkItem(
                 title = "Kebijakan Privasi",
                 onClick = { /* Navigasi ke halaman web */ }
