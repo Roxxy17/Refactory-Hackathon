@@ -160,10 +160,10 @@ fun AppBottomNavigationBar(
                 .height(70.dp)
                 .fillMaxWidth()
                 .shadow(
-                    elevation = 20.dp, // Bayangan Besar
+                    elevation = 16.dp, // Atur elevasi bayangan
                     shape = RoundedCornerShape(24.dp),
-                    spotColor = mainShadowColor, // Warna bayangan (Hijau pudar di light mode)
-                    ambientColor = mainShadowColor
+                    spotColor = Color.Black.copy(alpha = 0.3f), // Warna spot shadow lebih gelap
+                    ambientColor = Color.Black.copy(alpha = 0.1f) // Warna ambient shadow lebih pudar
                 )
                 .align(Alignment.BottomCenter),
             color = barBgColor,

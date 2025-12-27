@@ -89,7 +89,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         topBar = {
             HomeTopAppBar(scrollBehavior)
         },
-        containerColor = MaterialTheme.colorScheme.background // Latar belakang adaptif tema
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0.dp)// Latar belakang adaptif tema
     ) { paddingValues ->
 
         Column(

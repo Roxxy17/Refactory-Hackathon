@@ -1,8 +1,11 @@
 package com.example.kalanacommerce.presentation.screen.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding // <-- Tambahkan import ini
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,64 +37,54 @@ import org.koin.androidx.compose.get
 fun DashboardScreen(
     mainNavController: NavHostController
 ) {
-    // 1. Setup Controller & Session (Sama seperti file lama)
     val dashboardNavController = rememberNavController()
     val sessionManager: SessionManager = get()
     val scope = rememberCoroutineScope()
-
-    // Pantau status login
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // 2. AREA KONTEN (Layer Belakang)
         Scaffold(
-            containerColor = Color.Transparent,
-            // PENTING: Matikan insets agar konten tembus ke belakang status bar (seperti file lama)
+            // --- PERBAIKAN 1: Jadikan Scaffold UTAMA memiliki warna background yang benar ---
+            containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0.dp)
         ) { paddingValues ->
-            // Kita abaikan paddingValues dari Scaffold ini agar konten full sampai bawah
-
+            // --- PERBAIKAN 2: Terapkan padding ke NavHost ---
+            // Ini akan mendorong konten NavHost ke atas, menjauh dari area Bottom Bar.
             NavHost(
                 navController = dashboardNavController,
                 startDestination = BottomBarScreen.Eksplor.route,
-                modifier = Modifier.fillMaxSize()
+                // Terapkan padding yang diberikan oleh Scaffold
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
             ) {
                 // --- TAB 1: HOME ---
                 composable(BottomBarScreen.Eksplor.route) {
                     HomeScreen(modifier = Modifier.fillMaxSize())
                 }
-
-                // --- TAB 2: PENCARIAN (Sesuai file lamamu) ---
+                // --- TAB 2: PENCARIAN ---
                 composable(BottomBarScreen.Pencarian.route) {
                     SearchingScreen(onBack = { dashboardNavController.popBackStack() })
                 }
-
-                // --- TAB 3: RIWAYAT (Sesuai file lamamu) ---
+                // --- TAB 3: RIWAYAT ---
                 composable(BottomBarScreen.Riwayat.route) {
                     HistoryScreen(onBack = { dashboardNavController.popBackStack() })
                 }
-
                 // --- TAB 4: PROFILE ---
                 composable(BottomBarScreen.Profile.route) {
                     ProfileScreen(
-                        // Logic Auth Action (Sama persis dengan file lama)
                         onAuthAction = {
                             if (isLoggedIn) {
-                                // LOGOUT MEMBER
                                 scope.launch {
                                     sessionManager.clearAuthData()
-                                    // Reset ke home setelah logout
                                     dashboardNavController.navigate(BottomBarScreen.Eksplor.route) {
                                         popUpTo(BottomBarScreen.Eksplor.route) { inclusive = true }
                                     }
                                 }
                             } else {
-                                // LOGIN GUEST
                                 mainNavController.navigate(Graph.Auth)
                             }
                         },
-                        // Navigasi Menu Profil (Sama persis)
                         onNavigateToEditProfile = { mainNavController.navigate(Screen.EditProfile.route) },
                         onNavigateToAddress = { mainNavController.navigate(Screen.Address.route) },
                         onNavigateToSettings = { mainNavController.navigate(Screen.Settings.route) },
@@ -102,6 +95,7 @@ fun DashboardScreen(
         }
 
         // 3. BOTTOM BAR (Overlay / Layer Atas)
+        // Ditempatkan di luar Scaffold agar bisa menjadi overlay transparan
         Box(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {

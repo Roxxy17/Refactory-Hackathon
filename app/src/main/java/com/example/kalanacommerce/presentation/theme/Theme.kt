@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -49,9 +50,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun KalanaCommerceTheme(
-    // KEMBALIKAN PARAMETER INI
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Opsional: Dynamic color (Android 12+)
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -68,10 +67,35 @@ fun KalanaCommerceTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Status bar mengikuti warna background agar terlihat menyatu
-            window.statusBarColor = colorScheme.background.toArgb()
-            // Icon status bar: Gelap di light mode, Terang di dark mode
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+
+            // 1. Set warna transparan
+            window.statusBarColor = Color.Transparent.toArgb()
+            window.navigationBarColor = Color.Transparent.toArgb()
+
+            // 2. Izin menggambar di belakang system bar
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+
+            // 3. (PENTING) Matikan paksaan kontras sistem di Android 10+
+            // Ini yang menyebabkan bar putih muncul di Light Mode meski sudah diset transparan
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
+
+            // 4. (Opsional) Support poni layar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                window.attributes.layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+
+            // 5. Atur warna ikon (Gelap/Terang)
+            val insetsController = WindowCompat.getInsetsController(window, view)
+
+            // Status Bar: Ikon gelap jika tema terang
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+
+            // Nav Bar: Ikon gelap jika tema terang
+            // PENTING: Ini harus true di Light Mode agar ikon hitam muncul di atas background transparan
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

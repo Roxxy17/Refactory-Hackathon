@@ -5,14 +5,18 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color // Import Color
+import android.os.Build // Import Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.WindowManager // Import WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat // Import WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.kalanacommerce.MainActivity
 import com.example.kalanacommerce.R
@@ -27,17 +31,34 @@ class SplashActivity : AppCompatActivity() {
 
     private val SPLASH_SCREEN_DELAY: Long = 3000
 
-    // 1. Inject ThemeManager untuk akses preferensi tema user
     private val themeManager: ThemeManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // --- TAMBAHAN: KONFIGURASI FULL SCREEN (EDGE-TO-EDGE) ---
+        // Letakkan kode ini SEBELUM setContentView agar efeknya langsung terasa saat layout dimuat
+
+        // 1. Izinkan konten digambar di belakang system bar (Status Bar & Nav Bar)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // 2. Ubah warna bar menjadi transparan
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+
+        // 3. Khusus HP berponi (Notch) - Android 9 (Pie) ke atas
+        // Agar gambar background melebar memenuhi area poni
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        // ---------------------------------------------------------
+
         setContentView(R.layout.activity_splash)
 
         supportActionBar?.hide()
 
-        // 2. Setup Background Berdasarkan Tema
         setupThemeBackground()
 
         playAnimation()
@@ -51,36 +72,25 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun setupThemeBackground() {
-        // Pastikan di layout XML, view dengan id splash_background adalah <ImageView>
         val background = findViewById<ImageView>(R.id.splash_background)
-        val splashText = findViewById<android.widget.TextView>(R.id.splash_text) // 1. Ambil ID Text
+        val splashText = findViewById<android.widget.TextView>(R.id.splash_text)
 
-        // Gunakan lifecycleScope untuk membaca DataStore (karena butuh coroutine)
         lifecycleScope.launch {
-            // Ambil settingan tema saat ini (ambil .first() agar hanya baca sekali)
             val themeSetting = themeManager.themeSettingFlow.first()
-
-            // Cek apakah sistem HP sedang mode gelap
             val isSystemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
-            // Logika penentuan tema (Sama seperti di MainActivity)
             val isDarkTheme = when (themeSetting) {
                 ThemeSetting.LIGHT -> false
                 ThemeSetting.DARK -> true
                 ThemeSetting.SYSTEM -> isSystemDark
             }
 
-            // 2. Tentukan Resource Gambar & Warna Teks berdasarkan isDarkTheme
             if (isDarkTheme) {
-                // TEMA GELAP
                 background.setImageResource(R.drawable.profile_background_black)
-                // Warna teks terang (Putih/Abu muda) agar terbaca di background gelap
-                splashText.setTextColor(android.graphics.Color.parseColor("#EEEEEE"))
+                splashText.setTextColor(Color.parseColor("#EEEEEE"))
             } else {
-                // TEMA TERANG
                 background.setImageResource(R.drawable.profile_background_white)
-                // Warna teks gelap (Hitam/Abu tua) agar terbaca di background terang
-                splashText.setTextColor(android.graphics.Color.parseColor("#333333"))
+                splashText.setTextColor(Color.parseColor("#333333"))
             }
         }
     }
@@ -90,11 +100,9 @@ class SplashActivity : AppCompatActivity() {
         val logo = findViewById<View>(R.id.splash_logo)
         val text = findViewById<View>(R.id.splash_text)
 
-        // Initial State
         text.alpha = 0f
         text.translationY = 50f
 
-        // Definisi Animasi
         val logoScaleX = ObjectAnimator.ofFloat(logo, View.SCALE_X, 0.5f, 1f).setDuration(1000)
         val logoScaleY = ObjectAnimator.ofFloat(logo, View.SCALE_Y, 0.5f, 1f).setDuration(1000)
         val logoAlpha = ObjectAnimator.ofFloat(logo, View.ALPHA, 0f, 1f).setDuration(1000)
