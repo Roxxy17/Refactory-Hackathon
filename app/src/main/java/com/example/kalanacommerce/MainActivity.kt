@@ -6,11 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.kalanacommerce.back.data.local.datastore.ThemeManager
-import com.example.kalanacommerce.back.data.local.datastore.ThemeSetting
-import com.example.kalanacommerce.front.theme.KalanaCommerceTheme
-import com.example.kalanacommerce.navigation.AppNavGraph
-import com.example.kalanacommerce.navigation.Screen
+import com.example.kalanacommerce.data.local.datastore.ThemeManager
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
+import com.example.kalanacommerce.presentation.navigation.AppNavGraph
+import com.example.kalanacommerce.presentation.navigation.Screen
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {

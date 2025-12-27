@@ -4,7 +4,7 @@ import com.example.kalanacommerce.back.NewProductRequest
 import com.example.kalanacommerce.back.Product
 import com.example.kalanacommerce.back.ProductCreationResponse
 import com.example.kalanacommerce.back.ProductListResponse
-import com.example.kalanacommerce.back.data.remote.dto.auth.register.RegisterResponse
+import com.example.kalanacommerce.data.remote.dto.auth.register.RegisterResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*

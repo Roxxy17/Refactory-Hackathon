@@ -1,11 +1,11 @@
 package com.example.kalanacommerce
 
 import android.app.Application
-import com.example.kalanacommerce.back.di.appModule
-import com.example.kalanacommerce.back.di.localModule
-import com.example.kalanacommerce.back.di.networkModule
-import com.example.kalanacommerce.back.di.repositoryModule
-import com.example.kalanacommerce.back.di.useCaseModule
+import com.example.kalanacommerce.di.appModule
+import com.example.kalanacommerce.di.localModule
+import com.example.kalanacommerce.di.networkModule
+import com.example.kalanacommerce.di.repositoryModule
+import com.example.kalanacommerce.di.useCaseModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
