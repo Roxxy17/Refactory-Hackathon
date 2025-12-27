@@ -98,6 +98,11 @@ fun AppNavGraph(
             }
         }
 
+        // terms and condition
+        composable(route = Screen.TermsAndConditions.route) {
+            TermsAndConditionsScreen(onBack = { navController.popBackStack() })
+        }
+
         // --- DASHBOARD ---
         composable(Screen.Dashboard.route) {
             DashboardScreen(mainNavController = navController)
@@ -127,16 +132,18 @@ fun AppNavGraph(
         composable(route = Screen.Settings.route) {
             SettingsPage(onBack = { navController.popBackStack() })
         }
-        composable(route = Screen.TermsAndConditions.route) {
-            TermsAndConditionsScreen(onBack = { navController.popBackStack() })
-        }
 
-        // --- AUTH GRAPH ---
-        authGraph(navController)
+        authGraph(
+            navController = navController,
+            // Teruskan lambda untuk navigasi ke Terms and Conditions
+            onNavigateToTerms = {
+                navController.navigate(Screen.TermsAndConditions.route)
+            }
+        )
     }
 }
 
-fun NavGraphBuilder.authGraph(navController: NavHostController) {
+fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerms: () -> Unit = {}) {
     navigation(
         startDestination = Screen.Welcome.route,
         route = Graph.Auth
@@ -175,6 +182,7 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 },
+                onNavigateToTerms = onNavigateToTerms,
             )
         }
 
