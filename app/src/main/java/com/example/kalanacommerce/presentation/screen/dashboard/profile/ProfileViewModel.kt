@@ -1,7 +1,6 @@
-// File: D:/My-Project/KalanaCommerce/app/src/main/java/com/example/kalanacommerce/front/screen/dashboard/profile/ProfileViewModel.kt
-
 package com.example.kalanacommerce.presentation.screen.dashboard.profile
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.data.local.datastore.SessionManager
@@ -15,36 +14,55 @@ import kotlinx.coroutines.launch
 
 class ProfileViewModel(
     private val sessionManager: SessionManager,
-    private val themeManager: ThemeManager // Inject ThemeManager
+    private val themeManager: ThemeManager,
+    private val context: Context
 ) : ViewModel() {
 
-    // Gabungkan state user dan state theme
-    val uiState: StateFlow<ProfileUiState> = combine(
-        sessionManager.userFlow,
-        themeManager.themeSettingFlow // Ambil flow tema
-    ) { user, themeSetting ->
+    // Logika awal untuk menentukan apakah gelap/terang saat pertama kali load
+    private val initialIsDarkTheme =
+        themeManager.themeSettingFlow.value == ThemeSetting.DARK ||
+                (themeManager.themeSettingFlow.value == ThemeSetting.SYSTEM &&
+                        context.resources.configuration.uiMode and
+                        android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+                        android.content.res.Configuration.UI_MODE_NIGHT_YES)
 
-        // Logika konversi: Switch dianggap "ON" (True) hanya jika tema diset ke DARK
-        val isDark = themeSetting == ThemeSetting.DARK
+    val uiState: StateFlow<ProfileUiState> =
+        combine(
+            sessionManager.userFlow,
+            themeManager.themeSettingFlow
+        ) { user, themeSetting ->
 
-        ProfileUiState(
-            user = user,
-            isLoading = false,
-            isDarkTheme = isDark
+            // Tentukan apakah UI harus render Dark Mode atau Light Mode
+            val isDark = when (themeSetting) {
+                ThemeSetting.LIGHT -> false
+                ThemeSetting.DARK -> true
+                ThemeSetting.SYSTEM -> {
+                    // Cek konfigurasi HP user saat ini
+                    context.resources.configuration.uiMode and
+                            android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+                            android.content.res.Configuration.UI_MODE_NIGHT_YES
+                }
+            }
+
+            ProfileUiState(
+                user = user,
+                isLoading = false,
+                isDarkTheme = isDark,
+                themeSetting = themeSetting // Update field ini
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ProfileUiState(
+                isLoading = true,
+                isDarkTheme = initialIsDarkTheme,
+                themeSetting = themeManager.themeSettingFlow.value
+            )
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ProfileUiState(isLoading = true)
-    )
 
-    // Fungsi Toggle dari UI (Boolean -> Enum)
-    fun toggleTheme(isChecked: Boolean) {
+    // Fungsi baru: Set tema spesifik dari Dialog
+    fun setTheme(newSetting: ThemeSetting) {
         viewModelScope.launch {
-            // Jika user nyalakan Switch -> Simpan DARK
-            // Jika user matikan Switch -> Simpan LIGHT
-            // (Catatan: Penggunaan Switch akan menimpa setting SYSTEM menjadi manual)
-            val newSetting = if (isChecked) ThemeSetting.DARK else ThemeSetting.LIGHT
             themeManager.saveThemeSetting(newSetting)
         }
     }

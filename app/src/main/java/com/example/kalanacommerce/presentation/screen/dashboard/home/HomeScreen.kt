@@ -76,7 +76,7 @@ val allProducts = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExploreScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(modifier: Modifier = Modifier) {
     var searchQuery by remember { mutableStateOf("") }
 
     // Scroll Behavior untuk TopBar yang dinamis (Menghilang/Mengecil saat scroll)
@@ -609,16 +609,16 @@ fun ProductRow(products: List<ProductItem>) {
 
 @Preview(showBackground = true)
 @Composable
-fun ExploreScreenPreviewLight() {
+fun HomeScreenPreviewLight() {
     KalanaCommerceTheme(darkTheme = false) {
-        ExploreScreen()
+        HomeScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ExploreScreenPreviewDark() {
+fun HomeScreenPreviewDark() {
     KalanaCommerceTheme(darkTheme = true) {
-        ExploreScreen()
+        HomeScreen()
     }
 }

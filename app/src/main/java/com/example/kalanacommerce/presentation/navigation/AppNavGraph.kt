@@ -23,6 +23,7 @@ import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
 import com.example.kalanacommerce.presentation.screen.auth.terms.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.ChatScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.AddressPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.EditProfilePage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.SettingsPage
@@ -99,7 +100,7 @@ fun AppNavGraph(
 
         // --- DASHBOARD ---
         composable(Screen.Dashboard.route) {
-            DashboardNavigation(mainNavController = navController)
+            DashboardScreen(mainNavController = navController)
         }
 
         // --- PROTECTED ROUTES ---

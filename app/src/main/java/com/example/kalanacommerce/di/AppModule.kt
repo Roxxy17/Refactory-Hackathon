@@ -20,8 +20,7 @@ val appModule = module {
 
     viewModel {
         SignInViewModel(
-            signInUseCase = get(),
-            sessionManager = get()
+            signInUseCase = get(), sessionManager = get()
         )
     }
 
@@ -35,8 +34,7 @@ val appModule = module {
     // Sekarang membutuhkan 2 parameter: SessionManager & ThemeManager
     viewModel {
         ProfileViewModel(
-            sessionManager = get(), // get() pertama mengambil SessionManager
-            themeManager = get()    // get() kedua mengambil ThemeManager
+            get(), get(), androidContext()
         )
     }
 }

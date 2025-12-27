@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard
+package com.example.kalanacommerce.presentation.screen.dashboard.search
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,9 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.presentation.components.ThemeSelectionDialog
 
 @Composable
 fun ProfileScreen(
@@ -42,18 +43,23 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit,
     onNavigateToAddress: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToTermsAndConditions: () -> Unit // Callback navigasi ke T&C
+    onNavigateToTermsAndConditions: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val user = uiState.user
     val isDarkTheme = uiState.isDarkTheme
     val isLoggedIn = user != null
 
+    // Ambil setting tema saat ini (System/Light/Dark)
+    val currentThemeSetting = uiState.themeSetting
+
+    // State untuk menampilkan Dialog
+    var showThemeDialog by remember { mutableStateOf(false) }
+
     val backgroundColor = MaterialTheme.colorScheme.background
 
     Scaffold(
         containerColor = backgroundColor,
-        // Matikan insets agar gambar header bisa full screen di belakang status bar
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -77,7 +83,6 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Gradient Overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -152,47 +157,44 @@ fun ProfileScreen(
                     // Notifikasi
                     ColorfulMenuItem(
                         icon = Icons.Outlined.Notifications,
-                        iconTint = Color(0xFF9C27B0), // Ungu
+                        iconTint = Color(0xFF9C27B0),
                         iconBg = Color(0xFFF3E5F5),
                         title = "Notifikasi",
                         onClick = onNavigateToSettings
                     )
                     MenuSpacer()
 
-                    // Switch Tema
-                    ThemeToggleItem(isDarkTheme = isDarkTheme) { viewModel.toggleTheme(it) }
+                    // --- ITEM TEMA BARU (Membuka Dialog) ---
+                    ColorfulMenuItem(
+                        icon = if (isDarkTheme) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
+                        iconTint = Color(0xFFFFC107), // Amber
+                        iconBg = Color(0xFFFFF8E1),
+                        title = "Tampilan Aplikasi",
+                        // Menampilkan status saat ini (misal: "System")
+                        subtitle = currentThemeSetting.name.lowercase().replaceFirstChar { it.titlecase() },
+                        onClick = { showThemeDialog = true }
+                    )
                     MenuSpacer()
 
                     // Bahasa
                     ColorfulMenuItem(
                         icon = Icons.Outlined.Language,
-                        iconTint = Color(0xFF009688), // Teal
+                        iconTint = Color(0xFF009688),
                         iconBg = Color(0xFFE0F2F1),
                         title = "Bahasa",
                         subtitle = "Indonesia",
-                        onClick = { /* TODO: Ganti Bahasa */ }
+                        onClick = { /* TODO */ }
                     )
                     MenuSpacer()
 
-                    // --- ITEM BARU: SYARAT & KETENTUAN ---
+                    // Syarat & Ketentuan
                     ColorfulMenuItem(
-                        icon = Icons.Outlined.Description, // Ikon Dokumen
-                        iconTint = Color(0xFF607D8B), // Blue Grey (Warna Netral/Profesional)
-                        iconBg = Color(0xFFECEFF1),   // Background Abu Sangat Muda
+                        icon = Icons.Outlined.Description,
+                        iconTint = Color(0xFF607D8B),
+                        iconBg = Color(0xFFECEFF1),
                         title = "Syarat & Ketentuan",
                         subtitle = "Kebijakan Penggunaan",
-                        onClick = onNavigateToTermsAndConditions // Panggil Navigasi di sini
-                    )
-                    MenuSpacer()
-
-                    // Bantuan Dan Laporan
-                    ColorfulMenuItem(
-                        icon = Icons.Outlined.Language,
-                        iconTint = Color(0xFF009688), // Teal
-                        iconBg = Color(0xFFE0F2F1),
-                        title = "Bantuan & Laporan",
-                        subtitle = "Pusat bantuan & pengaduan",
-                        onClick = { /* TODO: Ganti Bahasa */ }
+                        onClick = onNavigateToTermsAndConditions
                     )
                 }
 
@@ -212,12 +214,72 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }
+
+        // --- THEME CHOOSER DIALOG ---
+        if (showThemeDialog) {
+            // Panggil komponen baru yang lebih bagus
+            ThemeSelectionDialog(
+                currentSetting = currentThemeSetting,
+                onDismiss = { showThemeDialog = false },
+                onSelectTheme = { newSetting ->
+                    viewModel.setTheme(newSetting)
+                    showThemeDialog = false
+                }
+            )
+        }
     }
 }
 
-// ==========================================
-// COMPONENT: PROFILE INFO (GLASS EFFECT)
-// ==========================================
+// --- SUB-COMPONENT: DIALOG TEMA ---
+@Composable
+fun ThemeChooserDialog(
+    currentSetting: ThemeSetting,
+    onDismiss: () -> Unit,
+    onSelectTheme: (ThemeSetting) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pilih Tampilan", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                ThemeSetting.entries.forEach { setting ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (setting == currentSetting),
+                                onClick = { onSelectTheme(setting) }
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (setting == currentSetting),
+                            onClick = { onSelectTheme(setting) }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Nama yang ramah pengguna
+                        val label = when(setting) {
+                            ThemeSetting.SYSTEM -> "Ikuti Sistem"
+                            ThemeSetting.LIGHT -> "Mode Terang"
+                            ThemeSetting.DARK -> "Mode Gelap"
+                        }
+                        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        }
+    )
+}
+
+// ... (Sisa komponen UserInfoSection, GuestInfoSection, dll sama seperti sebelumnya) ...
+// ... Copy paste bagian bawah file lama Anda di sini ...
 
 @Composable
 fun UserInfoSection(userName: String, userEmail: String, initial: String) {
@@ -304,10 +366,6 @@ fun GuestInfoSection(onLoginClick: () -> Unit) {
     }
 }
 
-// ==========================================
-// COMPONENT: STATS BAR
-// ==========================================
-
 @Composable
 fun FloatingStatsBar() {
     Card(
@@ -368,10 +426,6 @@ fun StatsDivider() {
             .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     )
 }
-
-// ==========================================
-// COMPONENT: MENU LIST
-// ==========================================
 
 @Composable
 fun SectionHeader(title: String) {
@@ -451,46 +505,6 @@ fun ColorfulMenuItem(
             contentDescription = null,
             tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
             modifier = Modifier.size(16.dp)
-        )
-    }
-}
-
-@Composable
-fun ThemeToggleItem(isDarkTheme: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFF263238))
-        ) {
-            Icon(
-                imageVector = if (isDarkTheme) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
-                contentDescription = null,
-                tint = Color(0xFFFFCA28),
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = if (isDarkTheme) "Mode Terang" else "Mode Gelap",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        Switch(
-            checked = isDarkTheme,
-            onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-            )
         )
     }
 }

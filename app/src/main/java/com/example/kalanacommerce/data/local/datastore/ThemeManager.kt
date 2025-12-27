@@ -1,18 +1,22 @@
-package com.example.kalanacommerce.data.local.datastore // atau sesuaikan dengan path Anda
+package com.example.kalanacommerce.data.local.datastore
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 // Enum untuk merepresentasikan pilihan tema
 enum class ThemeSetting {
     LIGHT, DARK, SYSTEM
 }
 
-// Buat instance DataStore sama seperti SessionManager
+// Buat instance DataStore
 private val Context.themeDataStore by preferencesDataStore(name = "theme_prefs")
 
 class ThemeManager(private val context: Context) {
@@ -22,8 +26,8 @@ class ThemeManager(private val context: Context) {
         private val THEME_SETTING_KEY = stringPreferencesKey("theme_setting")
     }
 
-    // Flow untuk mendapatkan pilihan tema saat ini. Default-nya adalah SYSTEM.
-    val themeSettingFlow: Flow<ThemeSetting> = context.themeDataStore.data
+    // --- PERBAIKAN UTAMA: Ubah Flow menjadi StateFlow ---
+    val themeSettingFlow: StateFlow<ThemeSetting> = context.themeDataStore.data
         .map { preferences ->
             // Baca string dari DataStore, jika tidak ada, gunakan "SYSTEM"
             val themeName = preferences[THEME_SETTING_KEY] ?: ThemeSetting.SYSTEM.name
@@ -35,6 +39,14 @@ class ThemeManager(private val context: Context) {
                 ThemeSetting.SYSTEM
             }
         }
+        .stateIn(
+            // StateFlow memerlukan CoroutineScope untuk dijalankan
+            scope = CoroutineScope(Dispatchers.IO),
+            // Mulai segera dan tetap aktif selama ada yang mengoleksi
+            started = SharingStarted.WhileSubscribed(5_000),
+            // Nilai awal yang akan ditampilkan sebelum DataStore selesai membaca
+            initialValue = ThemeSetting.SYSTEM
+        )
 
     // Fungsi untuk menyimpan pilihan tema baru dari pengguna
     suspend fun saveThemeSetting(themeSetting: ThemeSetting) {

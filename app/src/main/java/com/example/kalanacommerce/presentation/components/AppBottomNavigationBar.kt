@@ -1,38 +1,41 @@
 package com.example.kalanacommerce.presentation.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.presentation.navigation.BottomBarScreen
+import kotlin.math.roundToInt
 
 @Composable
 fun AppBottomNavigationBar(
@@ -40,267 +43,295 @@ fun AppBottomNavigationBar(
     mainNavController: NavController,
     onItemClick: (BottomBarScreen) -> Unit
 ) {
-    var isFabMenuExpanded by remember { mutableStateOf(false) }
+    // --- 1. CONFIG & STATE ---
+    var isMenuExpanded by remember { mutableStateOf(false) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val primaryColor = Color(0xFF069C6F)
-    val secondaryColor = Color(0xFF027B58)
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
 
-    val fabSize = 64.dp
-    val bottomBarHeight = 60.dp
-    val fabPadding = 12.dp
-    val cornerRadius = 16.dp
+    // --- 2. THEME COLORS ---
+    val isDark = isSystemInDarkTheme()
+    val barBgColor = MaterialTheme.colorScheme.surface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
 
-    // --- PERUBAHAN 1: Definisikan extraHeight di sini agar bisa digunakan di kalkulasi lain ---
-    val extraHeightForCutout = 20.dp
+    // Warna untuk menu popup (Kontras dengan background)
+    val popupBgColor = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface
+    val popupContentColor = MaterialTheme.colorScheme.onSurface
 
-    val fabAnimationSpec = spring<Float>(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessLow
-    )
-    val rotation by animateFloatAsState(
-        targetValue = if (isFabMenuExpanded) 45f else 0f,
-        animationSpec = spring(),
-        label = "fabRotation"
-    )
-    val fabMenuScale by animateFloatAsState(
-        targetValue = if (isFabMenuExpanded) 1f else 0f,
-        animationSpec = fabAnimationSpec,
-        label = "fabMenuScale"
+    // Shadow Colors (Glow Effect)
+    // Di Dark mode, shadow hitam pekat tidak terlihat, jadi kita kurangi atau ganti strategi (disini pakai elevation tonal)
+    val mainShadowColor = if (isDark) Color.Black.copy(alpha = 0.5f) else primaryColor.copy(alpha = 0.25f)
+    val buttonShadowColor = if (isDark) Color.Black.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.15f)
+
+    // Gradient Tombol Tengah
+    val centerButtonGradient = Brush.verticalGradient(
+        colors = listOf(primaryColor, secondaryColor)
     )
 
-    // --- PERUBAHAN 2: Naikkan tinggi Box pembungkus agar FAB yang lebih tinggi tidak terpotong ---
+    // --- 3. ANIMATION STATE (Diagonal Movement) ---
+    // Kita gunakan Transition untuk mengontrol semua animasi menu sekaligus
+    val transition = updateTransition(targetState = isMenuExpanded, label = "MenuTransition")
+
+    // Offset Jarak Diagonal (X dan Y)
+    // Semakin besar angka minus Y, semakin tinggi naiknya.
+    // Semakin besar angka X, semakin lebar menyampingnya.
+    val moveY by transition.animateDp(
+        transitionSpec = { spring(dampingRatio = 0.6f, stiffness = 600f) },
+        label = "OffsetY"
+    ) { if (it) (-90).dp else 0.dp } // Naik 90dp saat expanded
+
+    val moveX by transition.animateDp(
+        transitionSpec = { spring(dampingRatio = 0.6f, stiffness = 600f) },
+        label = "OffsetX"
+    ) { if (it) 75.dp else 0.dp } // Menyamping 75dp saat expanded
+
+    val menuAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 200) },
+        label = "Alpha"
+    ) { if (it) 1f else 0f }
+
+    val menuScale by transition.animateFloat(
+        transitionSpec = { spring(dampingRatio = 0.6f) },
+        label = "Scale"
+    ) { if (it) 1f else 0.5f }
+
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(bottomBarHeight + fabSize / 2 + extraHeightForCutout + 16.dp)
+            .height(180.dp), // Area diperbesar agar animasi diagonal muat
+        contentAlignment = Alignment.BottomCenter
     ) {
-        BottomAppBar(
+
+        // --- 4. POP-UP MENUS (DIAGONAL) ---
+
+        // TOMBOL KIRI (PESAN) - Diagonal Kiri Atas (-X, -Y)
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .drawBehind {
-                    val fabSizePx = fabSize.toPx()
-                    val fabPaddingPx = fabPadding.toPx()
-                    val extraHeightPx = extraHeightForCutout.toPx() // Gunakan variabel
-
-                    val cutoutRadius = (fabSizePx / 2f) + fabPaddingPx
-                    // --- Gunakan extraHeightPx di sini ---
-                    val cutoutHeight = cutoutRadius + extraHeightPx
-                    val handleWidth = cutoutRadius / 1.5f
-
-                    val shadowPath = Path().apply {
-                        // Path untuk shadow harus mengikuti shape lekukan yang lebih tinggi
-                        moveTo((size.width / 2) - cutoutRadius - handleWidth, 0f)
-                        cubicTo(
-                            x1 = (size.width / 2) - cutoutRadius, y1 = 0f,
-                            x2 = (size.width / 2) - cutoutRadius, y2 = cutoutHeight,
-                            x3 = size.width / 2, y3 = cutoutHeight
-                        )
-                        cubicTo(
-                            x1 = (size.width / 2) + cutoutRadius, y1 = cutoutHeight,
-                            x2 = (size.width / 2) + cutoutRadius, y2 = 0f,
-                            x3 = (size.width / 2) + cutoutRadius + handleWidth, y3 = 0f
-                        )
-                    }
-
-                    drawIntoCanvas { canvas ->
-                        val paint = Paint()
-                        val frameworkPaint = paint.asFrameworkPaint()
-                        frameworkPaint.color = Color.Transparent.toArgb()
-                        frameworkPaint.setShadowLayer(
-                            18.dp.toPx(),
-                            0f,
-                            -6f, // Offset Y bayangan mungkin perlu disesuaikan
-                            primaryColor.copy(alpha = 0.5f).toArgb()
-                        )
-                        canvas.drawPath(shadowPath, paint)
-                    }
-                }
-                .clip(
-                    convexBottomBarShape(
-                        fabSize = fabSize,
-                        fabPadding = fabPadding,
-                        cornerRadius = cornerRadius,
-                        // Gunakan variabel di sini
-                        extraHeight = extraHeightForCutout
-                    )
-                ),
-            containerColor = Color.White,
-            tonalElevation = 0.dp
+                .offset { IntOffset(x = -moveX.toPx().roundToInt(), y = moveY.toPx().roundToInt()) }
+                .align(Alignment.BottomCenter) // Start dari tengah bawah
+                .padding(bottom = 24.dp) // Posisi awal di belakang tombol FAB
+                .alpha(menuAlpha)
+                .scale(menuScale)
         ) {
-            // ... (Row dan NavigationBarItem tidak berubah)
-            val items = listOf(
-                BottomBarScreen.Eksplor,
-                BottomBarScreen.Pencarian,
-                BottomBarScreen.Riwayat,
-                BottomBarScreen.Profile
+            DiagonalMenuButton(
+                icon = Icons.Default.Chat,
+                label = "Pesan",
+                bgColor = popupBgColor,
+                textColor = popupContentColor,
+                iconColor = primaryColor,
+                shadowColor = buttonShadowColor,
+                onClick = {
+                    isMenuExpanded = false
+                    mainNavController.navigate("chat_screen")
+                }
             )
+        }
+
+        // TOMBOL KANAN (KERANJANG) - Diagonal Kanan Atas (+X, -Y)
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(x = moveX.toPx().roundToInt(), y = moveY.toPx().roundToInt()) }
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+                .alpha(menuAlpha)
+                .scale(menuScale)
+        ) {
+            DiagonalMenuButton(
+                icon = Icons.Default.ShoppingCart,
+                label = "Keranjang",
+                bgColor = popupBgColor,
+                textColor = popupContentColor,
+                iconColor = primaryColor,
+                shadowColor = buttonShadowColor,
+                onClick = {
+                    isMenuExpanded = false
+                    mainNavController.navigate("transaction_screen")
+                }
+            )
+        }
+
+        // --- 5. MAIN BAR (Navigation) ---
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .height(70.dp)
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 20.dp, // Bayangan Besar
+                    shape = RoundedCornerShape(24.dp),
+                    spotColor = mainShadowColor, // Warna bayangan (Hijau pudar di light mode)
+                    ambientColor = mainShadowColor
+                )
+                .align(Alignment.BottomCenter),
+            color = barBgColor,
+            tonalElevation = 3.dp, // Penting untuk Dark Mode
+            shape = RoundedCornerShape(24.dp),
+        ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NavigationBarItem(
-                    selected = currentRoute == items[0].route,
-                    onClick = { onItemClick(items[0]) },
-                    icon = { Icon(imageVector = items[0].icon, contentDescription = items[0].title) },
-                    label = if (currentRoute == items[0].route) { { Text(text = items[0].title) } } else null,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryColor, selectedTextColor = primaryColor,
-                        unselectedIconColor = Color.Gray, indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    selected = currentRoute == items[1].route,
-                    onClick = { onItemClick(items[1]) },
-                    icon = { Icon(imageVector = items[1].icon, contentDescription = items[1].title) },
-                    label = if (currentRoute == items[1].route) { { Text(text = items[1].title) } } else null,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryColor, selectedTextColor = primaryColor,
-                        unselectedIconColor = Color.Gray, indicatorColor = Color.Transparent
-                    )
-                )
-                Spacer(modifier = Modifier.width(fabSize + 8.dp))
-                NavigationBarItem(
-                    selected = currentRoute == items[2].route,
-                    onClick = { onItemClick(items[2]) },
-                    icon = { Icon(imageVector = items[2].icon, contentDescription = items[2].title) },
-                    label = if (currentRoute == items[2].route) { { Text(text = items[2].title) } } else null,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryColor, selectedTextColor = primaryColor,
-                        unselectedIconColor = Color.Gray, indicatorColor = Color.Transparent
-                    )
-                )
-                NavigationBarItem(
-                    selected = currentRoute == items[3].route,
-                    onClick = { onItemClick(items[3]) },
-                    icon = { Icon(imageVector = items[3].icon, contentDescription = items[3].title) },
-                    label = if (currentRoute == items[3].route) { { Text(text = items[3].title) } } else null,
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = primaryColor, selectedTextColor = primaryColor,
-                        unselectedIconColor = Color.Gray, indicatorColor = Color.Transparent
-                    )
-                )
+                // KIRI
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    NavBarItem(BottomBarScreen.Eksplor, currentRoute, primaryColor) { onItemClick(it) }
+                    NavBarItem(BottomBarScreen.Pencarian, currentRoute, primaryColor) { onItemClick(it) }
+                }
+
+                // SPACER TENGAH
+                Spacer(modifier = Modifier.width(68.dp))
+
+                // KANAN
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    NavBarItem(BottomBarScreen.Riwayat, currentRoute, primaryColor) { onItemClick(it) }
+                    NavBarItem(BottomBarScreen.Profile, currentRoute, primaryColor) { onItemClick(it) }
+                }
             }
         }
 
-        // --- PERUBAHAN 3: Naikkan posisi Box FAB dengan offset baru ---
-        val fabVerticalOffset = -(bottomBarHeight - fabPadding) / 2 - extraHeightForCutout
+        // --- 6. CENTER FAB (Floating Action Button) ---
+        val rotation by animateFloatAsState(
+            targetValue = if (isMenuExpanded) 135f else 0f,
+            animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
+            label = "FabRot"
+        )
+        val fabScale by animateFloatAsState(targetValue = if (isMenuExpanded) 0.9f else 1f, label = "FabScale")
 
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                // Gunakan offset vertikal yang sudah dihitung
-                .offset(y = fabVerticalOffset)
-        ) {
-            // ... (Sub-FAB tidak berubah)
-            FloatingActionButton(
-                onClick = {
-                    mainNavController.navigate("chat_screen")
-                    isFabMenuExpanded = false
-                },
-                modifier = Modifier
-                    .size(56.dp)
-                    .align(Alignment.Center)
-                    .scale(fabMenuScale)
-                    .offset(x = (-80).dp, y = (-20).dp),
-                shape = CircleShape,
-                containerColor = Color.White
-            ) {
-                Icon(Icons.Default.Chat, contentDescription = "Pesan", tint = primaryColor)
-            }
-
-            FloatingActionButton(
-                onClick = {
-                    mainNavController.navigate("transaction_screen")
-                    isFabMenuExpanded = false
-                },
-                modifier = Modifier
-                    .size(56.dp)
-                    .align(Alignment.Center)
-                    .scale(fabMenuScale)
-                    .offset(x = 80.dp, y = (-20).dp),
-                shape = CircleShape,
-                containerColor = Color.White
-            ) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = "Keranjang", tint = primaryColor)
-            }
-
-            // ... (Tumpukan FAB utama tidak berubah)
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(fabSize)
-                    .align(Alignment.Center)
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        primaryColor.copy(alpha = 0.5f),
-                                        Color.Transparent
-                                    ),
-                                    radius = size.width / 2.0f
-                                )
-                            )
-                        }
-                )
-                FloatingActionButton(
-                    onClick = { isFabMenuExpanded = !isFabMenuExpanded },
-                    modifier = Modifier.fillMaxSize(),
+                .padding(bottom = 40.dp) // Naikkan posisi agar duduk di atas bar
+                .size(64.dp)
+                .scale(fabScale)
+                .shadow(
+                    elevation = 12.dp,
                     shape = CircleShape,
-                    containerColor = Color.Transparent,
-                    contentColor = Color.White,
-                    elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(primaryColor, secondaryColor)
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isFabMenuExpanded) Icons.Default.Close else Icons.Default.Add,
-                            contentDescription = if (isFabMenuExpanded) "Tutup Menu" else "Buka Menu",
-                            modifier = Modifier
-                                .size(32.dp)
-                                .rotate(rotation)
-                        )
-                    }
-                }
+                    spotColor = primaryColor.copy(alpha = 0.6f) // Glowing shadow hijau
+                )
+                .clip(CircleShape)
+                .background(centerButtonGradient)
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    isMenuExpanded = !isMenuExpanded
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Menu",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(32.dp)
+                    .rotate(rotation)
+            )
+        }
+    }
+}
+
+// --- SUB COMPONENT BARU: DIAGONAL BUTTON ---
+@Composable
+fun DiagonalMenuButton(
+    icon: ImageVector,
+    label: String,
+    bgColor: Color,
+    textColor: Color,
+    iconColor: Color,
+    shadowColor: Color,
+    onClick: () -> Unit
+) {
+    // Kita buat layout vertikal (Icon besar di atas, Label kecil di bawah)
+    // agar terlihat seperti "Satelit" yang rapi
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.clickable { onClick() }
+    ) {
+        // Lingkaran Icon
+        Box(
+            modifier = Modifier
+                .size(50.dp) // Ukuran tombol satelit
+                .shadow(8.dp, CircleShape, spotColor = shadowColor)
+                .background(bgColor, CircleShape)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Label dengan background tipis agar terbaca jelas
+        Surface(
+            color = bgColor.copy(alpha = 0.9f),
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 2.dp,
+            modifier = Modifier.height(22.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
             }
         }
     }
 }
 
-// Pastikan fungsi 'convexBottomBarShape' didefinisikan di file lain
-// dan menerima parameter 'extraHeight'
-
-@Preview(showBackground = true, backgroundColor = 0xFFF0F0F0)
 @Composable
-fun AppBottomNavigationBarPreview() {
-    val dashboardNavController = rememberNavController()
-    val mainNavController = rememberNavController()
-    Scaffold(
-        bottomBar = {
-            AppBottomNavigationBar(
-                navController = dashboardNavController,
-                mainNavController = mainNavController,
-                onItemClick = { /* do nothing */ }
+fun NavBarItem(
+    screen: BottomBarScreen,
+    currentRoute: String?,
+    activeColor: Color,
+    onClick: (BottomBarScreen) -> Unit
+) {
+    val isSelected = currentRoute == screen.route
+    val haptic = LocalHapticFeedback.current
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+
+    Box(
+        modifier = Modifier
+            .height(50.dp)
+            .width(60.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                if (!isSelected) {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick(screen)
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = screen.icon,
+                contentDescription = screen.title,
+                tint = if (isSelected) activeColor else inactiveColor,
+                modifier = Modifier
+                    .size(26.dp)
+                    .scale(if (isSelected) 1.1f else 1.0f)
             )
+            AnimatedVisibility(visible = isSelected) {
+                Text(
+                    text = screen.title,
+                    color = activeColor,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
-    ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues))
     }
 }
