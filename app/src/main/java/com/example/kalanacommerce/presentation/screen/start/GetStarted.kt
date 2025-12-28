@@ -35,7 +35,7 @@ import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 private enum class ScreenState { Idle, Entered }
 
 @Composable
-fun FirstScreen(
+fun GetStarted(
     onNavigateToLogin: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
@@ -289,9 +289,9 @@ fun FirstScreen(
 
 @Preview(showBackground = true, heightDp = 800)
 @Composable
-fun FirstScreenPreview() {
+fun GetStartedPreview() {
     KalanaCommerceTheme(darkTheme = false) { // Coba ganti true untuk preview dark mode
-        FirstScreen(
+        GetStarted(
             onNavigateToLogin = {},
             onNavigateToRegister = {}
         )

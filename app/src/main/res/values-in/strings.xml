@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KalanaCommerce</string>
+
+    <string name="login_welcome_back">Selamat Datang Kembali!</string>
+    <string name="email">Email</string>
+    <string name="password">Kata Sandi</string>
+    <string name="remember_me">Ingat saya</string>
+    <string name="forgot_password">Lupa Kata Sandi?</string>
+    <string name="sign_in">Masuk</string>
+    <string name="or_continue_with">ATAU</string>
+    <string name="dont_have_account">Belum punya akun?</string>
+    <string name="sign_up">Daftar</string>
+    <string name="welcome_back_user">Selamat datang kembali, %1$s!</string>
+
+    // Profile Screen
+    <string name="language">Bahasa</string>
+
+    // language selector
+    <string name="choose_language">Pilih Bahasa</string>
+    <string name="cancel">Batal</string>
+</resources>

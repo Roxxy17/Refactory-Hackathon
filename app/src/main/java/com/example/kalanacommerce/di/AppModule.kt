@@ -5,6 +5,7 @@ import com.example.kalanacommerce.presentation.screen.auth.register.RegisterView
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.core.util.DefaultDispatcherProvider
 import com.example.kalanacommerce.core.util.DispatcherProvider
+import com.example.kalanacommerce.data.local.datastore.LanguageManager
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import org.koin.android.ext.koin.androidContext // Import untuk androidContext()
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -17,6 +18,7 @@ val appModule = module {
     // --- 1. DAFTARKAN ThemeManager DI SINI ---
     // (Wajib ada agar bisa di-inject ke ViewModel dan Activity)
     single { ThemeManager(androidContext()) }
+    single { LanguageManager(androidContext()) }
 
     viewModel {
         SignInViewModel(
@@ -30,11 +32,13 @@ val appModule = module {
         )
     }
 
-    // --- 2. UPDATE ProfileViewModel DI SINI ---
-    // Sekarang membutuhkan 2 parameter: SessionManager & ThemeManager
+    // --- PERBAIKAN DI SINI ---
     viewModel {
         ProfileViewModel(
-            get(), get(), androidContext()
+            sessionManager = get(),
+            themeManager = get(),
+            languageManager = get(),
+            context = androidContext()
         )
     }
 }

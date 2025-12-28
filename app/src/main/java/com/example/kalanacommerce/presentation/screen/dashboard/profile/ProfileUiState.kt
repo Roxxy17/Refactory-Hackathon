@@ -7,6 +7,6 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val user: UserDto? = null,
     val isDarkTheme: Boolean = false,
-    // Menambahkan field ini agar UI bisa menampilkan status tema saat ini
-    val themeSetting: ThemeSetting = ThemeSetting.SYSTEM
+    val themeSetting: ThemeSetting = ThemeSetting.SYSTEM,
+    val currentLanguage: String = "en"
 )

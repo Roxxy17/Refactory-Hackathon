@@ -17,12 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,8 +34,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -44,6 +43,7 @@ import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.presentation.components.CustomToast
+import com.example.kalanacommerce.presentation.components.LanguageSelectionDialog
 import com.example.kalanacommerce.presentation.components.ToastType
 import com.example.kalanacommerce.presentation.components.ThemeSelectionDialog
 
@@ -74,6 +74,40 @@ fun ProfileScreen(
     val scrollState = rememberScrollState()
     val backgroundColor = MaterialTheme.colorScheme.background
     val systemInDark = isSystemInDarkTheme()
+
+    // State untuk memunculkan Dialog Bahasa
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
+    // Di dalam ProfileScreen.kt
+
+    var isInitialLoad by rememberSaveable { mutableStateOf(true) }
+
+    LaunchedEffect(uiState.currentLanguage) {
+        if (!isInitialLoad) {
+            // Tampilkan toast hanya jika bahasa berubah (bukan saat aplikasi baru dibuka)
+            toastMessage = if (uiState.currentLanguage == "id")
+                "Bahasa diganti ke Indonesia 🇮🇩"
+            else
+                "Language changed to English 🇺🇸"
+            toastType = ToastType.Success
+            showToast = true
+        }
+        isInitialLoad = false
+    }
+
+// 2. LOGIC DIALOG (Pastikan pengecekan kode sama)
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = uiState.currentLanguage,
+            onDismiss = { showLanguageDialog = false },
+            onLanguageSelected = { code ->
+                if (code != uiState.currentLanguage) {
+                    viewModel.setLanguage(code)
+                }
+                showLanguageDialog = false
+            }
+        )
+    }
 
     // Logika Aktif Gelap/Terang (Gabungan Setting App & System)
     val isDarkActive = remember(currentThemeSetting, systemInDark) {
@@ -150,12 +184,9 @@ fun ProfileScreen(
             Box(
                 contentAlignment = Alignment.Center, modifier = Modifier.zIndex(2f)
             ) {
+                // User Info Section
                 if (isLoggedIn) {
-                    UserInfoSection(
-                        userName = user?.name ?: "Pengguna",
-                        userEmail = user?.email ?: "",
-                        initial = user?.name?.take(1)?.uppercase() ?: "U"
-                    )
+                    UserInfoSection(user?.name ?: "User", user?.email ?: "", user?.name?.take(1) ?: "U")
                 } else {
                     GuestInfoSection(onLoginClick = onAuthAction)
                 }
@@ -247,9 +278,12 @@ fun ProfileScreen(
                             icon = Icons.Outlined.Language,
                             iconTint = Color(0xFF009688),
                             iconBg = Color(0xFFE0F2F1),
-                            title = "Bahasa",
-                            subtitle = "Indonesia",
-                            onClick = { /* TODO: Logic Ganti Bahasa */ }
+                            title = stringResource(R.string.language),
+                            subtitle = if (uiState.currentLanguage == "id") "Bahasa Indonesia" else "English",
+                            onClick = {
+                                // BUKA DIALOG SAAT DIKLIK
+                                showLanguageDialog = true
+                            }
                         )
                         MenuSpacer()
 

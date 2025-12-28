@@ -27,7 +27,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.AddressPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.EditProfilePage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.SettingsPage
-import com.example.kalanacommerce.presentation.screen.start.FirstScreen
+import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
 
@@ -149,7 +149,7 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
         route = Graph.Auth
     ) {
         composable(Screen.Welcome.route) {
-            FirstScreen(
+            GetStarted(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) }
             )

@@ -3,6 +3,7 @@ package com.example.kalanacommerce.presentation.screen.dashboard.profile
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kalanacommerce.data.local.datastore.LanguageManager
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class ProfileViewModel(
     private val sessionManager: SessionManager,
     private val themeManager: ThemeManager,
+    private val languageManager: LanguageManager,
     private val context: Context
 ) : ViewModel() {
 
@@ -29,8 +31,9 @@ class ProfileViewModel(
     val uiState: StateFlow<ProfileUiState> =
         combine(
             sessionManager.userFlow,
-            themeManager.themeSettingFlow
-        ) { user, themeSetting ->
+            themeManager.themeSettingFlow,
+            languageManager.languageFlow
+        ) { user, themeSetting, lang ->
 
             // Tentukan apakah UI harus render Dark Mode atau Light Mode
             val isDark = when (themeSetting) {
@@ -48,7 +51,8 @@ class ProfileViewModel(
                 user = user,
                 isLoading = false,
                 isDarkTheme = isDark,
-                themeSetting = themeSetting // Update field ini
+                themeSetting = themeSetting,
+                currentLanguage = lang// Update field ini
             )
         }.stateIn(
             scope = viewModelScope,
@@ -64,6 +68,13 @@ class ProfileViewModel(
     fun setTheme(newSetting: ThemeSetting) {
         viewModelScope.launch {
             themeManager.saveThemeSetting(newSetting)
+        }
+    }
+
+    // Fungsi ganti bahasa
+    fun setLanguage(code: String) {
+        viewModelScope.launch {
+            languageManager.setLanguage(code)
         }
     }
 }
