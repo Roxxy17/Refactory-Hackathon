@@ -2,6 +2,15 @@
 <resources>
     <string name="app_name">KalanaCommerce</string>
 
+    // Get Started
+    <string name="get_started_logo_desc">Logo Kalana</string>
+    <string name="get_started_title">Kesegaran Terpercaya</string>
+    <string name="get_started_desc">Nikmati produk berkualitas terbaik langsung\ndari alam ke depan pintu Anda.</string>
+    <string name="get_started_btn">Mulai Sekarang</string>
+    <string name="get_started_have_account">Sudah punya akun?</string>
+    <string name="get_started_sign_in">Masuk</string>
+
+    // Sign In
     <string name="login_welcome_back">Selamat Datang Kembali!</string>
     <string name="email">Email</string>
     <string name="password">Kata Sandi</string>
@@ -12,6 +21,7 @@
     <string name="dont_have_account">Belum punya akun?</string>
     <string name="sign_up">Daftar</string>
     <string name="welcome_back_user">Selamat datang kembali, %1$s!</string>
+    <string name="Sign_in_please_sign_in_to_your_account">Silahkan masuk ke akun anda</string>
 
     // Profile Screen
     <string name="language">Bahasa</string>
@@ -52,6 +62,25 @@
     <string name="keluar_aplikasi">Keluar</string>
     <string name="masuk_sekarang">Masuk Sekarang</string>
 
+    // Help Center
+    <string name="help_subtitle">Apa yang bisa kami bantu? Pilih metode kontak di bawah atau cek FAQ kami.</string>
+    <string name="faq_title">Pertanyaan Umum (FAQ)</string>
+    <string name="faq_q1">Kapan saya bisa mengambil pesanan?</string>
+    <string name="faq_a1">Pantau status di menu \'Pesanan Saya\'. Jika status berubah menjadi \'Siap Diambil\', silakan datang ke toko kami dan tunjukkan bukti pesanan kepada petugas.</string>
+    <string name="faq_q2">Metode pembayaran apa saja yang tersedia?</string>
+    <string name="faq_a2">Kami mendukung Transfer Bank (BCA, Mandiri, BRI), E-Wallet (GoPay, OVO, Dana), dan Kartu Kredit.</string>
+    <string name="faq_q3">Bagaimana cara mengajukan pengembalian dana?</string>
+    <string name="faq_a3">Komplain dapat diajukan maksimal 24 jam. Disarankan untuk mengecek kondisi barang langsung di tempat saat pengambilan. Hubungi admin via WhatsApp untuk bantuan.</string>
+    <string name="faq_q4">Apakah tersedia layanan pesan antar (delivery)?</string>
+    <string name="faq_a4">Mohon maaf, saat ini kami hanya melayani sistem **Ambil Sendiri (Self Pick-up)**. Pesanan harus diambil langsung di lokasi toko kami.</string>
+    <string name="faq_q5">Di mana lokasi pengambilan barang?</string>
+    <string name="faq_a5">Lokasi toko tercantum di halaman \'Kontak\' atau pada detail pesanan Anda. Pastikan datang saat jam operasional toko.</string>
+    <string name="faq_q6">Lupa kata sandi akun?</string>
+    <string name="faq_a6">Klik \'Lupa Password\' di halaman login, masukkan email Anda, dan kami akan mengirimkan kode OTP untuk reset kata sandi.</string>
+    <string name="visit_us">Kunjungi kita</string>
+    <string name="website">Website</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="chat_admin">Chat Admin</string>
 
     // Terms And Conditions
     <string name="terms_conditions"><![CDATA[Syarat & Ketentuan]]></string>
@@ -111,6 +140,5 @@
     <string name="theme_option_dark_desc">Nyaman di mata, hemat baterai pada layar OLED.</string>
     <string name="close_content_description">Tutup</string>
     <string name="selected_content_description">Terpilih</string>
-
 
 </resources>

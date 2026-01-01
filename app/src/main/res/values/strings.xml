@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+    <resources>
     <string name="app_name">KalanaCommerce</string>
 
+    // Get Started
+    <string name="get_started_logo_desc">Kalana Logo</string>
+    <string name="get_started_title">Freshness You Can Trust</string>
+    <string name="get_started_desc">Experience the best quality products directly\nfrom nature to your doorstep.</string>
+    <string name="get_started_btn">Get Started</string>
+    <string name="get_started_have_account">Already have an account?</string>
+    <string name="get_started_sign_in">Sign In</string>
+
+    // Sign In
     <string name="login_welcome_back">Welcome Back!</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -12,6 +21,7 @@
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="sign_up">Sign up</string>
     <string name="welcome_back_user">Welcome back, %1$s!</string>
+    <string name="Sign_in_please_sign_in_to_your_account">Please sign in to your account</string>
 
     // Profile Screen
     <string name="language">Language</string>
@@ -51,6 +61,27 @@
     <string name="voucher">Vouchers</string>
     <string name="keluar_aplikasi">Log Out</string>
     <string name="masuk_sekarang">Log In Now</string>
+
+    // Help Center
+    <string name="help_subtitle">How can we help you today? Select a contact method below or check our FAQ.</string>
+    <string name="faq_title">Frequently Asked Questions</string>
+    <string name="faq_q1">When can I pick up my order?</string>
+    <string name="faq_a1">Check the \'My Orders\' menu. Once the status changes to \'Ready for Pickup\', please come to our store and show the order proof to our staff.</string>
+    <string name="faq_q2">What payment methods are available?</string>
+    <string name="faq_a2">We support Bank Transfer (BCA, Mandiri, BRI), E-Wallet (GoPay, OVO, Dana), and Credit Card.</string>
+    <string name="faq_q3">How do I request a refund?</string>
+    <string name="faq_a3">Refund requests are valid for 24 hours. We highly recommend checking the item condition immediately upon pickup. Contact admin via WhatsApp for assistance.</string>
+    <string name="faq_q4">Is home delivery available?</string>
+    <string name="faq_a4">We apologize, currently we only support **Self Pick-up**. Orders must be collected directly at our store location.</string>
+    <string name="faq_q5">Where is the pickup location?</string>
+    <string name="faq_a5">The store location is listed on the \'Contact\' page or in your order details. Please ensure you visit during opening hours.</string>
+    <string name="faq_q6">Forgot your password?</string>
+    <string name="faq_a6">Click \'Forgot Password\' on the login page, enter your email, and we will send an OTP code to reset your password.</string>
+    <string name="visit_us">Visit Us</string>
+    <string name="website">Website</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="chat_admin">Chat Admin</string>
+
 
     // Terms And Conditions
     <string name="terms_conditions"><![CDATA[Terms & Conditions]]></string>

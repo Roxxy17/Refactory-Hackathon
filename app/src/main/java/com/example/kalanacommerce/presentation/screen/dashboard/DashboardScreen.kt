@@ -93,7 +93,8 @@ fun DashboardScreen(
                         onNavigateToTermsAndConditions = { mainNavController.navigate(Screen.TermsAndConditions.route) },
                         onNavigateToForgotPassword = {
                             mainNavController.navigate(Screen.ForgotPassword.route)
-                        }
+                        },
+                        onNavigateToHelpCenter = { mainNavController.navigate(Screen.HelpCenter.route)}
                     )
                 }
             }

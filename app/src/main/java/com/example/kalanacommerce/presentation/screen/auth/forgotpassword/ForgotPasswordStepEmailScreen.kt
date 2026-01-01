@@ -1,8 +1,10 @@
 package com.example.kalanacommerce.presentation.screen.auth.forgotpassword
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +23,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -38,123 +42,174 @@ import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 @Composable
 fun ForgotPasswordStepEmailScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToOtp: (String) -> Unit, // Parameter untuk membawa email ke screen selanjutnya
+    onNavigateToOtp: (String) -> Unit,
     viewModel: ForgotPasswordViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+    // --- SETUP ANIMASI BLOB ---
+    val blobColor1 = MaterialTheme.colorScheme.primary
+    val blobColor2 = MaterialTheme.colorScheme.secondary
+    val backgroundColor = MaterialTheme.colorScheme.background
+
+    val infiniteTransition = rememberInfiniteTransition(label = "Infinite BG")
+
+    val blob1Scale by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob1"
+    )
+
+    val blob2Offset by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 50f,
+        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob2"
+    )
+
+    // --- ROOT CONTAINER (BOX) ---
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor)
+    ) {
+        // --- LAYER 1: BACKGROUND ANIMATION ---
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Blob Atas Kiri (Alpha 0.4f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent),
+                    center = Offset(0f, 0f),
+                    radius = size.width * 0.8f * blob1Scale
+                ),
+                center = Offset(0f, 0f),
+                radius = size.width * 0.8f * blob1Scale
             )
-        },
-        modifier = Modifier.imePadding()
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
-            // --- STATE 1: FORM INPUT EMAIL ---
-            AnimatedVisibility(visible = !uiState.isSuccess, enter = fadeIn(), exit = fadeOut()) {
-                Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    IconHeader(Icons.Filled.LockReset, MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(32.dp))
+            // Blob Bawah Kanan (Alpha 0.5f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent),
+                    center = Offset(size.width, size.height),
+                    radius = size.width * 0.9f
+                ),
+                center = Offset(size.width - blob2Offset, size.height + blob2Offset),
+                radius = size.width * 0.9f
+            )
+        }
 
-                    Text(
-                        text = stringResource(R.string.forgot_password_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.forgot_password_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(40.dp))
+        // --- LAYER 2: KONTEN UTAMA ---
+        Scaffold(
+            containerColor = Color.Transparent, // PENTING: Transparan agar blob terlihat
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            },
+            modifier = Modifier.imePadding()
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
-                    OutlinedTextField(
-                        value = uiState.email,
-                        onValueChange = { viewModel.onEmailChange(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.email_address)) },
-                        placeholder = { Text(stringResource(R.string.email_placeholder)) },
-                        leadingIcon = { Icon(Icons.Outlined.Email, null) },
-                        trailingIcon = {
-                            if (uiState.email.isNotEmpty()) {
-                                IconButton({ viewModel.onEmailChange("") }) { Icon(Icons.Filled.Clear, null) }
-                            }
-                        },
-                        isError = !uiState.isEmailValid,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Button(
-                        onClick = { viewModel.onSubmit() },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        enabled = !uiState.isLoading && uiState.email.isNotEmpty()
+                // --- STATE 1: FORM INPUT EMAIL ---
+                AnimatedVisibility(visible = !uiState.isSuccess, enter = fadeIn(), exit = fadeOut()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text(stringResource(R.string.send_reset_link))
+                        Spacer(modifier = Modifier.height(20.dp))
+                        IconHeader(Icons.Filled.LockReset, MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Text(
+                            text = stringResource(R.string.forgot_password_title),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.forgot_password_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(40.dp))
+
+                        OutlinedTextField(
+                            value = uiState.email,
+                            onValueChange = { viewModel.onEmailChange(it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.email_address)) },
+                            placeholder = { Text(stringResource(R.string.email_placeholder)) },
+                            leadingIcon = { Icon(Icons.Outlined.Email, null) },
+                            trailingIcon = {
+                                if (uiState.email.isNotEmpty()) {
+                                    IconButton({ viewModel.onEmailChange("") }) { Icon(Icons.Filled.Clear, null) }
+                                }
+                            },
+                            isError = !uiState.isEmailValid,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = { viewModel.onSubmit() },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = !uiState.isLoading && uiState.email.isNotEmpty()
+                        ) {
+                            if (uiState.isLoading) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text(stringResource(R.string.send_reset_link))
+                            }
                         }
                     }
                 }
-            }
 
-            // --- STATE 2: EMAIL SENT SUCCESS ---
-            AnimatedVisibility(visible = uiState.isSuccess, enter = fadeIn(), exit = fadeOut()) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    IconHeader(Icons.Outlined.MarkEmailRead, MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Text(
-                        text = stringResource(R.string.check_your_email),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = stringResource(R.string.email_sent_desc, uiState.email),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(40.dp))
-
-                    // TOMBOL LANJUT KE STEP OTP
-                    Button(
-                        onClick = { onNavigateToOtp(uiState.email) },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp)
+                // --- STATE 2: EMAIL SENT SUCCESS ---
+                AnimatedVisibility(visible = uiState.isSuccess, enter = fadeIn(), exit = fadeOut()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Masukkan Kode OTP") // Bisa dipindah ke strings.xml
+                        IconHeader(Icons.Outlined.MarkEmailRead, MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Text(
+                            text = stringResource(R.string.check_your_email),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.email_sent_desc, uiState.email),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(40.dp))
+
+                        Button(
+                            onClick = { onNavigateToOtp(uiState.email) },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Masukkan Kode OTP")
+                        }
                     }
                 }
             }

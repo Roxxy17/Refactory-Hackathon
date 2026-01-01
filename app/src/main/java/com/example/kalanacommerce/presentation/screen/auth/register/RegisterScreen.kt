@@ -1,8 +1,15 @@
 package com.example.kalanacommerce.presentation.screen.auth.register
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,9 +30,12 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -59,6 +69,9 @@ fun RegisterScreen(
     onNavigateToTerms: () -> Unit = {},
     viewModel: RegisterViewModel = koinViewModel()
 ) {
+    val blobColor1 = MaterialTheme.colorScheme.primary
+    val blobColor2 = MaterialTheme.colorScheme.secondary
+
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -109,12 +122,53 @@ fun RegisterScreen(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "Infinite BG")
+
+    // Animasi posisi/skala background blob 1
+    val blob1Scale by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob1"
+    )
+
+    // Animasi posisi background blob 2
+    val blob2Offset by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 50f,
+        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob2"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
+        // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Blob Atas Kiri
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent),
+                    center = Offset(0f, 0f),
+                    radius = size.width * 0.8f * blob1Scale
+                ),
+                center = Offset(0f, 0f),
+                radius = size.width * 0.8f * blob1Scale
+            )
+
+            // Blob Bawah Kanan
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent),
+                    center = Offset(size.width, size.height),
+                    radius = size.width * 0.9f
+                ),
+                center = Offset(size.width - blob2Offset, size.height + blob2Offset),
+                radius = size.width * 0.9f
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()

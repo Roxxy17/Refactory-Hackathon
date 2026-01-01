@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -127,7 +128,7 @@ fun GetStarted(
             // Blob Atas Kiri
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(blobColor1.copy(alpha = 0.15f), Color.Transparent),
+                    colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent),
                     center = Offset(0f, 0f),
                     radius = size.width * 0.8f * blob1Scale
                 ),
@@ -138,7 +139,7 @@ fun GetStarted(
             // Blob Bawah Kanan
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(blobColor2.copy(alpha = 0.2f), Color.Transparent),
+                    colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent),
                     center = Offset(size.width, size.height),
                     radius = size.width * 0.9f
                 ),
@@ -176,11 +177,8 @@ fun GetStarted(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_logo_panjang),
-                        contentDescription = "Kalana Logo",
+                        contentDescription = stringResource(R.string.get_started_logo_desc),
                         modifier = Modifier.width(220.dp)
-                        // Opsional: Jika logo Anda hitam pekat dan hilang di dark mode,
-                        // Anda bisa menambahkan colorFilter untuk mengubah warnanya:
-                        // colorFilter = ColorFilter.tint(textColor)
                     )
                 }
 
@@ -194,7 +192,7 @@ fun GetStarted(
                         .alpha(textAlpha)
                 ) {
                     Text(
-                        text = "Freshness You Can Trust",
+                        text = stringResource(R.string.get_started_title),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = textColor // MENGGUNAKAN WARNA TEMA
@@ -204,7 +202,7 @@ fun GetStarted(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Experience the best quality products directly\nfrom nature to your doorstep.",
+                        text = stringResource(R.string.get_started_desc),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = textColor.copy(alpha = 0.7f), // MENGGUNAKAN WARNA TEMA
                             fontWeight = FontWeight.Normal,
@@ -242,7 +240,7 @@ fun GetStarted(
                     )
                 ) {
                     Text(
-                        "Get Started",
+                        stringResource(R.string.get_started_btn),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary
@@ -264,7 +262,7 @@ fun GetStarted(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Already have an account?",
+                        text = stringResource(R.string.get_started_have_account),
                         color = textColor.copy(alpha = 0.6f), // MENGGUNAKAN WARNA TEMA
                         fontSize = 14.sp
                     )
@@ -273,7 +271,7 @@ fun GetStarted(
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         Text(
-                            text = "Sign In",
+                            text = stringResource(R.string.get_started_sign_in),
                             color = primaryColor, // MENGGUNAKAN WARNA TEMA
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp

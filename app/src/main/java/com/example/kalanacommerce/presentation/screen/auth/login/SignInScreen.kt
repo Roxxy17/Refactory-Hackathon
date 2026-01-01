@@ -1,8 +1,15 @@
 package com.example.kalanacommerce.presentation.screen.auth.login
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +27,7 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.AutofillType
@@ -51,6 +59,8 @@ import com.example.kalanacommerce.presentation.theme.*
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -60,6 +70,10 @@ fun LoginScreen(
     onSignInSuccess: () -> Unit,
     viewModel: SignInViewModel = koinViewModel()
 ) {
+
+    val blobColor1 = MaterialTheme.colorScheme.primary
+    val blobColor2 = MaterialTheme.colorScheme.secondary
+
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -122,12 +136,53 @@ fun LoginScreen(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "Infinite BG")
+
+    // Animasi posisi/skala background blob 1
+    val blob1Scale by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob1"
+    )
+
+    // Animasi posisi background blob 2
+    val blob2Offset by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 50f,
+        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "Blob2"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
+        // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Blob Atas Kiri
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent),
+                    center = Offset(0f, 0f),
+                    radius = size.width * 0.8f * blob1Scale
+                ),
+                center = Offset(0f, 0f),
+                radius = size.width * 0.8f * blob1Scale
+            )
+
+            // Blob Bawah Kanan
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent),
+                    center = Offset(size.width, size.height),
+                    radius = size.width * 0.9f
+                ),
+                center = Offset(size.width - blob2Offset, size.height + blob2Offset),
+                radius = size.width * 0.9f
+            )
+        }
+
         // --- KONTEN UTAMA ---
         Column(
             modifier = Modifier
@@ -138,6 +193,9 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+
+
+
             HeaderSection()
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -310,7 +368,7 @@ private fun HeaderSection() {
             )
         )
         Text(
-            text = "Please sign in to your account",
+            text = stringResource(R.string.Sign_in_please_sign_in_to_your_account),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant, // MENGGUNAKAN WARNA TEMA
             modifier = Modifier.padding(top = 8.dp)
@@ -396,10 +454,12 @@ private fun LoginTextField(
     TextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().connectToAutofill(
-            autofillTypes = autofillTypes,
-            onFill = { onValueChange(it) } // Saat user pilih saran, update text
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .connectToAutofill(
+                autofillTypes = autofillTypes,
+                onFill = { onValueChange(it) } // Saat user pilih saran, update text
+            ),
         placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         textStyle = LocalTextStyle.current.copy(

@@ -1,13 +1,9 @@
 package com.example.kalanacommerce.presentation.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -24,11 +20,12 @@ import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.Forgot
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
-import com.example.kalanacommerce.presentation.screen.auth.terms.TermsAndConditionsScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.AddressPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.EditProfilePage
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.SettingsPage
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
@@ -112,12 +109,21 @@ fun AppNavGraph(
             SettingsPage(onBack = { navController.popBackStack() })
         }
 
+        composable(route = Screen.HelpCenter.route) {
+            HelpCenterScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         // --- AUTH GRAPH ---
         authGraph(
             navController = navController,
             onNavigateToTerms = {
                 navController.navigate(Screen.TermsAndConditions.route)
             }
+
         )
     }
 }
@@ -164,8 +170,6 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             )
         }
 
-        // --- FORGOT PASSWORD FLOW (DIPERBAIKI & DIPINDAHKAN KE SINI) ---
-
         // 1. Step Email
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordStepEmailScreen(
@@ -183,7 +187,6 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
-
             ForgotPasswordStepOtpScreen(
                 email = email,
                 onNavigateBack = { navController.popBackStack() },

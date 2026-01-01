@@ -56,7 +56,8 @@ fun ProfileScreen(
     onNavigateToAddress: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToTermsAndConditions: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit
+    onNavigateToForgotPassword: () -> Unit,
+    onNavigateToHelpCenter : () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -313,7 +314,7 @@ fun ProfileScreen(
                             Color(0xFFE1F5FE),
                             stringResource(R.string.pusat_bantuan),
                             subtitle = stringResource(R.string.hubungi_kami),
-                            onClick = { /* TODO */ }
+                            onClick = onNavigateToHelpCenter
                         )
                     }
 
