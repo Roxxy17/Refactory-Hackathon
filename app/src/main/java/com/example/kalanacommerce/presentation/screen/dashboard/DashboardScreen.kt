@@ -75,26 +75,28 @@ fun DashboardScreen(
                     ProfileScreen(
                         onAuthAction = {
                             if (isLoggedIn) {
+                                // --- LOGIC LOGOUT ---
                                 scope.launch {
-                                    sessionManager.clearAuthData() // Menghapus token & set isLoggedIn = false
+                                    sessionManager.clearAuthData() // 1. Hapus Token
 
-                                    // Navigasi keluar dari Dashboard ke Root
-                                    mainNavController.navigate("root_splash") {
-                                        popUpTo(0) { inclusive = true }
+                                    // 2. Refresh Dashboard ke mode Guest (Pindah ke Tab Awal)
+                                    // Kita gunakan navigate ke Dashboard route untuk me-reset state
+                                    mainNavController.navigate(Screen.Dashboard.route) {
+                                        popUpTo(0) { inclusive = true } // Bersihkan tumpukan layar
                                     }
                                 }
                             } else {
+                                // --- LOGIC LOGIN (Jika Guest klik tombol Masuk) ---
                                 mainNavController.navigate(Graph.Auth)
                             }
                         },
+                        // ... callback navigasi lainnya ...
                         onNavigateToEditProfile = { mainNavController.navigate(Screen.EditProfile.route) },
                         onNavigateToAddress = { mainNavController.navigate(Screen.Address.route) },
                         onNavigateToSettings = { mainNavController.navigate(Screen.Settings.route) },
                         onNavigateToTermsAndConditions = { mainNavController.navigate(Screen.TermsAndConditions.route) },
-                        onNavigateToForgotPassword = {
-                            mainNavController.navigate(Screen.ForgotPassword.route)
-                        },
-                        onNavigateToHelpCenter = { mainNavController.navigate(Screen.HelpCenter.route)}
+                        onNavigateToForgotPassword = { mainNavController.navigate(Screen.ForgotPassword.route) },
+                        onNavigateToHelpCenter = { mainNavController.navigate(Screen.HelpCenter.route) }
                     )
                 }
             }

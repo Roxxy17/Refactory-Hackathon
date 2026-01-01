@@ -20,30 +20,44 @@ class ForgotPasswordViewModel(
     val uiState: StateFlow<ForgotPasswordUiState> = _uiState.asStateFlow()
 
     fun onEmailChange(newEmail: String) {
-        _uiState.update { it.copy(email = newEmail, isEmailValid = true, error = null) }
+        // Reset error dan status sukses saat user mengetik ulang
+        _uiState.update {
+            it.copy(email = newEmail, isEmailValid = true, error = null, isSuccess = false)
+        }
+    }
+
+    // Fungsi untuk mereset error setelah Toast muncul
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    // Fungsi untuk mereset success setelah navigasi (PENTING)
+    fun clearSuccessState() {
+        _uiState.update { it.copy(isSuccess = false, isResetSuccess = false) }
     }
 
     fun onSubmit() {
         val currentEmail = _uiState.value.email
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentEmail).matches()) {
-            _uiState.update { it.copy(isEmailValid = false) }
+            _uiState.update { it.copy(isEmailValid = false, error = "Format email tidak valid") }
             return
         }
 
         viewModelScope.launch {
-            // Panggil API Forgot Password (Step 1)
             forgotPasswordUseCase(currentEmail).collect { result ->
                 when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true, error = null) }
-                    is Resource.Success -> _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
+                    is Resource.Success -> _uiState.update {
+                        // HANYA set success jika result benar-benar Success
+                        it.copy(isLoading = false, isSuccess = true)
+                    }
+                    is Resource.Error -> _uiState.update {
+                        // Pastikan isSuccess FALSE jika error
+                        it.copy(isLoading = false, isSuccess = false, error = result.message)
+                    }
                 }
             }
         }
-    }
-
-    fun resetState() {
-        _uiState.update { ForgotPasswordUiState() }
     }
 
     // --- STEP 2 ---
@@ -59,13 +73,25 @@ class ForgotPasswordViewModel(
     fun onResetPassword(email: String) {
         val state = _uiState.value
 
+        // Validasi OTP Minimal 6 Digit sebelum panggil API
+        if (state.otp.length < 6) {
+            _uiState.update { it.copy(error = "Kode OTP tidak valid") }
+            return
+        }
+
+        if (state.newPassword.isEmpty()) {
+            _uiState.update { it.copy(error = "Password baru wajib diisi") }
+            return
+        }
+
         viewModelScope.launch {
-            // Panggil API Reset Password (Step 2)
             resetPasswordUseCase(email, state.otp, state.newPassword).collect { result ->
                 when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true, error = null) }
                     is Resource.Success -> _uiState.update { it.copy(isLoading = false, isResetSuccess = true) }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
+                    is Resource.Error -> _uiState.update {
+                        it.copy(isLoading = false, isResetSuccess = false, error = result.message)
+                    }
                 }
             }
         }

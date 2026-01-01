@@ -33,9 +33,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.presentation.components.CustomToast // Import
+import com.example.kalanacommerce.presentation.components.ToastType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,73 +53,67 @@ fun ForgotPasswordStepOtpScreen(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmVisible by remember { mutableStateOf(false) }
 
-    val isFormValid = uiState.otp.length >= 4 &&
+    // --- PERBAIKAN VALIDASI ---
+    // Pastikan OTP harus persis 6 digit (atau sesuai aturan backend)
+    val isFormValid = uiState.otp.length == 6 &&
             uiState.newPassword.isNotEmpty() &&
             uiState.newPassword == confirmPassword
 
-    // --- SETUP ANIMASI BLOB ---
+    // --- STATE TOAST ---
+    var showToast by remember { mutableStateOf(false) }
+    var toastMessage by remember { mutableStateOf("") }
+    var toastType by remember { mutableStateOf(ToastType.Success) }
+
+    // --- OBSERVASI ERROR ---
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { errorMsg ->
+            toastMessage = errorMsg
+            toastType = ToastType.Error
+            showToast = true
+            viewModel.clearError()
+        }
+    }
+
+    // --- OBSERVASI SUKSES RESET ---
+    LaunchedEffect(uiState.isResetSuccess) {
+        if (uiState.isResetSuccess) {
+            toastMessage = "Password berhasil diubah!"
+            toastType = ToastType.Success
+            showToast = true
+        }
+    }
+
+    // ... (BLOB ANIMATION SAMA) ...
     val blobColor1 = MaterialTheme.colorScheme.primary
     val blobColor2 = MaterialTheme.colorScheme.secondary
     val backgroundColor = MaterialTheme.colorScheme.background
-
     val infiniteTransition = rememberInfiniteTransition(label = "Infinite BG")
-
     val blob1Scale by infiniteTransition.animateFloat(
         initialValue = 1f, targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "Blob1"
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse), label = "Blob1"
     )
-
     val blob2Offset by infiniteTransition.animateFloat(
         initialValue = 0f, targetValue = 50f,
-        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "Blob2"
+        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing), RepeatMode.Reverse), label = "Blob2"
     )
 
-    // --- ROOT CONTAINER (BOX) ---
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
+        modifier = Modifier.fillMaxSize().background(backgroundColor)
     ) {
-        // --- LAYER 1: BACKGROUND ANIMATION ---
+        // ... (CANVAS BLOB SAMA) ...
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Blob Atas Kiri (Alpha 0.4f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent),
-                    center = Offset(0f, 0f),
-                    radius = size.width * 0.8f * blob1Scale
-                ),
-                center = Offset(0f, 0f),
-                radius = size.width * 0.8f * blob1Scale
-            )
-
-            // Blob Bawah Kanan (Alpha 0.5f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent),
-                    center = Offset(size.width, size.height),
-                    radius = size.width * 0.9f
-                ),
-                center = Offset(size.width - blob2Offset, size.height + blob2Offset),
-                radius = size.width * 0.9f
-            )
+            drawCircle(brush = Brush.radialGradient(colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale)
+            drawCircle(brush = Brush.radialGradient(colors = listOf(blobColor2.copy(alpha = 0.5f), Color.Transparent), center = Offset(size.width, size.height), radius = size.width * 0.9f), center = Offset(size.width - blob2Offset, size.height + blob2Offset), radius = size.width * 0.9f)
         }
 
-        // --- LAYER 2: KONTEN UTAMA ---
         Scaffold(
-            containerColor = Color.Transparent, // PENTING: Transparan
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {},
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back),
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.onBackground)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -128,7 +123,7 @@ fun ForgotPasswordStepOtpScreen(
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
-                // --- FORM: INPUT OTP & PASSWORD BARU ---
+                // FORM INPUT
                 AnimatedVisibility(visible = !uiState.isResetSuccess, enter = fadeIn(), exit = fadeOut()) {
                     Column(
                         modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(24.dp),
@@ -137,36 +132,26 @@ fun ForgotPasswordStepOtpScreen(
                         Spacer(modifier = Modifier.height(20.dp))
                         IconHeader(Icons.Filled.VpnKey, MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(32.dp))
-
-                        Text(
-                            text = stringResource(R.string.otp_title),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        Text(text = stringResource(R.string.otp_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.otp_instruction, email),
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(text = stringResource(R.string.otp_instruction, email), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(32.dp))
 
                         // 1. INPUT OTP
                         OutlinedTextField(
                             value = uiState.otp,
-                            onValueChange = { if (it.length <= 6) viewModel.onOtpChange(it) },
+                            onValueChange = { if (it.length <= 6) viewModel.onOtpChange(it) }, // Batasi input max 6
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text(stringResource(R.string.otp_label)) },
                             placeholder = { Text("123456") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                             shape = RoundedCornerShape(16.dp),
-                            singleLine = true
+                            singleLine = true,
+                            isError = uiState.otp.isNotEmpty() && uiState.otp.length < 6 // Visual error jika belum lengkap
                         )
-
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 2. INPUT PASSWORD BARU
+                        // 2. PASSWORD BARU
                         OutlinedTextField(
                             value = uiState.newPassword,
                             onValueChange = { viewModel.onNewPasswordChange(it) },
@@ -174,16 +159,11 @@ fun ForgotPasswordStepOtpScreen(
                             label = { Text(stringResource(R.string.new_password_label)) },
                             leadingIcon = { Icon(Icons.Default.Lock, null) },
                             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                                    Icon(if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
-                                }
-                            },
+                            trailingIcon = { IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) { Icon(if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null) } },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true
                         )
-
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // 3. KONFIRMASI PASSWORD
@@ -194,40 +174,27 @@ fun ForgotPasswordStepOtpScreen(
                             label = { Text(stringResource(R.string.confirm_password_label)) },
                             leadingIcon = { Icon(Icons.Default.Lock, null) },
                             visualTransformation = if (isConfirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { isConfirmVisible = !isConfirmVisible }) {
-                                    Icon(if (isConfirmVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
-                                }
-                            },
+                            trailingIcon = { IconButton(onClick = { isConfirmVisible = !isConfirmVisible }) { Icon(if (isConfirmVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null) } },
                             isError = confirmPassword.isNotEmpty() && confirmPassword != uiState.newPassword,
-                            supportingText = {
-                                if (confirmPassword.isNotEmpty() && confirmPassword != uiState.newPassword) {
-                                    Text(stringResource(R.string.password_mismatch_error), color = MaterialTheme.colorScheme.error)
-                                }
-                            },
+                            supportingText = { if (confirmPassword.isNotEmpty() && confirmPassword != uiState.newPassword) Text(stringResource(R.string.password_mismatch_error), color = MaterialTheme.colorScheme.error) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true
                         )
-
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
                             onClick = { viewModel.onResetPassword(email) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
-                            enabled = !uiState.isLoading && isFormValid
+                            enabled = !uiState.isLoading && isFormValid // Button mati jika OTP < 6 digit
                         ) {
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                            } else {
-                                Text(stringResource(R.string.reset_password_btn))
-                            }
+                            if (uiState.isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp)) else Text(stringResource(R.string.reset_password_btn))
                         }
                     }
                 }
 
-                // --- STATE SUCCESS ---
+                // STATE SUKSES RESET
                 AnimatedVisibility(visible = uiState.isResetSuccess, enter = fadeIn(), exit = fadeOut()) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -236,31 +203,29 @@ fun ForgotPasswordStepOtpScreen(
                     ) {
                         IconHeader(Icons.Default.CheckCircle, MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(32.dp))
-
-                        Text(
-                            text = stringResource(R.string.password_changed_title),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = stringResource(R.string.password_changed_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.password_changed_desc),
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(text = stringResource(R.string.password_changed_desc), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(40.dp))
-
                         Button(
-                            onClick = onResetSuccess,
+                            onClick = {
+                                viewModel.clearSuccessState() // Reset state saat keluar
+                                onResetSuccess()
+                            },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text(stringResource(R.string.back_to_login))
-                        }
+                        ) { Text(stringResource(R.string.back_to_login)) }
                     }
                 }
             }
         }
+
+        // --- CUSTOM TOAST (Overlay) ---
+        CustomToast(
+            message = toastMessage,
+            isVisible = showToast,
+            type = toastType,
+            onDismiss = { showToast = false }
+        )
     }
 }

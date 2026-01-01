@@ -218,7 +218,6 @@ fun LoginScreen(
                 onValueChange = { password = it },
                 placeholder = stringResource(id = R.string.password),
                 icon = Icons.Outlined.Lock,
-                autofillTypes = passwordAutofill,
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
                 onDone = { focusManager.clearFocus() },

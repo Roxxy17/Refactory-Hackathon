@@ -219,7 +219,7 @@ fun HelpCenterScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
@@ -313,7 +313,6 @@ fun FaqItemCard(item: FaqItem) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp) // Sedikit jarak antar card
             .border(1.dp, borderColor, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .clickable { expanded = !expanded }, colors = CardDefaults.cardColors(

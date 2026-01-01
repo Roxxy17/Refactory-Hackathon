@@ -32,8 +32,16 @@ val networkModule = module {
 
         HttpClient(Android) {
 
+            // --- PERBAIKAN UTAMA DISINI ---
+            // Ini memaksa Ktor melempar Exception jika status code bukan 2xx (200-299).
+            // Error 4xx -> ClientRequestException
+            // Error 5xx -> ServerResponseException
+            expectSuccess = true
+            // ------------------------------
+
             install(Logging) {
                 level = LogLevel.ALL
+                logger = Logger.DEFAULT // Digabung agar lebih rapi
             }
 
             install(ContentNegotiation) {
@@ -43,11 +51,6 @@ val networkModule = module {
                     explicitNulls = false
                     ignoreUnknownKeys = true
                 })
-            }
-
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.BODY
             }
 
             defaultRequest {
@@ -65,8 +68,7 @@ val networkModule = module {
     single<AuthService> { AuthServiceImpl(get()) }
 }
 
-
-// Helper Function untuk SSL (Private di file ini saja)
+// Helper Function SSL (Biarkan saja jika memang dipakai untuk debug/bypass SSL)
 private fun createBadSslSocketFactory(): SSLSocketFactory {
     val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
