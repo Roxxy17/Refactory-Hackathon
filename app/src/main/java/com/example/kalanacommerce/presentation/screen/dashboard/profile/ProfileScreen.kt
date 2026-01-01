@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -54,8 +55,11 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit,
     onNavigateToAddress: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToTermsAndConditions: () -> Unit
+    onNavigateToTermsAndConditions: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
 ) {
+
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val user = uiState.user
     val isLoggedIn = user != null
@@ -78,29 +82,31 @@ fun ProfileScreen(
     // State untuk memunculkan Dialog Bahasa
     var showLanguageDialog by remember { mutableStateOf(false) }
 
-    // Di dalam ProfileScreen.kt
+    // Gunakan key kombinasi agar LaunchedEffect dipicu tepat setelah restart
+    LaunchedEffect(uiState.shouldShowToast, uiState.currentLanguage) {
+        if (uiState.shouldShowToast) {
+            // Beri delay 300ms agar animasi 'blink' selesai dan layar sudah stabil
+            kotlinx.coroutines.delay(100)
 
-    var isInitialLoad by rememberSaveable { mutableStateOf(true) }
-
-    LaunchedEffect(uiState.currentLanguage) {
-        if (!isInitialLoad) {
-            // Tampilkan toast hanya jika bahasa berubah (bukan saat aplikasi baru dibuka)
             toastMessage = if (uiState.currentLanguage == "id")
                 "Bahasa diganti ke Indonesia 🇮🇩"
             else
                 "Language changed to English 🇺🇸"
+
             toastType = ToastType.Success
             showToast = true
+
+            // Reset status di DataStore
+            viewModel.clearLangToast()
         }
-        isInitialLoad = false
     }
 
-// 2. LOGIC DIALOG (Pastikan pengecekan kode sama)
+    // --- PERBAIKAN LOGIKA DIALOG ---
     if (showLanguageDialog) {
         LanguageSelectionDialog(
             currentLanguage = uiState.currentLanguage,
             onDismiss = { showLanguageDialog = false },
-            onLanguageSelected = { code ->
+            onLanguageSelected = { code -> // PINDAHKAN LOGIKA KE DALAM SINI
                 if (code != uiState.currentLanguage) {
                     viewModel.setLanguage(code)
                 }
@@ -207,15 +213,15 @@ fun ProfileScreen(
 
                     // --- MENU: AKUN SAYA ---
                     if (isLoggedIn) {
-                        SectionHeader("Akun Saya")
+                        SectionHeader(stringResource(R.string.my_account))
                         MenuCard(isDarkActive) {
                             // 1. Edit Profil
                             ColorfulMenuItem(
                                 Icons.Outlined.Person,
                                 Color(0xFF2196F3),
                                 Color(0xFFE3F2FD),
-                                "Edit Profil",
-                                subtitle = "Ubah Profil",
+                                stringResource(R.string.edit_profil),
+                                subtitle = stringResource(R.string.ubah_profil),
                                 onClick = onNavigateToEditProfile
                             )
                             MenuSpacer()
@@ -225,8 +231,8 @@ fun ProfileScreen(
                                 Icons.Outlined.LocationOn,
                                 Color(0xFF4CAF50),
                                 Color(0xFFE8F5E9),
-                                "Alamat Pengiriman",
-                                subtitle = "Daftar Alamat",
+                                stringResource(R.string.alamat_pengiriman),
+                                subtitle = stringResource(R.string.daftar_alamat),
                                 onClick = onNavigateToAddress
                             )
                             MenuSpacer()
@@ -236,24 +242,24 @@ fun ProfileScreen(
                                 Icons.Outlined.Lock,
                                 Color(0xFFD32F2F),
                                 Color(0xFFFFEBEE),
-                                "Keamanan Akun",
-                                subtitle = "Kata sandi & PIN",
-                                onClick = { /* TODO */ }
+                                stringResource(R.string.keamanan_akun),
+                                subtitle = stringResource(R.string.kata_sandi_pin),
+                                onClick = onNavigateToForgotPassword
                             )
                         }
                         Spacer(modifier = Modifier.height(24.dp))
                     }
 
                     // --- MENU: PENGATURAN ---
-                    SectionHeader("Pengaturan")
+                    SectionHeader(stringResource(R.string.pengaturan))
                     MenuCard(isDarkActive) {
                         // 1. Notifikasi
                         ColorfulMenuItem(
                             Icons.Outlined.Notifications,
                             Color(0xFF9C27B0),
                             Color(0xFFF3E5F5),
-                            "Notifikasi",
-                            subtitle = "Semua notifikasi aktif",
+                            stringResource(R.string.notifikasi),
+                            subtitle = stringResource(R.string.semua_notifikasi_aktif),
                             onClick = onNavigateToSettings
                         )
                         MenuSpacer()
@@ -263,11 +269,11 @@ fun ProfileScreen(
                             icon = if (isDarkActive) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
                             iconTint = Color(0xFFFFC107),
                             iconBg = Color(0xFFFFF8E1),
-                            title = "Tampilan Aplikasi",
+                            title = stringResource(R.string.tampilan_aplikasi),
                             subtitle = when(currentThemeSetting) {
-                                ThemeSetting.SYSTEM -> "Ikuti Sistem"
-                                ThemeSetting.LIGHT -> "Mode Terang"
-                                ThemeSetting.DARK -> "Mode Gelap"
+                                ThemeSetting.SYSTEM -> stringResource(R.string.ikuti_sistem)
+                                ThemeSetting.LIGHT -> stringResource(R.string.mode_terang)
+                                ThemeSetting.DARK -> stringResource(R.string.mode_gelap)
                             },
                             onClick = { showThemeDialog = true }
                         )
@@ -279,7 +285,9 @@ fun ProfileScreen(
                             iconTint = Color(0xFF009688),
                             iconBg = Color(0xFFE0F2F1),
                             title = stringResource(R.string.language),
-                            subtitle = if (uiState.currentLanguage == "id") "Bahasa Indonesia" else "English",
+                            subtitle = if (uiState.currentLanguage == "id") stringResource(R.string.bahasa_indonesia) else stringResource(
+                                R.string.english
+                            ),
                             onClick = {
                                 // BUKA DIALOG SAAT DIKLIK
                                 showLanguageDialog = true
@@ -292,8 +300,8 @@ fun ProfileScreen(
                             Icons.Outlined.Description,
                             Color(0xFF607D8B),
                             Color(0xFFECEFF1),
-                            "Syarat & Ketentuan",
-                            subtitle = "Kebijakan Penggunaan",
+                            stringResource(R.string.syarat_ketentuan),
+                            subtitle = stringResource(R.string.kebijakan_penggunaan),
                             onClick = onNavigateToTermsAndConditions
                         )
                         MenuSpacer()
@@ -303,8 +311,8 @@ fun ProfileScreen(
                             Icons.Outlined.SupportAgent,
                             Color(0xFF0288D1),
                             Color(0xFFE1F5FE),
-                            "Pusat Bantuan",
-                            subtitle = "Hubungi Kami",
+                            stringResource(R.string.pusat_bantuan),
+                            subtitle = stringResource(R.string.hubungi_kami),
                             onClick = { /* TODO */ }
                         )
                     }
@@ -317,7 +325,7 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Text(
-                        text = "Versi 1.0.0 (Build 102)",
+                        text = stringResource(R.string.versi_1_0_0_build_102),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -348,7 +356,9 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if(isLoggedIn) "Profil Saya" else "Selamat Datang",
+                        text = if(isLoggedIn) stringResource(R.string.profil_saya) else stringResource(
+                            R.string.selamat_datang
+                        ),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
@@ -368,9 +378,9 @@ fun ProfileScreen(
                     viewModel.setTheme(newSetting)
                     showThemeDialog = false
                     val message = when (newSetting) {
-                        ThemeSetting.SYSTEM -> "Tampilan mengikuti sistem \uD83D\uDCF1"
-                        ThemeSetting.LIGHT -> "Mode Terang aktif ☀️"
-                        ThemeSetting.DARK -> "Mode Gelap aktif \uD83C\uDF19"
+                        ThemeSetting.SYSTEM -> context.getString(R.string.tampilan_mengikuti_sistem)
+                        ThemeSetting.LIGHT -> context.getString(R.string.mode_terang_aktif)
+                        ThemeSetting.DARK -> context.getString(R.string.mode_gelap_aktif)
                     }
                     toastMessage = message
                     toastType = ToastType.Info
@@ -457,12 +467,12 @@ fun GuestInfoSection(onLoginClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Hai, Pengunjung!",
+            text = stringResource(R.string.hai_pengunjung),
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            text = "Masuk untuk akses fitur lengkap",
+            text = stringResource(R.string.masuk_untuk_akses_fitur_lengkap),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -484,7 +494,7 @@ fun GuestInfoSection(onLoginClick: () -> Unit) {
                 )
         ) {
             Text(
-                text = "Masuk atau Daftar", style = MaterialTheme.typography.titleMedium.copy(
+                text = stringResource(R.string.masuk_atau_daftar), style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp
                 )
             )
@@ -510,11 +520,14 @@ fun FloatingStatsBar(isDark: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatsItem(Icons.Outlined.ShoppingBag, "Pesanan", "2", Color(0xFF2196F3))
+            StatsItem(Icons.Outlined.ShoppingBag,
+                stringResource(R.string.pesanan), "2", Color(0xFF2196F3))
             StatsDivider()
-            StatsItem(Icons.Outlined.FavoriteBorder, "Favorit", "12", Color(0xFFE91E63))
+            StatsItem(Icons.Outlined.FavoriteBorder,
+                stringResource(R.string.favorit), "12", Color(0xFFE91E63))
             StatsDivider()
-            StatsItem(Icons.Outlined.LocalOffer, "Voucher", "5", Color(0xFFFF9800))
+            StatsItem(Icons.Outlined.LocalOffer,
+                stringResource(R.string.voucher), "5", Color(0xFFFF9800))
         }
     }
 }
@@ -655,7 +668,7 @@ fun AuthButton(isLoggedIn: Boolean, onClick: () -> Unit) {
         if (isLoggedIn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimary
     val borderColor =
         if (isLoggedIn) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else Color.Transparent
-    val text = if (isLoggedIn) "Keluar Aplikasi" else "Masuk Sekarang"
+    val text = if (isLoggedIn) stringResource(R.string.keluar_aplikasi) else stringResource(R.string.masuk_sekarang)
     Button(
         onClick = onClick,
         modifier = Modifier

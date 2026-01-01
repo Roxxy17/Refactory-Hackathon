@@ -28,12 +28,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Di MainActivity.kt onCreate
         lifecycleScope.launch {
             val savedLang = languageManager.languageFlow.first()
             val currentLocales = AppCompatDelegate.getApplicationLocales()
 
-            // Hanya restart jika benar-benar perlu
-            if (!currentLocales.isEmpty && currentLocales.toLanguageTags() != savedLang) {
+            // Gunakan toLanguageTags() untuk perbandingan string yang akurat
+            if (currentLocales.toLanguageTags() != savedLang) {
                 val appLocale = LocaleListCompat.forLanguageTags(savedLang)
                 AppCompatDelegate.setApplicationLocales(appLocale)
             }

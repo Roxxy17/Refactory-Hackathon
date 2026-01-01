@@ -32,8 +32,9 @@ class ProfileViewModel(
         combine(
             sessionManager.userFlow,
             themeManager.themeSettingFlow,
-            languageManager.languageFlow
-        ) { user, themeSetting, lang ->
+            languageManager.languageFlow,
+            languageManager.shouldShowToastFlow
+        ) { user, themeSetting, lang, pendingToast ->
 
             // Tentukan apakah UI harus render Dark Mode atau Light Mode
             val isDark = when (themeSetting) {
@@ -52,7 +53,8 @@ class ProfileViewModel(
                 isLoading = false,
                 isDarkTheme = isDark,
                 themeSetting = themeSetting,
-                currentLanguage = lang// Update field ini
+                currentLanguage = lang,
+                shouldShowToast = pendingToast // Update field ini
             )
         }.stateIn(
             scope = viewModelScope,
@@ -69,6 +71,11 @@ class ProfileViewModel(
         viewModelScope.launch {
             themeManager.saveThemeSetting(newSetting)
         }
+    }
+
+    // Tambahkan fungsi reset
+    fun clearLangToast() {
+        viewModelScope.launch { languageManager.clearPendingToast() }
     }
 
     // Fungsi ganti bahasa

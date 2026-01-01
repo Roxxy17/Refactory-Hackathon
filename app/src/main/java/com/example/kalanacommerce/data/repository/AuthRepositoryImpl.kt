@@ -3,8 +3,12 @@
 package com.example.kalanacommerce.data.repository
 
 import android.util.Log
+import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.remote.dto.auth.UserDto
+import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ForgotPasswordRequest
+import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ForgotPasswordResponse
+import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ResetPasswordRequest
 import com.example.kalanacommerce.data.remote.dto.auth.login.SignInRequest
 import com.example.kalanacommerce.data.remote.dto.auth.login.SignInResponse // <-- Tambahkan import ini
 import com.example.kalanacommerce.data.remote.dto.auth.register.RegisterRequest
@@ -13,6 +17,8 @@ import com.example.kalanacommerce.data.remote.service.AuthService
 import com.example.kalanacommerce.domain.repository.AuthRepository
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class AuthRepositoryImpl(
     private val authService: AuthService,
@@ -93,6 +99,42 @@ class AuthRepositoryImpl(
         catch (e: Exception) {
             // Tangani error umum lainnya
             Result.failure(Exception("Gagal Login: ${e.message}"))
+        }
+    }
+
+    // Forgot Password
+    override fun forgotPassword(email: String): Flow<Resource<String>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = authService.forgotPassword(ForgotPasswordRequest(email))
+            emit(Resource.Success(response.message))
+        } catch (e: ClientRequestException) {
+            val errorMessage = try {
+                e.response.body<ForgotPasswordResponse>().message
+            } catch (ex: Exception) {
+                "Gagal mengirim OTP"
+            }
+            emit(Resource.Error(errorMessage))
+        } catch (e: Exception) {
+            emit(Resource.Error(e.localizedMessage ?: "Terjadi kesalahan"))
+        }
+    }
+
+    // Reset Password
+    override fun resetPassword(email: String, otp: String, newPassword: String): Flow<Resource<String>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = authService.resetPassword(ResetPasswordRequest(email, otp, newPassword))
+            emit(Resource.Success(response.message))
+        } catch (e: ClientRequestException) {
+            val errorMessage = try {
+                e.response.body<ForgotPasswordResponse>().message
+            } catch (ex: Exception) {
+                "Gagal mereset password"
+            }
+            emit(Resource.Error(errorMessage))
+        } catch (e: Exception) {
+            emit(Resource.Error(e.localizedMessage ?: "Terjadi kesalahan"))
         }
     }
 

@@ -71,26 +71,32 @@ class SplashActivity : AppCompatActivity() {
         }, SPLASH_SCREEN_DELAY)
     }
 
+    // SplashActivity.kt
+
     private fun setupThemeBackground() {
         val background = findViewById<ImageView>(R.id.splash_background)
         val splashText = findViewById<android.widget.TextView>(R.id.splash_text)
 
         lifecycleScope.launch {
-            val themeSetting = themeManager.themeSettingFlow.first()
-            val isSystemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            // Gunakan collect untuk memastikan kita mendapat nilai terbaru
+            themeManager.themeSettingFlow.collect { themeSetting ->
+                val isSystemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                        Configuration.UI_MODE_NIGHT_YES
 
-            val isDarkTheme = when (themeSetting) {
-                ThemeSetting.LIGHT -> false
-                ThemeSetting.DARK -> true
-                ThemeSetting.SYSTEM -> isSystemDark
-            }
+                val isDarkTheme = when (themeSetting) {
+                    ThemeSetting.LIGHT -> false
+                    ThemeSetting.DARK -> true
+                    ThemeSetting.SYSTEM -> isSystemDark
+                }
 
-            if (isDarkTheme) {
-                background.setImageResource(R.drawable.profile_background_black)
-                splashText.setTextColor(Color.parseColor("#EEEEEE"))
-            } else {
-                background.setImageResource(R.drawable.profile_background_white)
-                splashText.setTextColor(Color.parseColor("#333333"))
+                // Update UI berdasarkan hasil evaluasi tema
+                if (isDarkTheme) {
+                    background.setImageResource(R.drawable.profile_background_black)
+                    splashText.setTextColor(Color.WHITE)
+                } else {
+                    background.setImageResource(R.drawable.profile_background_white)
+                    splashText.setTextColor(Color.BLACK)
+                }
             }
         }
     }

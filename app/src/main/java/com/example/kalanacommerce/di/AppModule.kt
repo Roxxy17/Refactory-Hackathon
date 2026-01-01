@@ -6,6 +6,7 @@ import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.core.util.DefaultDispatcherProvider
 import com.example.kalanacommerce.core.util.DispatcherProvider
 import com.example.kalanacommerce.data.local.datastore.LanguageManager
+import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import org.koin.android.ext.koin.androidContext // Import untuk androidContext()
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -39,6 +40,13 @@ val appModule = module {
             themeManager = get(),
             languageManager = get(),
             context = androidContext()
+        )
+    }
+    // ForgotPasswordViewModel
+    viewModel {
+        ForgotPasswordViewModel(
+            forgotPasswordUseCase = get(),
+            resetPasswordUseCase = get()
         )
     }
 }

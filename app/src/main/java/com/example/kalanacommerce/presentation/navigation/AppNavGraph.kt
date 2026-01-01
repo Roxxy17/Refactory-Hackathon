@@ -11,13 +11,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType // IMPORT WAJIB
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument // IMPORT WAJIB
 import androidx.navigation.navigation
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.presentation.screen.TransactionScreen
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepEmailScreen
+import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepOtpScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
@@ -53,7 +56,6 @@ fun RequireAuth(
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    // UBAH 1: Start Destination diarahkan ke "root_splash" dulu
     startDestination: String = "root_splash"
 ) {
     NavHost(
@@ -62,43 +64,21 @@ fun AppNavGraph(
         modifier = modifier
     ) {
 
-        // --- UBAH 2: TAMBAHKAN SPLASH / ROOT LOGIC DI SINI ---
+        // --- SPLASH / ROOT LOGIC ---
         composable("root_splash") {
             val sessionManager: SessionManager = get()
-            // Kita butuh 'initial = null' untuk membedakan belum loading vs false
             val isLoggedInState by sessionManager.isLoggedInFlow.collectAsState(initial = null)
 
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                // Tampilkan loading spinner selagi membaca DataStore
-                CircularProgressIndicator()
-            }
-
             LaunchedEffect(isLoggedInState) {
-                when (isLoggedInState) {
-                    true -> {
-                        // Jika TRUE (Remember Me aktif): Langsung ke Dashboard
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo("root_splash") { inclusive = true }
-                        }
-                    }
-                    false -> {
-                        // Jika FALSE:
-                        // Opsi A: Langsung ke Welcome/Login (jika aplikasi wajib login)
-                        // navController.navigate(Graph.Auth) { popUpTo("root_splash") { inclusive = true } }
-
-                        // Opsi B: Tetap ke Dashboard (sebagai Guest) -> Sesuai kode Anda sebelumnya
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo("root_splash") { inclusive = true }
-                        }
-                    }
-                    null -> {
-                        // Sedang loading (do nothing)
+                if (isLoggedInState != null) {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 }
             }
         }
 
-        // terms and condition
+        // --- Terms and Conditions ---
         composable(route = Screen.TermsAndConditions.route) {
             TermsAndConditionsScreen(onBack = { navController.popBackStack() })
         }
@@ -116,7 +96,6 @@ fun AppNavGraph(
             }
         }
 
-        // ... (Route Chat, EditProfile, Address, Settings, Terms sama seperti sebelumnya) ...
         composable(route = "chat_screen") {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) { ChatScreen() }
@@ -133,9 +112,9 @@ fun AppNavGraph(
             SettingsPage(onBack = { navController.popBackStack() })
         }
 
+        // --- AUTH GRAPH ---
         authGraph(
             navController = navController,
-            // Teruskan lambda untuk navigasi ke Terms and Conditions
             onNavigateToTerms = {
                 navController.navigate(Screen.TermsAndConditions.route)
             }
@@ -160,7 +139,6 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             LoginScreen(
                 viewModel = viewModel,
                 onSignInSuccess = {
-                    // SUKSES LOGIN: Hapus seluruh history Auth agar tombol back tidak balik ke login
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Graph.Auth) { inclusive = true }
                     }
@@ -186,9 +164,35 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             )
         }
 
+        // --- FORGOT PASSWORD FLOW (DIPERBAIKI & DIPINDAHKAN KE SINI) ---
+
+        // 1. Step Email
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordStepEmailScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToOtp = { email ->
+                    // Membawa argumen email ke screen OTP
+                    navController.navigate("forgot_password_otp/$email")
+                }
+            )
+        }
+
+        // 2. Step OTP & Reset Password
+        composable(
+            route = "forgot_password_otp/{email}",
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+
+            ForgotPasswordStepOtpScreen(
+                email = email,
+                onNavigateBack = { navController.popBackStack() },
+                onResetSuccess = {
+                    // Reset sukses, kembali ke Login dan hapus history
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Graph.Auth) { inclusive = true }
+                    }
+                }
             )
         }
     }

@@ -8,5 +8,6 @@ data class ProfileUiState(
     val user: UserDto? = null,
     val isDarkTheme: Boolean = false,
     val themeSetting: ThemeSetting = ThemeSetting.SYSTEM,
-    val currentLanguage: String = "en"
+    val currentLanguage: String = "en",
+    val shouldShowToast: Boolean = false // TAMBAHKAN INI
 )

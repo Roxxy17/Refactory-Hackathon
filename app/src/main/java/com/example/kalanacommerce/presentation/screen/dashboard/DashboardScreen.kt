@@ -76,9 +76,11 @@ fun DashboardScreen(
                         onAuthAction = {
                             if (isLoggedIn) {
                                 scope.launch {
-                                    sessionManager.clearAuthData()
-                                    dashboardNavController.navigate(BottomBarScreen.Eksplor.route) {
-                                        popUpTo(BottomBarScreen.Eksplor.route) { inclusive = true }
+                                    sessionManager.clearAuthData() // Menghapus token & set isLoggedIn = false
+
+                                    // Navigasi keluar dari Dashboard ke Root
+                                    mainNavController.navigate("root_splash") {
+                                        popUpTo(0) { inclusive = true }
                                     }
                                 }
                             } else {
@@ -88,7 +90,10 @@ fun DashboardScreen(
                         onNavigateToEditProfile = { mainNavController.navigate(Screen.EditProfile.route) },
                         onNavigateToAddress = { mainNavController.navigate(Screen.Address.route) },
                         onNavigateToSettings = { mainNavController.navigate(Screen.Settings.route) },
-                        onNavigateToTermsAndConditions = { mainNavController.navigate(Screen.TermsAndConditions.route) }
+                        onNavigateToTermsAndConditions = { mainNavController.navigate(Screen.TermsAndConditions.route) },
+                        onNavigateToForgotPassword = {
+                            mainNavController.navigate(Screen.ForgotPassword.route)
+                        }
                     )
                 }
             }

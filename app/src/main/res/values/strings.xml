@@ -15,8 +15,100 @@
 
     // Profile Screen
     <string name="language">Language</string>
+    <string name="bahasa_diganti_ke_indonesia">Language changed to Indonesian 🇮🇩</string>
+    <string name="language_changed_to_english">Language changed to English 🇺🇸</string>
+    <string name="my_account">My Account</string>
+    <string name="edit_profil">Edit Profile</string>
+    <string name="ubah_profil">Change Profile</string>
+    <string name="alamat_pengiriman">Shipping Address</string>
+    <string name="daftar_alamat">Address List</string>
+    <string name="keamanan_akun">Account Security</string>
+    <string name="kata_sandi_pin"><![CDATA[Password]]></string>
+    <string name="pengaturan">Settings</string>
+    <string name="notifikasi">Notifications</string>
+    <string name="semua_notifikasi_aktif">All notifications enabled</string>
+    <string name="tampilan_aplikasi">App Appearance</string>
+    <string name="ikuti_sistem">System Default</string>
+    <string name="mode_terang">Light Mode</string>
+    <string name="mode_gelap">Dark Mode</string>
+    <string name="bahasa_indonesia">Indonesian</string>
+    <string name="english">English</string>
+    <string name="syarat_ketentuan"><![CDATA[Terms & Conditions]]></string>
+    <string name="kebijakan_penggunaan">Usage Policy</string>
+    <string name="pusat_bantuan">Help Center</string>
+    <string name="hubungi_kami">Contact Us</string>
+    <string name="versi_1_0_0_build_102">Version 1.0.0 (Build 102)</string>
+    <string name="profil_saya">My Profile</string>
+    <string name="selamat_datang">Welcome</string>
+    <string name="tampilan_mengikuti_sistem">Appearance set to System Default 📱</string>
+    <string name="mode_terang_aktif">Light Mode activated ☀️</string>
+    <string name="mode_gelap_aktif">Dark Mode activated 🌙</string>
+    <string name="hai_pengunjung">Hi, Guest!</string>
+    <string name="masuk_untuk_akses_fitur_lengkap">Log in to access full features</string>
+    <string name="masuk_atau_daftar">Log In or Sign Up</string>
+    <string name="pesanan">Orders</string>
+    <string name="favorit">Favorites</string>
+    <string name="voucher">Vouchers</string>
+    <string name="keluar_aplikasi">Log Out</string>
+    <string name="masuk_sekarang">Log In Now</string>
+
+    // Terms And Conditions
+    <string name="terms_conditions"><![CDATA[Terms & Conditions]]></string>
+    <string name="kembali">Kembali</string>
+    <string name="last_updated_december_2025">Last updated: December 2025</string>
+    <string name="welcome_to_kalana_commerce">Welcome to Kalana Commerce!</string>
+    <string name="stated">These terms and conditions outline the rules and regulations for the use of Kalana Commerce\'s Application. By accessing this app we assume you accept these terms and conditions. Do not continue to use Kalana Commerce if you do not agree to take all of the terms and conditions stated on this page.</string>
+    <string name="license">1. License</string>
+    <string name="license_text">Unless otherwise stated, Kalana Commerce and/or its licensors own the intellectual property rights for all material on Kalana Commerce. All intellectual property rights are reserved. You may access this from Kalana Commerce for your own personal use subjected to restrictions set in these terms and conditions.</string>
+    <string name="user_accounts">2. User Accounts</string>
+    <string name="user_accounts_text">When you create an account with us, you must provide us information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.</string>
+    <string name="content_liability">3. Content Liability</string>
+    <string name="content_liability_text">We shall not be hold responsible for any content that appears on your App. You agree to protect and defend us against all claims that is rising on your App. No link(s) should appear on any Website that may be interpreted as libelous, obscene or criminal, or which infringes, otherwise violates, or advocates the infringement or other violation of, any third party rights.</string>
+    <string name="your_privacy">4. Your Privacy</string>
+    <string name="your_privacy_text">Please read our Privacy Policy. We handle your data with care and use industry-standard encryption to protect your personal information.</string>
+    <string name="question_text">If you have any questions about these Terms, please contact us at support@kalanacommerce.com</string>
+
+    // ForgotPasswordStepEmailScreen
+    <string name="forgot_password_title">Forgot Password?</string>
+    <string name="forgot_password_desc">Enter the email associated with your account. We will send instructions to reset your password.</string>
+    <string name="email_address">Email Address</string>
+    <string name="email_placeholder">name@email.com</string>
+    <string name="invalid_email_format">Invalid email format</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="check_your_email">Check Your Email</string>
+    <string name="email_sent_desc">We have sent a password reset link to:\n%1$s</string>
+    <string name="back_to_login">Back to Login</string>
+    <string name="resend_link">Resend link</string>
+    <string name="back">Back</string>
+
+    // ForgotPasswordStepOtpScreen
+    <string name="otp_title">OTP Verification</string>
+    <string name="otp_instruction">Enter the 6-digit code sent to \n%1$s</string>
+    <string name="otp_label">OTP Code</string>
+    <string name="new_password_label">New Password</string>
+    <string name="confirm_password_label">Confirm New Password</string>
+    <string name="reset_password_btn">Reset Password</string>
+    <string name="password_changed_title">Password Changed!</string>
+    <string name="password_changed_desc">Your password has been updated successfully. Please login again.</string>
+    <string name="password_mismatch_error">Passwords do not match</string>
 
     // language selector
-    <string name="choose_language">Choose Language</string>
+    <string name="language_dialog_title">App Language</string>
+    <string name="language_dialog_subtitle">Select your preferred language for the interface.</string>
+    <string name="language_indonesia_desc">Indonesian Language</string>
+    <string name="language_english_desc">English Language</string>
     <string name="cancel">Cancel</string>
+
+    // Theme Dialog Selector
+    <string name="theme_dialog_title">App Appearance</string>
+    <string name="theme_dialog_subtitle">Choose the display mode you prefer.</string>
+    <string name="theme_option_system">System Default</string>
+    <string name="theme_option_system_desc">Adjusts to your device\'s settings.</string>
+    <string name="theme_option_light">Light Mode</string>
+    <string name="theme_option_light_desc">Clean look with a bright background.</string>
+    <string name="theme_option_dark">Dark Mode</string>
+    <string name="theme_option_dark_desc">Easy on the eyes, saves battery on OLED screens.</string>
+    <string name="close_content_description">Close</string>
+    <string name="selected_content_description">Selected</string>
+
 </resources>

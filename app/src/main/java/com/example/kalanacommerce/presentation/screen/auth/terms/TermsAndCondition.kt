@@ -8,10 +8,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +28,7 @@ fun TermsAndConditionsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Terms & Conditions",
+                        text = stringResource(R.string.terms_conditions),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -34,7 +36,7 @@ fun TermsAndConditionsScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali"
+                            contentDescription = stringResource(R.string.kembali)
                         )
                     }
                 },
@@ -57,7 +59,7 @@ fun TermsAndConditionsScreen(
 
             // Tanggal Update
             Text(
-                text = "Last updated: December 2025",
+                text = stringResource(R.string.last_updated_december_2025),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -66,46 +68,46 @@ fun TermsAndConditionsScreen(
 
             // Intro
             Text(
-                text = "Welcome to Kalana Commerce!",
+                text = stringResource(R.string.welcome_to_kalana_commerce),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(16.dp))
             TermsTextParagraph(
-                "These terms and conditions outline the rules and regulations for the use of Kalana Commerce's Application. By accessing this app we assume you accept these terms and conditions. Do not continue to use Kalana Commerce if you do not agree to take all of the terms and conditions stated on this page."
+                stringResource(R.string.stated)
             )
 
             TermsDivider()
 
             // Section 1
-            TermsSectionTitle("1. License")
+            TermsSectionTitle(stringResource(R.string.license))
             TermsTextParagraph(
-                "Unless otherwise stated, Kalana Commerce and/or its licensors own the intellectual property rights for all material on Kalana Commerce. All intellectual property rights are reserved. You may access this from Kalana Commerce for your own personal use subjected to restrictions set in these terms and conditions."
+                stringResource(R.string.license_text)
             )
 
             // Section 2
-            TermsSectionTitle("2. User Accounts")
+            TermsSectionTitle(stringResource(R.string.user_accounts))
             TermsTextParagraph(
-                "When you create an account with us, you must provide us information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service."
+                stringResource(R.string.user_accounts_text)
             )
 
             // Section 3
-            TermsSectionTitle("3. Content Liability")
+            TermsSectionTitle(stringResource(R.string.content_liability))
             TermsTextParagraph(
-                "We shall not be hold responsible for any content that appears on your App. You agree to protect and defend us against all claims that is rising on your App. No link(s) should appear on any Website that may be interpreted as libelous, obscene or criminal, or which infringes, otherwise violates, or advocates the infringement or other violation of, any third party rights."
+                stringResource(R.string.content_liability_text)
             )
 
             // Section 4
-            TermsSectionTitle("4. Your Privacy")
+            TermsSectionTitle(stringResource(R.string.your_privacy))
             TermsTextParagraph(
-                "Please read our Privacy Policy. We handle your data with care and use industry-standard encryption to protect your personal information."
+                stringResource(R.string.your_privacy_text)
             )
 
             TermsDivider()
 
             // Footer
             Text(
-                text = "If you have any questions about these Terms, please contact us at support@kalanacommerce.com",
+                text = stringResource(R.string.question_text),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 32.dp)

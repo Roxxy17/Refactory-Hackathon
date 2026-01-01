@@ -40,7 +40,7 @@ class SessionManager(context: Context) {
             // Jangan gunakan preferences.clear()
             // Hapus setiap key secara eksplisit untuk memastikan state benar-benar bersih
             preferences.remove(KEY_TOKEN)
-            preferences.remove(KEY_IS_LOGGED_IN)
+            preferences[KEY_IS_LOGGED_IN] = false
             preferences.remove(KEY_USER_NAME)
             preferences.remove(KEY_USER_EMAIL)
         }

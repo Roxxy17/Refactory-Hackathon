@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.example.kalanacommerce.R
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,42 +36,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 
-/**
- * Komponen Dialog Pemilihan Tema yang Kustom dan Modern.
- */
 @Composable
 fun ThemeSelectionDialog(
     currentSetting: ThemeSetting,
     onDismiss: () -> Unit,
     onSelectTheme: (ThemeSetting) -> Unit
 ) {
-    // Menggunakan Dialog dasar untuk kustomisasi penuh (bukan AlertDialog)
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh, // Warna background dialog yang sedikit berbeda
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                // --- HEADER DIALOG ---
+            Column(modifier = Modifier.padding(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Tampilan Aplikasi",
+                        text = stringResource(R.string.theme_dialog_title), // Menggunakan Resource
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -78,7 +73,7 @@ fun ThemeSelectionDialog(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Tutup",
+                            contentDescription = stringResource(R.string.close_content_description), // Menggunakan Resource
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -86,37 +81,36 @@ fun ThemeSelectionDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Pilih mode tampilan yang Anda sukai.",
+                    text = stringResource(R.string.theme_dialog_subtitle), // Menggunakan Resource
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- DAFTAR PILIHAN TEMA ---
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ThemeOptionItem(
                         setting = ThemeSetting.SYSTEM,
                         currentSetting = currentSetting,
                         icon = Icons.Outlined.BrightnessAuto,
-                        label = "Ikuti Sistem",
-                        description = "Menyesuaikan dengan pengaturan perangkat Anda.",
+                        label = stringResource(R.string.theme_option_system),
+                        description = stringResource(R.string.theme_option_system_desc),
                         onSelect = onSelectTheme
                     )
                     ThemeOptionItem(
                         setting = ThemeSetting.LIGHT,
                         currentSetting = currentSetting,
                         icon = Icons.Outlined.LightMode,
-                        label = "Mode Terang",
-                        description = "Tampilan bersih dengan latar belakang cerah.",
+                        label = stringResource(R.string.theme_option_light),
+                        description = stringResource(R.string.theme_option_light_desc),
                         onSelect = onSelectTheme
                     )
                     ThemeOptionItem(
                         setting = ThemeSetting.DARK,
                         currentSetting = currentSetting,
                         icon = Icons.Outlined.DarkMode,
-                        label = "Mode Gelap",
-                        description = "Nyaman di mata, hemat baterai pada layar OLED.",
+                        label = stringResource(R.string.theme_option_dark),
+                        description = stringResource(R.string.theme_option_dark_desc),
                         onSelect = onSelectTheme
                     )
                 }
@@ -223,7 +217,7 @@ private fun SelectionIndicator(isSelected: Boolean, primaryColor: Color) {
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "Selected",
+                contentDescription = stringResource(R.string.selected_content_description),
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(16.dp)
             )
