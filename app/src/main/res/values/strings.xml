@@ -142,4 +142,17 @@
     <string name="close_content_description">Close</string>
     <string name="selected_content_description">Selected</string>
 
+    // Edit Profile
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="full_name">Full Name</string>
+    <string name="edit_profile_email">Email</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="success_update_profile">Profile updated successfully</string>
+    <string name="error_update_profile">Failed to update profile</string>
+    <string name="error_image_processing">Failed to process image</string>
+
+
+
 </resources>

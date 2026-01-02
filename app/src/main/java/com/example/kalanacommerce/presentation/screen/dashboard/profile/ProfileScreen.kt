@@ -47,6 +47,8 @@ import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.LanguageSelectionDialog
 import com.example.kalanacommerce.presentation.components.ToastType
 import com.example.kalanacommerce.presentation.components.ThemeSelectionDialog
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @Composable
 fun ProfileScreen(
@@ -191,9 +193,14 @@ fun ProfileScreen(
             Box(
                 contentAlignment = Alignment.Center, modifier = Modifier.zIndex(2f)
             ) {
-                // User Info Section
                 if (isLoggedIn) {
-                    UserInfoSection(user?.name ?: "User", user?.email ?: "", user?.name?.take(1) ?: "U")
+                    // --- PERBAIKAN: Masukkan parameter imageUrl ---
+                    UserInfoSection(
+                        userName = user?.name ?: "User",
+                        userEmail = user?.email ?: "",
+                        initial = user?.name?.take(1) ?: "U",
+                        imageUrl = user?.image // Pastikan DTO UserProfileDto punya field 'image' (String URL)
+                    )
                 } else {
                     GuestInfoSection(onLoginClick = onAuthAction)
                 }
@@ -400,7 +407,12 @@ fun ProfileScreen(
 // --- SUB-COMPONENTS ---
 
 @Composable
-fun UserInfoSection(userName: String, userEmail: String, initial: String) {
+fun UserInfoSection(
+    userName: String,
+    userEmail: String,
+    initial: String,
+    imageUrl: String? // Tambah parameter ini
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             contentAlignment = Alignment.Center,
@@ -411,23 +423,37 @@ fun UserInfoSection(userName: String, userEmail: String, initial: String) {
                 .background(MaterialTheme.colorScheme.surface)
                 .border(4.dp, MaterialTheme.colorScheme.surface, CircleShape)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    ), contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = initial,
-                    style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimary
+            if (!imageUrl.isNullOrEmpty()) {
+                // 1. TAMPILKAN FOTO JIKA ADA
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Profile Picture",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
+            } else {
+                // 2. TAMPILKAN INISIAL JIKA FOTO KOSONG
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        ), contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))

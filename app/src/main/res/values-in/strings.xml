@@ -141,4 +141,16 @@
     <string name="close_content_description">Tutup</string>
     <string name="selected_content_description">Terpilih</string>
 
+    // Edit Profile
+    <string name="edit_profile_title">Edit Profil</string>
+    <string name="full_name">Nama Lengkap</string>
+    <string name="edit_profile_email">Email</string>
+    <string name="phone_number">Nomor Telepon</string>
+    <string name="save_changes">Simpan Perubahan</string>
+    <string name="change_photo">Ubah Foto</string>
+    <string name="success_update_profile">Profil berhasil diperbarui</string>
+    <string name="error_update_profile">Gagal memperbarui profil</string>
+    <string name="error_image_processing">Gagal memproses gambar</string>
+
+
 </resources>

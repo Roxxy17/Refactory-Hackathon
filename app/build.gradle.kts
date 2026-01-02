@@ -109,6 +109,7 @@ android {
         implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
         implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
         implementation("io.ktor:ktor-client-logging:2.3.11")
+        implementation("io.ktor:ktor-client-auth:2.3.11")
 
         // Testing
         testImplementation("junit:junit:4.13.2")
@@ -121,4 +122,8 @@ android {
 
         //splash screen
         implementation("androidx.core:core-splashscreen:1.0.1")
+
+        // COIL (Image Loading for Compose)
+        implementation("io.coil-kt:coil-compose:2.6.0")
+        implementation("io.ktor:ktor-client-okhttp:2.3.12")
     }

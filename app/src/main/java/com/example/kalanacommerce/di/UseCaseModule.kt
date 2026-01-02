@@ -4,6 +4,9 @@ import com.example.kalanacommerce.domain.usecase.auth.RegisterUseCase
 import com.example.kalanacommerce.domain.usecase.auth.SignInUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ForgotPasswordUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ResetPasswordUseCase
+import com.example.kalanacommerce.domain.usecase.profile.GetProfileUseCase
+import com.example.kalanacommerce.domain.usecase.profile.UpdatePhotoUseCase
+import com.example.kalanacommerce.domain.usecase.profile.UpdateProfileUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -13,4 +16,7 @@ val useCaseModule = module {
     factory { LogoutUseCase(get()) }
     single { ForgotPasswordUseCase(get()) }
     single { ResetPasswordUseCase(get()) }
+    factory { GetProfileUseCase(get()) }
+    factory { UpdateProfileUseCase(get()) }
+    factory { UpdatePhotoUseCase(get()) }
 }

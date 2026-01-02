@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserDto(
+data class AuthUserDto(
     val id: String? = null,
     val name: String? = null,
     val email: String? = null,

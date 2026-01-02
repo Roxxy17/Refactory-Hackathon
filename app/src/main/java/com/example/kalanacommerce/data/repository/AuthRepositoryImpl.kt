@@ -1,9 +1,8 @@
 package com.example.kalanacommerce.data.repository
 
-import android.util.Log
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.data.local.datastore.SessionManager
-import com.example.kalanacommerce.data.remote.dto.auth.UserDto
+import com.example.kalanacommerce.data.mapper.toUserDto // <--- PENTING: Import Mapper
 import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ForgotPasswordRequest
 import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ForgotPasswordResponse
 import com.example.kalanacommerce.data.remote.dto.auth.forgotpassword.ResetPasswordRequest
@@ -11,11 +10,12 @@ import com.example.kalanacommerce.data.remote.dto.auth.login.SignInRequest
 import com.example.kalanacommerce.data.remote.dto.auth.login.SignInResponse
 import com.example.kalanacommerce.data.remote.dto.auth.register.RegisterRequest
 import com.example.kalanacommerce.data.remote.dto.auth.register.RegisterResponse
+import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
 import com.example.kalanacommerce.data.remote.service.AuthService
 import com.example.kalanacommerce.domain.repository.AuthRepository
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.plugins.ServerResponseException // WAJIB: Import ini untuk handle error 500
+import io.ktor.client.plugins.ServerResponseException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -24,122 +24,113 @@ class AuthRepositoryImpl(
     private val sessionManager: SessionManager
 ) : AuthRepository {
 
-    // --- REGISTER ---
-    override suspend fun register(
-        name: String,
-        email: String,
-        password: String,
-        phone: String
-    ): Result<Unit> {
-        return try {
+    // --- REGISTER (Ubah ke Flow agar konsisten) ---
+    override fun register(
+        name: String, email: String, password: String, phone: String
+    ): Flow<Resource<String>> = flow {
+        emit(Resource.Loading())
+        try {
             val response = authService.register(
-                RegisterRequest(
-                    name = name,
-                    email = email,
-                    password = password,
-                    phoneNumber = phone
-                )
+                RegisterRequest(name, email, password, phone)
             )
 
             if (response.status) {
-                Result.success(Unit)
+                // Register sukses
+                emit(Resource.Success(response.message))
             } else {
-                Result.failure(Exception(response.message))
+                emit(Resource.Error(response.message))
             }
 
         } catch (e: ClientRequestException) {
-            // Error 4xx
-            val errorBody = try {
+            val errorMessage = try {
                 e.response.body<RegisterResponse>().message
-            } catch (_: Exception) {
-                "Data yang dikirim tidak valid"
+            } catch (ex: Exception) {
+                "Data tidak valid"
             }
-            Result.failure(Exception(errorBody))
-
+            emit(Resource.Error(errorMessage))
         } catch (e: ServerResponseException) {
-            // Error 5xx
-            val errorBody = try {
+            val errorMessage = try {
                 e.response.body<RegisterResponse>().message
-            } catch (_: Exception) {
-                "Server sedang dalam perbaikan"
+            } catch (ex: Exception) {
+                "Server sedang dalam perbaikan (500)"
             }
-            Result.failure(Exception(errorBody))
-
+            emit(Resource.Error(errorMessage))
         } catch (e: Exception) {
-            Log.e("AUTH_ERROR", "Exception Detail: ${e.message}")
-            Result.failure(Exception("Gagal terhubung ke server. Periksa koneksi internet Anda."))
+            emit(Resource.Error(e.localizedMessage ?: "Terjadi kesalahan"))
         }
     }
 
-    // --- SIGN IN ---
-    override suspend fun signIn(email: String, password: String): Result<Pair<String, UserDto>> {
-        return try {
-            val request = SignInRequest(email = email, password = password)
-            val response: SignInResponse = authService.signIn(request)
+    // --- SIGN IN (Perbaikan Utama: Mapper + Session) ---
+    override fun signIn(email: String, password: String): Flow<Resource<ProfileUserDto>> = flow {
+        emit(Resource.Loading())
+        try {
+            val request = SignInRequest(email, password)
+            val response = authService.signIn(request)
 
             if (response.status) {
                 val token = response.data?.token
-                val user = response.data?.user
+                val authUser = response.data?.user // Ini AuthUserDto (Snake Case)
 
-                if (token != null && user != null) {
-                    Result.success(Pair(token, user))
+                if (token != null && authUser != null) {
+                    // 1. Mapping AuthUserDto -> UserDto (Camel Case + Balance)
+                    val userDto = authUser.toUserDto()
+
+                    // 2. Simpan Sesi (INI YANG SEBELUMNYA HILANG)
+                    sessionManager.saveSession(token, userDto)
+
+                    // 3. Emit Data User Lengkap ke UI
+                    emit(Resource.Success(userDto))
                 } else {
-                    Result.failure(Exception("Login berhasil tapi data user/token kosong"))
+                    emit(Resource.Error("Login berhasil tapi data tidak lengkap"))
                 }
             } else {
-                Result.failure(Exception(response.message))
+                emit(Resource.Error(response.message))
             }
         } catch (e: ClientRequestException) {
-            val errorBody = try {
+            val errorMessage = try {
                 e.response.body<SignInResponse>().message
-            } catch (_: Exception) {
+            } catch (ex: Exception) {
                 "Email atau password salah"
             }
-            Result.failure(Exception(errorBody))
+            emit(Resource.Error(errorMessage))
         } catch (e: ServerResponseException) {
-            val errorBody = try {
+            val errorMessage = try {
                 e.response.body<SignInResponse>().message
-            } catch (_: Exception) {
+            } catch (ex: Exception) {
                 "Terjadi kesalahan di server"
             }
-            Result.failure(Exception(errorBody))
+            emit(Resource.Error(errorMessage))
         } catch (e: Exception) {
-            Result.failure(Exception("Gagal Login: ${e.message}"))
+            emit(Resource.Error(e.localizedMessage ?: "Login gagal"))
         }
     }
 
-    // --- FORGOT PASSWORD (PERBAIKAN UTAMA DISINI) ---
+    // --- FORGOT PASSWORD ---
     override fun forgotPassword(email: String): Flow<Resource<String>> = flow {
         emit(Resource.Loading())
         try {
             val response = authService.forgotPassword(ForgotPasswordRequest(email))
-            // Jika sukses (200 OK)
             emit(Resource.Success(response.message))
         } catch (e: ClientRequestException) {
-            // Handle Error 4xx (Misal 404 Not Found, 400 Bad Request)
             val errorMessage = try {
-                // Mencoba membaca JSON response body untuk mengambil pesan error dari backend
                 e.response.body<ForgotPasswordResponse>().message
             } catch (ex: Exception) {
-                "Permintaan tidak valid"
+                "Email tidak ditemukan"
             }
             emit(Resource.Error(errorMessage))
         } catch (e: ServerResponseException) {
-            // Handle Error 5xx (Misal 500 Internal Server Error yang berisi "Akun Tidak Ditemukan")
             val errorMessage = try {
-                // Mencoba membaca JSON dari error 500
                 e.response.body<ForgotPasswordResponse>().message
             } catch (ex: Exception) {
-                "Terjadi kesalahan pada server (500)"
+                "Server error"
             }
             emit(Resource.Error(errorMessage))
         } catch (e: Exception) {
-            // Error Jaringan / Lainnya
-            emit(Resource.Error(e.localizedMessage ?: "Terjadi kesalahan koneksi"))
+            emit(Resource.Error(e.localizedMessage ?: "Gagal terhubung"))
         }
     }
 
-    // --- RESET PASSWORD (PERBAIKAN SAMA) ---
+    // --- RESET PASSWORD ---
     override fun resetPassword(
         email: String,
         otp: String,
@@ -150,33 +141,31 @@ class AuthRepositoryImpl(
             val response = authService.resetPassword(ResetPasswordRequest(email, otp, newPassword))
             emit(Resource.Success(response.message))
         } catch (e: ClientRequestException) {
-            // Handle 4xx
             val errorMessage = try {
                 e.response.body<ForgotPasswordResponse>().message
             } catch (ex: Exception) {
-                "Gagal mereset password, cek input Anda"
+                "OTP Salah atau Kadaluarsa"
             }
             emit(Resource.Error(errorMessage))
         } catch (e: ServerResponseException) {
-            // Handle 5xx
             val errorMessage = try {
                 e.response.body<ForgotPasswordResponse>().message
             } catch (ex: Exception) {
-                "Terjadi kesalahan pada server saat reset password"
+                "Server error"
             }
             emit(Resource.Error(errorMessage))
         } catch (e: Exception) {
-            emit(Resource.Error(e.localizedMessage ?: "Terjadi kesalahan koneksi"))
+            emit(Resource.Error(e.localizedMessage ?: "Gagal terhubung"))
         }
     }
 
     // --- LOGOUT ---
-    override suspend fun logout(): Result<Unit> {
+    override suspend fun logout(): Resource<Unit> { // Ubah Result ke Resource biar konsisten, atau biarkan suspend
         return try {
             sessionManager.clearAuthData()
-            Result.success(Unit)
+            Resource.Success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Resource.Error(e.localizedMessage ?: "Logout gagal")
         }
     }
 }

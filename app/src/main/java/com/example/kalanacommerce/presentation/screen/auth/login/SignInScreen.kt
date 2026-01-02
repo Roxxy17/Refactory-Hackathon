@@ -203,7 +203,7 @@ fun LoginScreen(
             LoginTextField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = stringResource(id = R.string.email),
+                placeholder = stringResource(id = R.string.edit_profile_email),
                 icon = Icons.Outlined.Email,
                 autofillTypes = emailAutofill,
                 keyboardType = KeyboardType.Email,

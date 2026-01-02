@@ -2,6 +2,7 @@ package com.example.kalanacommerce.presentation.screen.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kalanacommerce.core.util.Resource // Pastikan import Resource
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.domain.usecase.auth.SignInUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +21,6 @@ class SignInViewModel(
     private val _uiState = MutableStateFlow(SignInUiState())
     val uiState: StateFlow<SignInUiState> = _uiState.asStateFlow()
 
-    // --- TAMBAHAN 1: Expose email terakhir yang tersimpan ---
-    // UI akan mengamati ini untuk mengisi kolom email secara otomatis
     val lastEmail: StateFlow<String?> = sessionManager.lastEmail
         .stateIn(
             scope = viewModelScope,
@@ -30,40 +29,40 @@ class SignInViewModel(
         )
 
     fun signIn(email: String, password: String, isRemembered: Boolean) {
-        _uiState.update { it.copy(isLoading = true, error = null) }
-
         viewModelScope.launch {
-            signInUseCase(email, password)
-                .onSuccess { (token, user) ->
-                    // Simpan data sesi utama (Token, Login State, User Object)
-                    sessionManager.saveAuthData(token, isRemembered, user)
-
-                    // --- TAMBAHAN 2: Logika "Remember Me" untuk Email ---
-                    // Jika user mencentang Remember Me, kita simpan emailnya secara khusus
-                    // agar nanti bisa ditampilkan lagi (Pre-fill) saat logout/buka aplikasi lagi.
-                    if (isRemembered) {
-                        sessionManager.saveLastEmail(email)
-                    } else {
-                        // Opsional: Jika tidak dicentang, apakah ingin menghapus history email?
-                        // sessionManager.saveLastEmail("") 
+            signInUseCase(email, password).collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoading = true, error = null) }
                     }
+                    is Resource.Success -> {
+                        // Token & User SUDAH DISIMPAN otomatis oleh Repository.
+                        // Kita tinggal urus fitur "Last Email" (Remember Me)
+                        if (isRemembered) {
+                            sessionManager.saveLastEmail(email)
+                        } else {
+                            // Opsional: Hapus email terakhir jika user tidak mau diingat
+                            // sessionManager.saveLastEmail("")
+                        }
 
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSuccess = true,
-                            userName = user.name
-                        )
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = true,
+                                userName = result.data?.name ?: "User"
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = result.message
+                            )
+                        }
                     }
                 }
-                .onFailure { e ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = e.message
-                        )
-                    }
-                }
+            }
         }
     }
 

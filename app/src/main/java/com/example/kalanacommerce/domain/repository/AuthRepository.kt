@@ -1,13 +1,18 @@
 package com.example.kalanacommerce.domain.repository
 
 import com.example.kalanacommerce.core.util.Resource
-import com.example.kalanacommerce.data.remote.dto.auth.UserDto
+import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
+    // Pastikan semua return-nya Flow<Resource<...>>
+    fun register(name: String, email: String, password: String, phone: String): Flow<Resource<String>>
+
+    fun signIn(email: String, password: String): Flow<Resource<ProfileUserDto>>
+
     fun forgotPassword(email: String): Flow<Resource<String>>
+
     fun resetPassword(email: String, otp: String, newPassword: String): Flow<Resource<String>>
-    suspend fun signIn(email: String, password: String): Result<Pair<String, UserDto>>
-    suspend fun register(name: String, email: String, password: String, phoneNumber: String): Result<Unit>
-    suspend fun logout(): Result<Unit>
+
+    suspend fun logout(): Resource<Unit>
 }
