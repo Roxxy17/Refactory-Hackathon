@@ -1,149 +1,145 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddLocationAlt
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
+import org.koin.androidx.compose.koinViewModel
+import com.example.kalanacommerce.presentation.components.CustomToast // Pakai Toast Custom kamu
+import com.example.kalanacommerce.presentation.components.ToastType
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddressPage(onBack: () -> Unit) {
-    val addresses = remember {
-        listOf(
-            "Rumah" to "Jl. Sudirman No. 12, Jakarta Pusat, DKI Jakarta",
-            "Kantor" to "Gedung A Lt. 5, Jl. Rasuna Said, Kuningan, Jakarta Selatan"
-        )
+fun AddressListScreen(
+    viewModel: AddressViewModel = koinViewModel(),
+    onNavigateToAdd: () -> Unit,
+    onNavigateToEdit: (String) -> Unit,
+    onBackClick: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Handle Toast Message
+    var showToast by remember { mutableStateOf(false) }
+    var toastMessage by remember { mutableStateOf("") }
+    var toastType by remember { mutableStateOf(ToastType.Success) }
+
+    LaunchedEffect(uiState.error, uiState.successMessage) {
+        if (uiState.error != null) {
+            toastMessage = uiState.error!!
+            toastType = ToastType.Error
+            showToast = true
+            viewModel.clearMessages()
+        }
+        if (uiState.successMessage != null) {
+            toastMessage = uiState.successMessage!!
+            toastType = ToastType.Success
+            showToast = true
+            viewModel.clearMessages()
+        }
     }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Alamat Pengiriman", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* Tambah Alamat */ }) {
-                        Icon(Icons.Default.AddLocationAlt, contentDescription = "Tambah", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
-            )
+            TopAppBar(title = { Text("Daftar Alamat") })
         },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            addresses.forEachIndexed { index, (label, detail) ->
-                AddressCard(
-                    title = label,
-                    address = detail,
-                    isPrimary = index == 0,
-                    onEdit = { /* Edit */ }
-                )
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNavigateToAdd) {
+                Icon(Icons.Default.Add, contentDescription = "Tambah Alamat")
             }
         }
-    }
-}
-
-@Composable
-fun AddressCard(title: String, address: String, isPrimary: Boolean, onEdit: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = if(isPrimary) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (title == "Rumah") Icons.Default.Home else Icons.Default.Work,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                if (isPrimary) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = "UTAMA",
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else if (uiState.addresses.isEmpty()) {
+                Text("Belum ada alamat tersimpan", modifier = Modifier.align(Alignment.Center))
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.addresses) { address ->
+                        AddressItem(
+                            label = address.label,
+                            name = address.recipientName,
+                            phone = address.phoneNumber,
+                            fullAddress = address.fullAddress,
+                            isDefault = address.isDefault,
+                            onEdit = { onNavigateToEdit(address.id) },
+                            onDelete = { viewModel.deleteAddress(address.id) }
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = address,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp
+            // Tampilkan Custom Toast
+            CustomToast(
+                message = toastMessage,
+                isVisible = showToast,
+                type = toastType,
+                onDismiss = { showToast = false }
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onEdit,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Text("Ubah Alamat", color = MaterialTheme.colorScheme.onSurface)
-            }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun AddressPreview() {
-    KalanaCommerceTheme {
-        AddressPage(onBack = {})
+fun AddressItem(
+    label: String,
+    name: String,
+    phone: String,
+    fullAddress: String,
+    isDefault: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (isDefault) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("Utama") },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("$name | $phone", style = MaterialTheme.typography.bodyMedium)
+            Text(fullAddress, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Ubah")
+                }
+                TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)) {
+                    Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Hapus")
+                }
+            }
+        }
     }
 }

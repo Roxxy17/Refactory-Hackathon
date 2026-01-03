@@ -75,18 +75,21 @@ fun DashboardScreen(
                     ProfileScreen(
                         onAuthAction = {
                             if (isLoggedIn) {
-                                // --- LOGIC LOGOUT ---
+                                // --- LOGIKA LOGOUT & JADI TAMU ---
                                 scope.launch {
-                                    sessionManager.clearAuthData() // 1. Hapus Token
+                                    // 1. Hapus Data User
+                                    sessionManager.clearAuthData()
 
-                                    // 2. Refresh Dashboard ke mode Guest (Pindah ke Tab Awal)
-                                    // Kita gunakan navigate ke Dashboard route untuk me-reset state
+                                    // 2. Refresh ke Dashboard & BUNUH Instance Lama
+                                    // Kita arahkan ke Dashboard (bukan Login),
+                                    // TAPI kita pakai popUpTo(0) agar ViewModel profile yang lama HANCUR.
                                     mainNavController.navigate(Screen.Dashboard.route) {
-                                        popUpTo(0) { inclusive = true } // Bersihkan tumpukan layar
+                                        popUpTo(0) { inclusive = true }
                                     }
                                 }
                             } else {
-                                // --- LOGIC LOGIN (Jika Guest klik tombol Masuk) ---
+                                // --- LOGIKA LOGIN (Jika Tamu mau Masuk) ---
+                                // Arahkan ke Flow Auth (Welcome/Login)
                                 mainNavController.navigate(Graph.Auth)
                             }
                         },

@@ -124,7 +124,8 @@ fun CustomToast(
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
-                        maxLines = 2, // Support pesan agak panjang
+                        // UBAH BAGIAN INI:
+                        maxLines = 3, // Ubah dari 2 menjadi 3 agar muat pesan error panjang
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium
                     )

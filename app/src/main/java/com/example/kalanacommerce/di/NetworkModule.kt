@@ -10,14 +10,13 @@ import com.example.kalanacommerce.data.remote.service.ProfileServiceImpl
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.HttpRequestPipeline
+import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
@@ -32,33 +31,24 @@ val networkModule = module {
     single {
         val sessionManager: SessionManager = get()
 
-        HttpClient(OkHttp) {
+        // 1. BUAT INSTANCE CLIENT
+        val client = HttpClient(OkHttp) {
             expectSuccess = true
 
-            // --- KONFIGURASI MESIN OKHTTP ---
             engine {
                 config {
                     retryOnConnectionFailure(true)
-
-                    // Timeout Native OkHttp (Lebih akurat daripada plugin Ktor)
                     connectTimeout(30, TimeUnit.SECONDS)
                     readTimeout(30, TimeUnit.SECONDS)
                     writeTimeout(30, TimeUnit.SECONDS)
 
-                    // 🛠️ FIX MAGIC: PAKSA IPv4
-                    // Ini memperbaiki masalah di HP yang IPv6-nya tidak stabil/diblokir provider
                     dns(object : Dns {
                         override fun lookup(hostname: String): List<InetAddress> {
                             return try {
-                                // Ambil semua alamat IP
                                 val allAddresses = Dns.SYSTEM.lookup(hostname)
-                                // Hanya ambil yang IPv4 (Angka biasa, bukan Hexadecimal panjang)
                                 val ipv4Addresses = allAddresses.filter { it is Inet4Address }
-
-                                // Kalau ada IPv4, pakai itu. Kalau tidak ada, terpaksa pakai apa aja.
                                 if (ipv4Addresses.isNotEmpty()) ipv4Addresses else allAddresses
                             } catch (e: Exception) {
-                                // Fallback jika DNS gagal total
                                 Dns.SYSTEM.lookup(hostname)
                             }
                         }
@@ -66,7 +56,6 @@ val networkModule = module {
                 }
             }
 
-            // Plugin Timeout Ktor (Layer kedua, sekedar safety net)
             install(HttpTimeout) {
                 requestTimeoutMillis = 30000L
                 connectTimeoutMillis = 30000L
@@ -92,29 +81,34 @@ val networkModule = module {
                 })
             }
 
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        val token = sessionManager.tokenFlow.firstOrNull()
-                        if (!token.isNullOrEmpty()) {
-                            BearerTokens(token, "")
-                        } else {
-                            null
-                        }
-                    }
-                    sendWithoutRequest { request ->
-                        val path = request.url.pathSegments
-                        !path.contains("login") && !path.contains("register")
-                    }
-                }
-            }
-
             defaultRequest {
                 val rawUrl = BuildConfig.API_BASE_URL
                 val safeUrl = if (rawUrl.endsWith("/")) rawUrl else "$rawUrl/"
                 url(safeUrl)
             }
         }
+
+        // 2. PASANG INTERCEPTOR (PERBAIKAN SINTAKS DI SINI)
+        // Menggunakan 'HttpRequestPipeline.Before' langsung, bukan 'State.Before'
+        client.requestPipeline.intercept(HttpRequestPipeline.Before) {
+            try {
+                val token = sessionManager.tokenFlow.firstOrNull()
+
+                // 'context' di sini adalah HttpRequestBuilder
+                val path = context.url.encodedPath
+                val isAuthPath = path.contains("auth/login") || path.contains("auth/register")
+
+                if (!token.isNullOrEmpty() && !isAuthPath) {
+                    context.headers.append("Authorization", "Bearer $token")
+                    Log.d("KtorNetwork", "Token Attached (Async): ${token.takeLast(6)}")
+                }
+            } catch (e: Exception) {
+                Log.e("KtorNetwork", "Gagal attach token: ${e.message}")
+            }
+        }
+
+        // 3. RETURN CLIENT
+        client
     }
 
     single<AuthService> { AuthServiceImpl(get()) }

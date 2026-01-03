@@ -174,7 +174,7 @@ fun HelpCenterScreen(
                             subtitle = stringResource(R.string.whatsapp),
                             color = Color(0xFF25D366), // Warna WA
                             onClick = {
-                                val phoneNumber = "088806147806"
+                                val phoneNumber = "+6288806147806"
                                 val message = "Halo Admin Kalana, saya butuh bantuan."
                                 val url = "https://api.whatsapp.com/send?phone=$phoneNumber&text=${
                                     Uri.encode(message)
@@ -195,7 +195,7 @@ fun HelpCenterScreen(
                             subtitle = stringResource(R.string.website),
                             color = Color(0xFF2196F3), // Warna Web Biru
                             onClick = {
-                                val url = "https://kalanacommerce.com"
+                                val url = "https://www.kalanapantry.my.id/"
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                 context.startActivity(intent)
                             })

@@ -26,13 +26,14 @@ import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.Forgot
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressPage
-import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfilePage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressListScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.notification.SettingsPage
+import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfilePage
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
@@ -44,16 +45,11 @@ fun RequireAuth(
     navController: NavHostController,
     content: @Composable () -> Unit
 ) {
-    // 1. UBAH INITIAL JADI NULL (State: Unknown/Loading)
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = null)
 
     when (isLoggedIn) {
-        true -> {
-            // Status: SUDAH LOGIN -> Boleh Masuk
-            content()
-        }
+        true -> content()
         false -> {
-            // Status: BELUM LOGIN -> Tendang ke Halaman Auth
             LaunchedEffect(Unit) {
                 navController.navigate(Graph.Auth) {
                     popUpTo(0) { inclusive = true }
@@ -61,8 +57,6 @@ fun RequireAuth(
             }
         }
         null -> {
-            // Status: LOADING (Sedang Cek DataStore) -> Tampilkan Loading Putih
-            // Ini mencegah user ditendang padahal data belum siap
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -75,8 +69,7 @@ fun RequireAuth(
     }
 }
 
-// 2. MIDDLEWARE BARU: Satpam untuk Guest (Redirect if Logged In)
-// Ini yang akan memperbaiki masalah kamu terpental ke Login padahal masih ada session
+// 2. MIDDLEWARE: Satpam untuk Guest (Redirect if Logged In)
 @Composable
 fun RedirectIfLoggedIn(
     sessionManager: SessionManager,
@@ -87,7 +80,6 @@ fun RedirectIfLoggedIn(
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
-            // Jika sudah login tapi coba buka halaman Login/Register -> Lempar ke Dashboard
             navController.navigate(Screen.Dashboard.route) {
                 popUpTo(0) { inclusive = true }
             }
@@ -116,13 +108,9 @@ fun AppNavGraph(
             val isLoggedInState by sessionManager.isLoggedInFlow.collectAsState(initial = null)
 
             LaunchedEffect(isLoggedInState) {
-                // Tunggu sampai status login terbaca (tidak null)
                 if (isLoggedInState != null) {
-                    // Logikanya UBAH DISINI:
-                    // Mau dia User (true) atau Guest (false), SEMUANYA boleh masuk Dashboard.
-                    // Nanti Dashboard sendiri yang akan memilah tampilannya.
                     navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0) { inclusive = true } // Hapus Splash dari history
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             }
@@ -133,16 +121,17 @@ fun AppNavGraph(
             DashboardScreen(mainNavController = navController)
         }
 
-        // --- FITUR UMUM (Bisa diakses siapa saja) ---
+        // --- FITUR UMUM ---
         composable(route = Screen.TermsAndConditions.route) {
             TermsAndConditionsScreen(onBack = { navController.popBackStack() })
         }
-
         composable(route = Screen.HelpCenter.route) {
             HelpCenterScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // --- PROTECTED ROUTES (Hanya User Login) ---
+        // --- PROTECTED ROUTES (Fitur User) ---
+
+        // Transaction & Chat
         composable(route = "transaction_screen") {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
@@ -153,16 +142,59 @@ fun AppNavGraph(
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) { ChatScreen() }
         }
+
+        // Profile & Settings
         composable(route = Screen.EditProfile.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) { EditProfilePage(onBack = { navController.popBackStack() }) }
         }
-        composable(route = Screen.Address.route) {
-            val sessionManager: SessionManager = get()
-            RequireAuth(sessionManager, navController) { AddressPage(onBack = { navController.popBackStack() }) }
-        }
         composable(route = Screen.Settings.route) {
             SettingsPage(onBack = { navController.popBackStack() })
+        }
+
+        // --- FITUR ALAMAT (CRUD) ---
+
+        // 1. LIST ALAMAT
+        composable(route = Screen.Address.route) {
+            val sessionManager: SessionManager = get()
+            RequireAuth(sessionManager, navController) {
+                AddressListScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToAdd = {
+                        navController.navigate("address_create")
+                    },
+                    onNavigateToEdit = { addressId ->
+                        navController.navigate("address_edit/$addressId")
+                    }
+                )
+            }
+        }
+
+        // 2. TAMBAH ALAMAT BARU
+        composable(route = "address_create") {
+            val sessionManager: SessionManager = get()
+            RequireAuth(sessionManager, navController) {
+                AddressFormScreen(
+                    addressId = null, // ID Null = Mode Tambah
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        // 3. EDIT ALAMAT
+        composable(
+            route = "address_edit/{addressId}",
+            arguments = listOf(navArgument("addressId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val addressId = backStackEntry.arguments?.getString("addressId")
+            val sessionManager: SessionManager = get()
+
+            RequireAuth(sessionManager, navController) {
+                AddressFormScreen(
+                    addressId = addressId, // ID Ada = Mode Edit
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // --- AUTH GRAPH ---
@@ -175,7 +207,6 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
         startDestination = Screen.Welcome.route,
         route = Graph.Auth
     ) {
-        // 1. Welcome (Hanya Guest)
         composable(Screen.Welcome.route) {
             val sessionManager: SessionManager = get()
             RedirectIfLoggedIn(sessionManager, navController) {
@@ -186,15 +217,11 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             }
         }
 
-        // 2. Login (Hanya Guest)
         composable(Screen.Login.route) {
-            val sessionManager: SessionManager = get()
             val viewModel: SignInViewModel = koinViewModel()
-
             LoginScreen(
                 viewModel = viewModel,
                 onSignInSuccess = {
-                    // Navigasi manual dijalankan setelah Toast selesai (delay 1.5s di LoginScreen)
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -202,13 +229,10 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
-
         }
 
-        // 3. Register (Hanya Guest)
         composable(route = Screen.Register.route) {
             val sessionManager: SessionManager = get()
-
             RedirectIfLoggedIn(sessionManager, navController) {
                 RegisterScreen(
                     onNavigateToLogin = {
@@ -226,42 +250,27 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             }
         }
 
-        // --- FORGOT PASSWORD FLOW ---
-        // Catatan: Screen ini TIDAK dibungkus RedirectIfLoggedIn agar bisa diakses dari Profile
-
-        // Step 1: Email
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordStepEmailScreen(
-                onNavigateBack = {
-                    // Logika Back: Cukup popBackStack.
-                    // Jika dari Login -> balik ke Login. Jika dari Profile -> balik ke Profile.
-                    navController.popBackStack()
-                },
-                onNavigateToOtp = { email ->
-                    navController.navigate("forgot_password_otp/$email")
-                }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToOtp = { email -> navController.navigate("forgot_password_otp/$email") }
             )
         }
 
-        // Step 2: OTP
         composable(
             route = "forgot_password_otp/{email}",
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
-            val sessionManager: SessionManager = get() // Perlu ini untuk Logout paksa
+            val sessionManager: SessionManager = get()
 
             ForgotPasswordStepOtpScreen(
                 email = email,
                 onNavigateBack = { navController.popBackStack() },
                 onResetSuccess = {
-                    // 1. Clear Data Session (Logout)
-                    kotlinx.coroutines.runBlocking {
-                        sessionManager.clearAuthData()
-                    }
-                    // 2. Arahkan ke Login Screen
+                    kotlinx.coroutines.runBlocking { sessionManager.clearAuthData() }
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true } // Hapus semua history
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )

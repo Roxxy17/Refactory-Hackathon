@@ -1,6 +1,6 @@
 package com.example.kalanacommerce.data.remote.dto.user
 
-import com.example.kalanacommerce.data.remote.dto.adress.AddressDto
+import com.example.kalanacommerce.data.remote.dto.address.AddressDto
 import kotlinx.serialization.Serializable
 
 @Serializable
