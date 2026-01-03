@@ -58,6 +58,7 @@ class AddressViewModel(
         postalCode: String,
         provinceId: String,
         cityId: String,
+        districtId: String,
         isDefault: Boolean
     ) {
         viewModelScope.launch {
@@ -69,7 +70,7 @@ class AddressViewModel(
                 postalCode = postalCode,
                 provincesId = provinceId,
                 citiesId = cityId,
-                districtsId = "ID-JK-JKT-GM",
+                districtsId = districtId,
                 isDefault = isDefault
             )
 

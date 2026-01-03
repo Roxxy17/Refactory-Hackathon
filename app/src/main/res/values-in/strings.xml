@@ -152,5 +152,46 @@
     <string name="error_update_profile">Gagal memperbarui profil</string>
     <string name="error_image_processing">Gagal memproses gambar</string>
 
+    // address page tambah
+    <string name="address_list_title">Daftar Alamat</string>
+    <string name="btn_add_address_new">Alamat Baru</string>
+    <string name="btn_add">Tambah</string>
+    <string name="btn_back">Kembali</string>
+
+    <string name="empty_address_title">Belum Ada Alamat</string>
+    <string name="empty_address_desc">Tambahkan alamat pengiriman agar proses checkoutmu lebih cepat dan mudah.</string>
+
+    <string name="label_main_address">Alamat Utama</string>
+    <string name="btn_delete">Hapus</string>
+    <string name="btn_edit">Ubah</string>
+
+    <string name="title_add_address">Tambah Alamat</string>
+    <string name="title_edit_address">Ubah Alamat</string>
+    <string name="btn_save_address">Simpan Alamat</string>
+    <string name="btn_save_changes">Simpan Perubahan</string>
+
+    <string name="label_address_label">Label Alamat</string>
+    <string name="hint_address_label">Contoh: Rumah, Kantor, Kos</string>
+    <string name="placeholder_address_label">Simpan sebagai...</string>
+
+    <string name="section_recipient_info">Info Penerima</string>
+    <string name="label_full_name">Nama Lengkap</string>
+    <string name="label_phone_number">Nomor HP</string>
+
+    <string name="section_location_detail">Detail Lokasi</string>
+    <string name="label_full_address">Alamat Lengkap</string>
+    <string name="placeholder_full_address">Nama Jalan, No. Rumah, RT/RW</string>
+    <string name="label_postal_code">Kode Pos</string>
+
+    <string name="section_area_id">Area Wilayah (ID)</string>
+    <string name="helper_area_id">Masukkan ID Wilayah (Sementara):</string>
+    <string name="label_province_id">Provinsi ID</string>
+    <string name="label_city_id">Kota ID</string>
+    <string name="label_district_id">Kec. ID</string>
+
+    <string name="title_set_main_address">Jadikan Alamat Utama</string>
+    <string name="desc_set_main_address">Alamat ini akan otomatis terpilih saat checkout.</string>
+
+
 
 </resources>

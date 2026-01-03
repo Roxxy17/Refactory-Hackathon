@@ -153,6 +153,46 @@
     <string name="error_update_profile">Failed to update profile</string>
     <string name="error_image_processing">Failed to process image</string>
 
+    address page tambah
+    <string name="address_list_title">Address List</string>
+    <string name="btn_add_address_new">New Address</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_back">Back</string>
+
+    <string name="empty_address_title">No Addresses Yet</string>
+    <string name="empty_address_desc">Add a shipping address to make your checkout process faster and easier.</string>
+
+    <string name="label_main_address">Main Address</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_edit">Edit</string>
+
+    <string name="title_add_address">Add Address</string>
+    <string name="title_edit_address">Edit Address</string>
+    <string name="btn_save_address">Save Address</string>
+    <string name="btn_save_changes">Save Changes</string>
+
+    <string name="label_address_label">Address Label</string>
+    <string name="hint_address_label">Ex: Home, Office, Apartment</string>
+    <string name="placeholder_address_label">Save as...</string>
+
+    <string name="section_recipient_info">Recipient Info</string>
+    <string name="label_full_name">Full Name</string>
+    <string name="label_phone_number">Phone Number</string>
+
+    <string name="section_location_detail">Location Details</string>
+    <string name="label_full_address">Full Address</string>
+    <string name="placeholder_full_address">Street Name, House No., Unit</string>
+    <string name="label_postal_code">Postal Code</string>
+
+    <string name="section_area_id">Area Region (ID)</string>
+    <string name="helper_area_id">Enter Region ID (Temporary):</string>
+    <string name="label_province_id">Province ID</string>
+    <string name="label_city_id">City ID</string>
+    <string name="label_district_id">District ID</string>
+
+    <string name="title_set_main_address">Set as Main Address</string>
+    <string name="desc_set_main_address">This address will be automatically selected during checkout.</string>
+
 
 
 </resources>
