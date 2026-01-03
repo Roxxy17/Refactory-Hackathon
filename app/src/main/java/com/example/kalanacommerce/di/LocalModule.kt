@@ -7,6 +7,5 @@ import org.koin.dsl.module
 
 val localModule = module {
     single { SessionManager(androidContext()) }
-
     single { ThemeManager(androidContext())}
 }

@@ -27,8 +27,7 @@ val appModule = module {
     single { ThemeManager(androidContext()) }
     single { LanguageManager(androidContext()) }
 
-    single<AddressService> { AddressServiceImpl(get()) }
-    single<AddressRepository> { AddressRepositoryImpl(get()) }
+
     viewModel { AddressViewModel(get()) }
 
     viewModel {

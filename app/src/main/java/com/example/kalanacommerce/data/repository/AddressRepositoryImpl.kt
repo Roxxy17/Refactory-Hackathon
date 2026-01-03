@@ -5,8 +5,14 @@ import com.example.kalanacommerce.data.remote.dto.address.AddressRequest
 import com.example.kalanacommerce.data.remote.service.AddressService
 import com.example.kalanacommerce.domain.model.Address
 import com.example.kalanacommerce.domain.repository.AddressRepository
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.RedirectResponseException
+import io.ktor.client.plugins.ServerResponseException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeoutException
 
 class AddressRepositoryImpl(
     private val api: AddressService
@@ -24,24 +30,21 @@ class AddressRepositoryImpl(
                     label = dto.label,
                     recipientName = dto.recipientName,
                     phoneNumber = dto.phoneNumber,
-
                     street = dto.street,
                     postalCode = dto.postalCode,
                     provincesId = dto.provincesId ?: "",
                     citiesId = dto.citiesId ?: "",
                     districtsId = dto.districtsId ?: "",
-
                     fullAddress = "${dto.street}, ${dto.citiesId ?: ""} ${dto.postalCode}",
                     isDefault = dto.isDefault
                 )
             }
             emit(Resource.Success(domainData))
         } catch (e: Exception) {
-            emit(Resource.Error("Gagal memuat alamat: ${e.localizedMessage}"))
+            emit(Resource.Error(getDetailedErrorMessage(e)))
         }
     }
 
-    // FUNGSI INI SEKARANG SUDAH ADA DI INTERFACE, JADI TIDAK AKAN ERROR 'OVERRIDES NOTHING' LAGI
     override fun getAddressById(id: String): Flow<Resource<Address>> = flow {
         emit(Resource.Loading())
         try {
@@ -54,22 +57,20 @@ class AddressRepositoryImpl(
                     label = dto.label,
                     recipientName = dto.recipientName,
                     phoneNumber = dto.phoneNumber,
-
                     street = dto.street,
                     postalCode = dto.postalCode,
                     provincesId = dto.provincesId ?: "",
                     citiesId = dto.citiesId ?: "",
                     districtsId = dto.districtsId ?: "",
-
                     fullAddress = "${dto.street}, ${dto.citiesId ?: ""} ${dto.postalCode}",
                     isDefault = dto.isDefault
                 )
                 emit(Resource.Success(address))
             } else {
-                emit(Resource.Error("Alamat tidak ditemukan"))
+                emit(Resource.Error("Alamat tidak ditemukan."))
             }
         } catch (e: Exception) {
-            emit(Resource.Error("Gagal load detail: ${e.localizedMessage}"))
+            emit(Resource.Error(getDetailedErrorMessage(e)))
         }
     }
 
@@ -79,7 +80,7 @@ class AddressRepositoryImpl(
             api.createAddress(request)
             emit(Resource.Success("Alamat berhasil ditambahkan"))
         } catch (e: Exception) {
-            emit(Resource.Error("Gagal tambah alamat: ${e.localizedMessage}"))
+            emit(Resource.Error(getDetailedErrorMessage(e)))
         }
     }
 
@@ -89,7 +90,7 @@ class AddressRepositoryImpl(
             api.updateAddress(id, request)
             emit(Resource.Success("Alamat berhasil diupdate"))
         } catch (e: Exception) {
-            emit(Resource.Error("Gagal update alamat: ${e.localizedMessage}"))
+            emit(Resource.Error(getDetailedErrorMessage(e)))
         }
     }
 
@@ -99,7 +100,26 @@ class AddressRepositoryImpl(
             api.deleteAddress(id)
             emit(Resource.Success("Alamat berhasil dihapus"))
         } catch (e: Exception) {
-            emit(Resource.Error("Gagal hapus alamat: ${e.localizedMessage}"))
+            emit(Resource.Error(getDetailedErrorMessage(e)))
+        }
+    }
+
+    // --- HELPER ERROR MESSAGE (Sama seperti Profile) ---
+    private fun getDetailedErrorMessage(e: Exception): String {
+        return when (e) {
+            is ClientRequestException -> {
+                when (e.response.status.value) {
+                    400, 422 -> "Data alamat tidak valid. Cek inputan."
+                    401 -> "Sesi habis. Silakan login ulang."
+                    404 -> "Alamat tidak ditemukan."
+                    else -> "Gagal memproses permintaan."
+                }
+            }
+            is ServerResponseException -> "Server sedang sibuk/error (500)."
+            is RedirectResponseException -> "Kesalahan jaringan (Redirect)."
+            is TimeoutException, is SocketTimeoutException -> "Waktu habis. Koneksi internet lambat."
+            is IOException -> "Gagal terhubung. Cek koneksi internet."
+            else -> "Terjadi kesalahan." // Pesan singkat tanpa detail teknis
         }
     }
 }

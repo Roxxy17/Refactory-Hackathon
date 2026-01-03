@@ -8,7 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.data.local.datastore.SessionManager
+import com.example.kalanacommerce.data.mapper.toDto // <--- [PENTING] Import Mapper
 import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
+import com.example.kalanacommerce.domain.model.User // <--- [PENTING] Import User Domain
 import com.example.kalanacommerce.domain.repository.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,28 +33,34 @@ class EditProfileViewModel(
 
     private fun fetchProfileData() {
         viewModelScope.launch {
-            // 1. Load dari Cache (SessionManager) dulu
-            val cachedUser = sessionManager.userFlow.firstOrNull()
-            if (cachedUser != null) {
-                updateLocalUi(cachedUser)
+            // 1. Load dari Cache (SessionManager menyimpan DTO) - Tidak perlu ubah
+            val cachedUserDto = sessionManager.userFlow.firstOrNull()
+            if (cachedUserDto != null) {
+                updateLocalUi(cachedUserDto)
             }
 
-            // 2. Ambil data terbaru dari Server
+            // 2. Ambil data terbaru dari Server (Return: Resource<User>)
             profileRepository.getProfile().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
-                        if (cachedUser == null) {
+                        if (cachedUserDto == null) {
                             _uiState.update { it.copy(isLoading = true) }
                         }
                     }
                     is Resource.Success -> {
-                        val freshUser = result.data
-                        if (freshUser != null) {
-                            updateLocalUi(freshUser)
-                            // Simpan ke SessionManager agar sinkron
+                        val freshUserDomain: User? = result.data
+
+                        if (freshUserDomain != null) {
+                            // KONVERSI DOMAIN -> DTO
+                            val userDto = freshUserDomain.toDto()
+
+                            // Update UI Lokal
+                            updateLocalUi(userDto)
+
+                            // Simpan ke SessionManager
                             val token = sessionManager.tokenFlow.firstOrNull()
                             if (token != null) {
-                                sessionManager.saveSession(token, freshUser)
+                                sessionManager.saveSession(token, userDto)
                             }
                         }
                         _uiState.update { it.copy(isLoading = false) }
@@ -61,7 +69,7 @@ class EditProfileViewModel(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = result.message // Pesan detail dari Repository
+                                errorMessage = result.message
                             )
                         }
                     }
@@ -70,6 +78,7 @@ class EditProfileViewModel(
         }
     }
 
+    // Fungsi ini tetap menerima DTO karena UI State masih pakai struktur data lama
     private fun updateLocalUi(user: ProfileUserDto) {
         _uiState.update {
             it.copy(
@@ -89,6 +98,7 @@ class EditProfileViewModel(
         viewModelScope.launch {
             val currentState = _uiState.value
 
+            // Repository.updateProfile return String (Pesan), jadi tidak ada perubahan tipe data
             profileRepository.updateProfile(
                 name = currentState.name,
                 email = currentState.email,
@@ -97,7 +107,7 @@ class EditProfileViewModel(
                 when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                     is Resource.Success -> {
-                        refreshSessionData()
+                        refreshSessionData() // Panggil refresh setelah update sukses
                         _uiState.update { it.copy(isLoading = false, successMessage = "Profil berhasil diperbarui") }
                     }
                     is Resource.Error -> {
@@ -108,58 +118,46 @@ class EditProfileViewModel(
         }
     }
 
-    // --- FUNGSI UPDATE PHOTO DENGAN TRY-CATCH YANG KUAT ---
     fun updatePhoto(context: Context, uri: Uri) {
         viewModelScope.launch {
             try {
-                _uiState.update { it.copy(isLoading = true) } // Mulai Loading
+                _uiState.update { it.copy(isLoading = true) }
 
-                // 1. Buka Stream dari URI
                 val contentResolver = context.contentResolver
                 val inputStream = contentResolver.openInputStream(uri)
                     ?: throw Exception("Gagal membuka file gambar (Stream Null)")
 
-                // 2. Decode ke Bitmap
                 val originalBitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream.close() // Selalu tutup stream setelah dipakai
+                inputStream.close()
 
                 if (originalBitmap != null) {
-                    // 3. KOMPRESI GAMBAR (Cegah Error 413 Entity Too Large)
                     val outputStream = ByteArrayOutputStream()
-
-                    // Kompres ke JPEG dengan kualitas 50%
                     originalBitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
-
                     val compressedImageBytes = outputStream.toByteArray()
 
-                    // 4. Kirim ke Repository
                     profileRepository.updatePhoto(compressedImageBytes).collect { result ->
                         when (result) {
                             is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                             is Resource.Success -> {
-                                refreshSessionData()
+                                refreshSessionData() // Panggil refresh setelah upload sukses
                                 _uiState.update { it.copy(isLoading = false, successMessage = "Foto berhasil diubah") }
                             }
                             is Resource.Error -> {
-                                // Error dari Server/Jaringan (sudah didetailkan di Repository)
                                 _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                             }
                         }
                     }
                 } else {
-                    // Error jika gambar tidak bisa dibaca (misal format tidak didukung)
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = "Gagal membaca file gambar. Format mungkin tidak didukung.")
+                        it.copy(isLoading = false, errorMessage = "Gagal membaca file gambar.")
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Error LOKAL (Processing Error)
-                // Ini menangkap error seperti OutOfMemory, File tidak ditemukan, dll.
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Gagal memproses gambar di HP: ${e.localizedMessage ?: "Error tidak diketahui"}"
+                        errorMessage = "Gagal memproses gambar: ${e.localizedMessage}"
                     )
                 }
             }
@@ -167,15 +165,19 @@ class EditProfileViewModel(
     }
 
     private suspend fun refreshSessionData() {
+        // Return Repo sekarang Resource<User>
         profileRepository.getProfile().collect { result ->
             if (result is Resource.Success && result.data != null) {
-                val newUser = result.data
-                val token = sessionManager.tokenFlow.firstOrNull()
+                val userDomain = result.data // Tipe: User
 
+                // Konversi Domain -> DTO
+                val userDto = userDomain.toDto()
+
+                val token = sessionManager.tokenFlow.firstOrNull()
                 if (token != null) {
-                    sessionManager.saveSession(token, newUser)
+                    sessionManager.saveSession(token, userDto)
                 }
-                updateLocalUi(newUser)
+                updateLocalUi(userDto)
             }
         }
     }

@@ -9,6 +9,8 @@ import com.example.kalanacommerce.data.local.datastore.LanguageManager
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.data.mapper.toDto // <--- [PENTING] Import Mapper
+import com.example.kalanacommerce.domain.model.User // <--- [PENTING] Import Domain Model
 import com.example.kalanacommerce.domain.repository.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,29 +30,18 @@ class ProfileViewModel(
     val uiState = _uiState.asStateFlow()
 
     init {
-        // 1. Observasi Data User Lokal (Session)
         observeSession()
-
-        // 2. Observasi Pengaturan
         observeTheme()
         observeLanguage()
-
-        // --- PERBAIKAN DI SINI ---
-        // HAPUS: fetchUserProfile() <-- Jangan panggil manual di init!
-        // GANTI DENGAN INI:
         observeTokenAndFetch()
     }
 
-    // --- FUNGSI BARU: Pantau Token & Fetch Otomatis ---
     private fun observeTokenAndFetch() {
         viewModelScope.launch {
-            // Kita collect tokenFlow. Setiap kali token berubah (Login/Logout), blok ini jalan.
             sessionManager.tokenFlow.collect { token ->
                 if (!token.isNullOrEmpty()) {
-                    // Ada Token (User B Login) -> Tarik data dari API
                     fetchUserProfile()
                 } else {
-                    // Token Null (Logout) -> Bersihkan UI State agar data hantu hilang
                     _uiState.update {
                         it.copy(user = null, error = null, isLoading = false)
                     }
@@ -59,24 +50,25 @@ class ProfileViewModel(
         }
     }
 
-    // Fungsi fetchUserProfile (sedikit penyesuaian agar lebih aman)
     fun fetchUserProfile() {
         viewModelScope.launch {
             val token = sessionManager.tokenFlow.firstOrNull()
 
             if (!token.isNullOrEmpty()) {
-                // Tampilkan loading hanya jika data user belum ada (biar smooth)
                 if (_uiState.value.user == null) {
                     _uiState.update { it.copy(isLoading = true) }
                 }
 
+                // Repository sekarang mengembalikan Resource<User> (Domain)
                 profileRepository.getProfile().collect { result ->
                     when (result) {
                         is Resource.Success -> {
-                            val freshUser = result.data
-                            if (freshUser != null) {
-                                // Simpan ke session, UI akan update via 'observeSession'
-                                sessionManager.saveSession(token, freshUser)
+                            val freshUserDomain: User? = result.data
+
+                            if (freshUserDomain != null) {
+                                // KONVERSI DOMAIN -> DTO UNTUK SESSION
+                                val userDto = freshUserDomain.toDto()
+                                sessionManager.saveSession(token, userDto)
                             }
                             _uiState.update { it.copy(isLoading = false, error = null) }
                         }
@@ -92,15 +84,16 @@ class ProfileViewModel(
         }
     }
 
-    // --- SISANYA TETAP SAMA ---
     private fun observeSession() {
         viewModelScope.launch {
-            sessionManager.userFlow.collect { user ->
-                _uiState.update { it.copy(user = user) }
+            // SessionManager masih menyimpan DTO, jadi UI State menerima DTO
+            sessionManager.userFlow.collect { userDto ->
+                _uiState.update { it.copy(user = userDto) }
             }
         }
     }
 
+    // ... (Sisa fungsi Theme dan Language tidak berubah) ...
     private fun observeTheme() {
         viewModelScope.launch {
             themeManager.themeSettingFlow.collect { setting ->

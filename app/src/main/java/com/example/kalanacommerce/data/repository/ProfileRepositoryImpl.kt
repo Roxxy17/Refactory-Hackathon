@@ -1,9 +1,10 @@
 package com.example.kalanacommerce.data.repository
 
 import com.example.kalanacommerce.core.util.Resource
+import com.example.kalanacommerce.data.mapper.toDomain
 import com.example.kalanacommerce.data.remote.dto.user.UpdateProfileRequest
-import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
 import com.example.kalanacommerce.data.remote.service.ProfileService
+import com.example.kalanacommerce.domain.model.User
 import com.example.kalanacommerce.domain.repository.ProfileRepository
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
@@ -20,18 +21,20 @@ class ProfileRepositoryImpl(
     private val profileService: ProfileService
 ) : ProfileRepository {
 
-    override fun getProfile(): Flow<Resource<ProfileUserDto>> = flow {
+    override fun getProfile(): Flow<Resource<User>> = flow {
         emit(Resource.Loading())
         try {
-            val response = profileService.getProfile()
+            val response = profileService.getProfile() // Return BaseResponse<ProfileUserDto>
             if (response.data != null) {
-                emit(Resource.Success(response.data))
+                // MAPPING DTO -> DOMAIN
+                val userDomain = response.data.toDomain()
+                emit(Resource.Success(userDomain))
             } else {
-                emit(Resource.Error("Data kosong: ${response.message}"))
+                emit(Resource.Error("Data kosong"))
             }
         } catch (e: Exception) {
-            // Gunakan helper error detail
-            emit(Resource.Error(getDetailedErrorMessage(e)))
+            // ... error handling ...
+            emit(Resource.Error("Gagal load profil"))
         }
     }
 
@@ -62,31 +65,45 @@ class ProfileRepositoryImpl(
         }
     }
 
-    // --- HELPER: LOGGING LENGKAP UNTUK USER/TOAST ---
+    // --- HELPER: LOGGING LENGKAP & BERSIH UNTUK USER ---
     private fun getDetailedErrorMessage(e: Exception): String {
         return when (e) {
-            // Error 4xx (Salah Request, Data Kegedean, dll)
+            // Error 4xx (Salah Request, Data Kegedean, Auth)
             is ClientRequestException -> {
                 val status = e.response.status.value
-                val desc = e.response.status.description
-                "Gagal (Client $status): $desc. \nDetail: ${e.message}"
+                when (status) {
+                    413 -> "Gagal: Ukuran foto terlalu besar. Harap kompres foto atau pilih yang lebih kecil."
+                    401 -> "Gagal: Sesi telah berakhir. Silakan login ulang."
+                    400, 422 -> "Gagal: Data tidak valid. Cek kembali inputan Anda."
+                    else -> "Gagal ($status): Permintaan tidak dapat diproses."
+                }
             }
+
             // Error 5xx (Server Meledak/Down)
             is ServerResponseException -> {
                 val status = e.response.status.value
-                "Gagal (Server $status): Maaf, server sedang bermasalah. \nDetail: ${e.message}"
+                "Maaf, server sedang bermasalah ($status). Silakan coba lagi nanti."
             }
+
             // Error 3xx (Redirect aneh)
             is RedirectResponseException -> {
-                "Gagal (Redirect): Terjadi pengalihan tidak terduga. \nDetail: ${e.message}"
+                "Terjadi kesalahan pengalihan jaringan."
             }
-            // Error Koneksi (Timeout)
+
+            // Error Koneksi (Timeout / No Internet)
             is TimeoutException, is SocketTimeoutException -> {
-                "Waktu Habis (Timeout): Koneksi lambat atau server tidak merespon. Cek internetmu."
+                "Waktu habis. Koneksi internet Anda lambat atau tidak stabil."
             }
+
+            // Error Java/IO (Biasanya tidak ada internet)
+            is java.io.IOException -> {
+                "Gagal terhubung. Periksa koneksi internet Anda."
+            }
+
             // Error Lainnya
             else -> {
-                "Error Tidak Dikenal: ${e.localizedMessage ?: e.toString()}"
+                // Hapus detail teknis panjang, ambil localizedMessage singkat saja
+                "Terjadi kesalahan: ${e.message?.take(50) ?: "Tidak diketahui"}"
             }
         }
     }
