@@ -2,13 +2,29 @@ package com.example.kalanacommerce
 
 import android.app.Application
 import com.example.kalanacommerce.di.appModule
+import com.example.kalanacommerce.di.localModule
+import com.example.kalanacommerce.di.networkModule
+import com.example.kalanacommerce.di.repositoryModule
+import com.example.kalanacommerce.di.useCaseModule
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
 class MyApplication : Application() {
     override fun onCreate() {
+
         super.onCreate()
         startKoin {
-            modules(appModule) // Daftarkan modul Koin Anda
+            androidContext(this@MyApplication)
+            // * Muat semua modul yang sudah dirapikan
+            modules(
+                // * bagian di ( back/di)
+                networkModule,
+                repositoryModule,
+                useCaseModule,
+                localModule,   // (Nama baru dari DataStoreModule)
+                appModule
+                // * yang lain jika ada
+            )
         }
     }
 }

@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <domain-config>
-        <domain includeSubdomains="true">cipta-works.hackathon.sev-2.com</domain>
-        <trust-anchors>
-            <certificates src="system" />
-            <certificates src="user" />
-        </trust-anchors>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">202.155.14.40</domain>
     </domain-config>
-
-    <base-config>
-        <trust-anchors>
-            <certificates src="system" />
-            <certificates src="user" />
-        </trust-anchors>
-    </base-config>
 
 </network-security-config>

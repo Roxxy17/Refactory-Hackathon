@@ -1,5 +1,16 @@
-<resources>
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
     <string name="app_name">KalanaCommerce</string>
+
+    // Get Started
+    <string name="get_started_logo_desc">Kalana Logo</string>
+    <string name="get_started_title">Freshness You Can Trust</string>
+    <string name="get_started_desc">Experience the best quality products directly\nfrom nature to your doorstep.</string>
+    <string name="get_started_btn">Get Started</string>
+    <string name="get_started_have_account">Already have an account?</string>
+    <string name="get_started_sign_in">Sign In</string>
+
+    // Sign In
     <string name="login_welcome_back">Welcome Back!</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -9,4 +20,179 @@
     <string name="or_continue_with">OR</string>
     <string name="dont_have_account">Don\'t have an account?</string>
     <string name="sign_up">Sign up</string>
+    <string name="welcome_back_user">Welcome back, %1$s!</string>
+    <string name="Sign_in_please_sign_in_to_your_account">Please sign in to your account</string>
+
+    // Profile Screen
+    <string name="language">Language</string>
+    <string name="bahasa_diganti_ke_indonesia">Language changed to Indonesian 🇮🇩</string>
+    <string name="language_changed_to_english">Language changed to English 🇺🇸</string>
+    <string name="my_account">My Account</string>
+    <string name="edit_profil">Edit Profile</string>
+    <string name="ubah_profil">Change Profile</string>
+    <string name="alamat_pengiriman">Shipping Address</string>
+    <string name="daftar_alamat">Address List</string>
+    <string name="keamanan_akun">Account Security</string>
+    <string name="kata_sandi_pin"><![CDATA[Password]]></string>
+    <string name="pengaturan">Settings</string>
+    <string name="notifikasi">Notifications</string>
+    <string name="semua_notifikasi_aktif">All notifications enabled</string>
+    <string name="tampilan_aplikasi">App Appearance</string>
+    <string name="ikuti_sistem">System Default</string>
+    <string name="mode_terang">Light Mode</string>
+    <string name="mode_gelap">Dark Mode</string>
+    <string name="bahasa_indonesia">Indonesian</string>
+    <string name="english">English</string>
+    <string name="syarat_ketentuan"><![CDATA[Terms & Conditions]]></string>
+    <string name="kebijakan_penggunaan">Usage Policy</string>
+    <string name="pusat_bantuan">Help Center</string>
+    <string name="hubungi_kami">Contact Us</string>
+    <string name="versi_1_0_0_build_102">Version 1.0.0 (Build 102)</string>
+    <string name="profil_saya">My Profile</string>
+    <string name="selamat_datang">Welcome</string>
+    <string name="tampilan_mengikuti_sistem">Appearance set to System Default 📱</string>
+    <string name="mode_terang_aktif">Light Mode activated ☀️</string>
+    <string name="mode_gelap_aktif">Dark Mode activated 🌙</string>
+    <string name="hai_pengunjung">Hi, Guest!</string>
+    <string name="masuk_untuk_akses_fitur_lengkap">Log in to access full features</string>
+    <string name="masuk_atau_daftar">Log In or Sign Up</string>
+    <string name="pesanan">Orders</string>
+    <string name="favorit">Favorites</string>
+    <string name="voucher">Vouchers</string>
+    <string name="keluar_aplikasi">Log Out</string>
+    <string name="masuk_sekarang">Log In Now</string>
+
+    // Help Center
+    <string name="help_subtitle">How can we help you today? Select a contact method below or check our FAQ.</string>
+    <string name="faq_title">Frequently Asked Questions</string>
+    <string name="faq_q1">When can I pick up my order?</string>
+    <string name="faq_a1">Check the \'My Orders\' menu. Once the status changes to \'Ready for Pickup\', please come to our store and show the order proof to our staff.</string>
+    <string name="faq_q2">What payment methods are available?</string>
+    <string name="faq_a2">We support Bank Transfer (BCA, Mandiri, BRI), E-Wallet (GoPay, OVO, Dana), and Credit Card.</string>
+    <string name="faq_q3">How do I request a refund?</string>
+    <string name="faq_a3">Refund requests are valid for 24 hours. We highly recommend checking the item condition immediately upon pickup. Contact admin via WhatsApp for assistance.</string>
+    <string name="faq_q4">Is home delivery available?</string>
+    <string name="faq_a4">We apologize, currently we only support **Self Pick-up**. Orders must be collected directly at our store location.</string>
+    <string name="faq_q5">Where is the pickup location?</string>
+    <string name="faq_a5">The store location is listed on the \'Contact\' page or in your order details. Please ensure you visit during opening hours.</string>
+    <string name="faq_q6">Forgot your password?</string>
+    <string name="faq_a6">Click \'Forgot Password\' on the login page, enter your email, and we will send an OTP code to reset your password.</string>
+    <string name="visit_us">Visit Us</string>
+    <string name="website">Website</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="chat_admin">Chat Admin</string>
+
+
+    // Terms And Conditions
+    <string name="terms_conditions"><![CDATA[Terms & Conditions]]></string>
+    <string name="kembali">Kembali</string>
+    <string name="last_updated_december_2025">Last updated: December 2025</string>
+    <string name="welcome_to_kalana_commerce">Welcome to Kalana Commerce!</string>
+    <string name="stated">These terms and conditions outline the rules and regulations for the use of Kalana Commerce\'s Application. By accessing this app we assume you accept these terms and conditions. Do not continue to use Kalana Commerce if you do not agree to take all of the terms and conditions stated on this page.</string>
+    <string name="license">1. License</string>
+    <string name="license_text">Unless otherwise stated, Kalana Commerce and/or its licensors own the intellectual property rights for all material on Kalana Commerce. All intellectual property rights are reserved. You may access this from Kalana Commerce for your own personal use subjected to restrictions set in these terms and conditions.</string>
+    <string name="user_accounts">2. User Accounts</string>
+    <string name="user_accounts_text">When you create an account with us, you must provide us information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.</string>
+    <string name="content_liability">3. Content Liability</string>
+    <string name="content_liability_text">We shall not be hold responsible for any content that appears on your App. You agree to protect and defend us against all claims that is rising on your App. No link(s) should appear on any Website that may be interpreted as libelous, obscene or criminal, or which infringes, otherwise violates, or advocates the infringement or other violation of, any third party rights.</string>
+    <string name="your_privacy">4. Your Privacy</string>
+    <string name="your_privacy_text">Please read our Privacy Policy. We handle your data with care and use industry-standard encryption to protect your personal information.</string>
+    <string name="question_text">If you have any questions about these Terms, please contact us at support@kalanacommerce.com</string>
+
+    // ForgotPasswordStepEmailScreen
+    <string name="forgot_password_title">Forgot Password?</string>
+    <string name="forgot_password_desc">Enter the email associated with your account. We will send instructions to reset your password.</string>
+    <string name="email_address">Email Address</string>
+    <string name="email_placeholder">name@email.com</string>
+    <string name="invalid_email_format">Invalid email format</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="check_your_email">Check Your Email</string>
+    <string name="email_sent_desc">We have sent a password reset link to:\n%1$s</string>
+    <string name="back_to_login">Back to Login</string>
+    <string name="resend_link">Resend link</string>
+    <string name="back">Back</string>
+
+    // ForgotPasswordStepOtpScreen
+    <string name="otp_title">OTP Verification</string>
+    <string name="otp_instruction">Enter the 6-digit code sent to \n%1$s</string>
+    <string name="otp_label">OTP Code</string>
+    <string name="new_password_label">New Password</string>
+    <string name="confirm_password_label">Confirm New Password</string>
+    <string name="reset_password_btn">Reset Password</string>
+    <string name="password_changed_title">Password Changed!</string>
+    <string name="password_changed_desc">Your password has been updated successfully. Please login again.</string>
+    <string name="password_mismatch_error">Passwords do not match</string>
+
+    // language selector
+    <string name="language_dialog_title">App Language</string>
+    <string name="language_dialog_subtitle">Select your preferred language for the interface.</string>
+    <string name="language_indonesia_desc">Indonesian Language</string>
+    <string name="language_english_desc">English Language</string>
+    <string name="cancel">Cancel</string>
+
+    // Theme Dialog Selector
+    <string name="theme_dialog_title">App Appearance</string>
+    <string name="theme_dialog_subtitle">Choose the display mode you prefer.</string>
+    <string name="theme_option_system">System Default</string>
+    <string name="theme_option_system_desc">Adjusts to your device\'s settings.</string>
+    <string name="theme_option_light">Light Mode</string>
+    <string name="theme_option_light_desc">Clean look with a bright background.</string>
+    <string name="theme_option_dark">Dark Mode</string>
+    <string name="theme_option_dark_desc">Easy on the eyes, saves battery on OLED screens.</string>
+    <string name="close_content_description">Close</string>
+    <string name="selected_content_description">Selected</string>
+
+    // Edit Profile
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="full_name">Full Name</string>
+    <string name="edit_profile_email">Email</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="success_update_profile">Profile updated successfully</string>
+    <string name="error_update_profile">Failed to update profile</string>
+    <string name="error_image_processing">Failed to process image</string>
+
+    address page tambah
+    <string name="address_list_title">Address List</string>
+    <string name="btn_add_address_new">New Address</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_back">Back</string>
+
+    <string name="empty_address_title">No Addresses Yet</string>
+    <string name="empty_address_desc">Add a shipping address to make your checkout process faster and easier.</string>
+
+    <string name="label_main_address">Main Address</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_edit">Edit</string>
+
+    <string name="title_add_address">Add Address</string>
+    <string name="title_edit_address">Edit Address</string>
+    <string name="btn_save_address">Save Address</string>
+    <string name="btn_save_changes">Save Changes</string>
+
+    <string name="label_address_label">Address Label</string>
+    <string name="hint_address_label">Ex: Home, Office, Apartment</string>
+    <string name="placeholder_address_label">Save as...</string>
+
+    <string name="section_recipient_info">Recipient Info</string>
+    <string name="label_full_name">Full Name</string>
+    <string name="label_phone_number">Phone Number</string>
+
+    <string name="section_location_detail">Location Details</string>
+    <string name="label_full_address">Full Address</string>
+    <string name="placeholder_full_address">Street Name, House No., Unit</string>
+    <string name="label_postal_code">Postal Code</string>
+
+    <string name="section_area_id">Area Region (ID)</string>
+    <string name="helper_area_id">Enter Region ID (Temporary):</string>
+    <string name="label_province_id">Province ID</string>
+    <string name="label_city_id">City ID</string>
+    <string name="label_district_id">District ID</string>
+
+    <string name="title_set_main_address">Set as Main Address</string>
+    <string name="desc_set_main_address">This address will be automatically selected during checkout.</string>
+
+
+
 </resources>

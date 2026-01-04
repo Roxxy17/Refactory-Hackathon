@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KalanaCommerce</string>
+
+    // Get Started
+    <string name="get_started_logo_desc">Logo Kalana</string>
+    <string name="get_started_title">Kesegaran Terpercaya</string>
+    <string name="get_started_desc">Nikmati produk berkualitas terbaik langsung\ndari alam ke depan pintu Anda.</string>
+    <string name="get_started_btn">Mulai Sekarang</string>
+    <string name="get_started_have_account">Sudah punya akun?</string>
+    <string name="get_started_sign_in">Masuk</string>
+
+    // Sign In
+    <string name="login_welcome_back">Selamat Datang Kembali!</string>
+    <string name="email">Email</string>
+    <string name="password">Kata Sandi</string>
+    <string name="remember_me">Ingat saya</string>
+    <string name="forgot_password">Lupa Kata Sandi?</string>
+    <string name="sign_in">Masuk</string>
+    <string name="or_continue_with">ATAU</string>
+    <string name="dont_have_account">Belum punya akun?</string>
+    <string name="sign_up">Daftar</string>
+    <string name="welcome_back_user">Selamat datang kembali, %1$s!</string>
+    <string name="Sign_in_please_sign_in_to_your_account">Silahkan masuk ke akun anda</string>
+
+    // Profile Screen
+    <string name="language">Bahasa</string>
+    <string name="bahasa_diganti_ke_indonesia">Bahasa diganti ke Indonesia 🇮🇩</string>
+    <string name="language_changed_to_english">Bahasa diganti ke Inggris 🇺🇸</string>
+    <string name="my_account">Akun Saya</string>
+    <string name="edit_profil">Edit Profil</string>
+    <string name="ubah_profil">Ubah Profil</string>
+    <string name="alamat_pengiriman">Alamat Pengiriman</string>
+    <string name="daftar_alamat">Daftar Alamat</string>
+    <string name="keamanan_akun">Keamanan Akun</string>
+    <string name="kata_sandi_pin"><![CDATA[Kata Sandi]]></string>
+    <string name="pengaturan">Pengaturan</string>
+    <string name="notifikasi">Notifikasi</string>
+    <string name="semua_notifikasi_aktif">Semua notifikasi aktif</string>
+    <string name="tampilan_aplikasi">Tampilan Aplikasi</string>
+    <string name="ikuti_sistem">Ikuti Sistem</string>
+    <string name="mode_terang">Mode Terang</string>
+    <string name="mode_gelap">Mode Gelap</string>
+    <string name="bahasa_indonesia">Indonesia</string>
+    <string name="english">Inggris</string>
+    <string name="syarat_ketentuan"><![CDATA[Syarat & Ketentuan]]></string>
+    <string name="kebijakan_penggunaan">Kebijakan Penggunaan</string>
+    <string name="pusat_bantuan">Pusat Bantuan</string>
+    <string name="hubungi_kami">Hubungi Kami</string>
+    <string name="versi_1_0_0_build_102">Versi 1.0.0 (Build 102)</string>
+    <string name="profil_saya">Profil Saya</string>
+    <string name="selamat_datang">Selamat Datang</string>
+    <string name="tampilan_mengikuti_sistem">Tampilan mengikuti sistem 📱</string>
+    <string name="mode_terang_aktif">Mode Terang aktif ☀️</string>
+    <string name="mode_gelap_aktif">Mode Gelap aktif 🌙</string>
+    <string name="hai_pengunjung">Hai, Pengunjung!</string>
+    <string name="masuk_untuk_akses_fitur_lengkap">Masuk untuk akses fitur lengkap</string>
+    <string name="masuk_atau_daftar">Masuk atau Daftar</string>
+    <string name="pesanan">Pesanan</string>
+    <string name="favorit">Favorit</string>
+    <string name="voucher">Voucher</string>
+    <string name="keluar_aplikasi">Keluar</string>
+    <string name="masuk_sekarang">Masuk Sekarang</string>
+
+    // Help Center
+    <string name="help_subtitle">Apa yang bisa kami bantu? Pilih metode kontak di bawah atau cek FAQ kami.</string>
+    <string name="faq_title">Pertanyaan Umum (FAQ)</string>
+    <string name="faq_q1">Kapan saya bisa mengambil pesanan?</string>
+    <string name="faq_a1">Pantau status di menu \'Pesanan Saya\'. Jika status berubah menjadi \'Siap Diambil\', silakan datang ke toko kami dan tunjukkan bukti pesanan kepada petugas.</string>
+    <string name="faq_q2">Metode pembayaran apa saja yang tersedia?</string>
+    <string name="faq_a2">Kami mendukung Transfer Bank (BCA, Mandiri, BRI), E-Wallet (GoPay, OVO, Dana), dan Kartu Kredit.</string>
+    <string name="faq_q3">Bagaimana cara mengajukan pengembalian dana?</string>
+    <string name="faq_a3">Komplain dapat diajukan maksimal 24 jam. Disarankan untuk mengecek kondisi barang langsung di tempat saat pengambilan. Hubungi admin via WhatsApp untuk bantuan.</string>
+    <string name="faq_q4">Apakah tersedia layanan pesan antar (delivery)?</string>
+    <string name="faq_a4">Mohon maaf, saat ini kami hanya melayani sistem **Ambil Sendiri (Self Pick-up)**. Pesanan harus diambil langsung di lokasi toko kami.</string>
+    <string name="faq_q5">Di mana lokasi pengambilan barang?</string>
+    <string name="faq_a5">Lokasi toko tercantum di halaman \'Kontak\' atau pada detail pesanan Anda. Pastikan datang saat jam operasional toko.</string>
+    <string name="faq_q6">Lupa kata sandi akun?</string>
+    <string name="faq_a6">Klik \'Lupa Password\' di halaman login, masukkan email Anda, dan kami akan mengirimkan kode OTP untuk reset kata sandi.</string>
+    <string name="visit_us">Kunjungi kita</string>
+    <string name="website">Website</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="chat_admin">Chat Admin</string>
+
+    // Terms And Conditions
+    <string name="terms_conditions"><![CDATA[Syarat & Ketentuan]]></string>
+    <string name="kembali">Kembali</string>
+    <string name="last_updated_december_2025">Terakhir diperbarui: Desember 2025</string>
+    <string name="welcome_to_kalana_commerce">Selamat Datang di Kalana Commerce!</string>
+    <string name="stated">Syarat dan ketentuan ini menguraikan aturan dan peraturan penggunaan Aplikasi Kalana Commerce. Dengan mengakses aplikasi ini, kami menganggap Anda menyetujui syarat dan ketentuan ini. Jangan lanjutkan penggunaan Kalana Commerce jika Anda tidak setuju untuk mematuhi semua syarat dan ketentuan yang tercantum di halaman ini.</string>
+    <string name="license">1. Lisensi</string>
+    <string name="license_text">Kecuali dinyatakan lain, Kalana Commerce dan/atau pemberi lisensinya memiliki hak kekayaan intelektual atas semua materi di Kalana Commerce. Semua hak kekayaan intelektual dilindungi undang-undang. Anda dapat mengakses ini dari Kalana Commerce untuk penggunaan pribadi Anda dengan tunduk pada batasan yang diatur dalam syarat dan ketentuan ini.</string>
+    <string name="user_accounts">2. Akun Pengguna</string>
+    <string name="user_accounts_text">Saat Anda membuat akun pada kami, Anda wajib memberikan informasi yang akurat, lengkap, dan terkini setiap saat. Kegagalan untuk melakukannya merupakan pelanggaran terhadap Ketentuan, yang dapat mengakibatkan penghentian segera akun Anda di Layanan kami.</string>
+    <string name="content_liability">3. Tanggung Jawab Konten</string>
+    <string name="content_liability_text">Kami tidak bertanggung jawab atas konten apa pun yang muncul di Aplikasi Anda. Anda setuju untuk melindungi dan membela kami terhadap semua klaim yang timbul pada Aplikasi Anda. Tidak boleh ada tautan yang muncul di Situs Web mana pun yang dapat ditafsirkan sebagai pencemaran nama baik, cabul, atau kriminal, atau yang melanggar, menyalahi, atau menganjurkan pelanggaran atau pelanggaran lain terhadap hak pihak ketiga mana pun.</string>
+    <string name="your_privacy">4. Privasi Anda</string>
+    <string name="your_privacy_text">Silakan baca Kebijakan Privasi kami. Kami menangani data Anda dengan hati-hati dan menggunakan enkripsi standar industri untuk melindungi informasi pribadi Anda.</string>
+    <string name="question_text">Jika Anda memiliki pertanyaan tentang Ketentuan ini, silakan hubungi kami di support@kalanacommerce.com</string>
+
+    // ForgotPasswordStepEmailScreen
+    <string name="forgot_password_title">Lupa Password?</string>
+    <string name="forgot_password_desc">Masukkan email yang terdaftar pada akun Anda. Kami akan mengirimkan instruksi untuk mereset password.</string>
+    <string name="email_address">Alamat Email</string>
+    <string name="email_placeholder">nama@email.com</string>
+    <string name="invalid_email_format">Format email tidak valid</string>
+    <string name="send_reset_link">Kirim Link Reset</string>
+    <string name="check_your_email">Cek Email Anda</string>
+    <string name="email_sent_desc">Kami telah mengirimkan link reset password ke:\n%1$s</string>
+    <string name="back_to_login">Kembali ke Login</string>
+    <string name="resend_link">Kirim ulang link</string>
+    <string name="back">Kembali</string>
+
+    // ForgotPasswordStepOtpScreen
+    <string name="otp_title">Verifikasi OTP</string>
+    <string name="otp_instruction">Masukkan 6 digit kode yang dikirim ke \n%1$s</string>
+    <string name="otp_label">Kode OTP</string>
+    <string name="new_password_label">Kata Sandi Baru</string>
+    <string name="confirm_password_label">Konfirmasi Kata Sandi</string>
+    <string name="reset_password_btn">Atur Ulang Kata Sandi</string>
+    <string name="password_changed_title">Kata Sandi Diubah!</string>
+    <string name="password_changed_desc">Kata sandi Anda berhasil diperbarui. Silakan masuk kembali.</string>
+    <string name="password_mismatch_error">Kata sandi tidak cocok</string>
+
+    // language selector
+    <string name="language_dialog_title">Bahasa Aplikasi</string>
+    <string name="language_dialog_subtitle">Pilih bahasa yang Anda inginkan untuk antarmuka.</string>
+    <string name="language_indonesia_desc">Bahasa Indonesia</string>
+    <string name="language_english_desc">Bahasa Inggris</string>
+    <string name="cancel">Batal</string>
+
+    //Theme Dialog Selector
+    <string name="theme_dialog_title">Tampilan Aplikasi</string>
+    <string name="theme_dialog_subtitle">Pilih mode tampilan yang Anda sukai.</string>
+    <string name="theme_option_system">Ikuti Sistem</string>
+    <string name="theme_option_system_desc">Menyesuaikan dengan pengaturan perangkat Anda.</string>
+    <string name="theme_option_light">Mode Terang</string>
+    <string name="theme_option_light_desc">Tampilan bersih dengan latar belakang cerah.</string>
+    <string name="theme_option_dark">Mode Gelap</string>
+    <string name="theme_option_dark_desc">Nyaman di mata, hemat baterai pada layar OLED.</string>
+    <string name="close_content_description">Tutup</string>
+    <string name="selected_content_description">Terpilih</string>
+
+    // Edit Profile
+    <string name="edit_profile_title">Edit Profil</string>
+    <string name="full_name">Nama Lengkap</string>
+    <string name="edit_profile_email">Email</string>
+    <string name="phone_number">Nomor Telepon</string>
+    <string name="save_changes">Simpan Perubahan</string>
+    <string name="change_photo">Ubah Foto</string>
+    <string name="success_update_profile">Profil berhasil diperbarui</string>
+    <string name="error_update_profile">Gagal memperbarui profil</string>
+    <string name="error_image_processing">Gagal memproses gambar</string>
+
+    // address page tambah
+    <string name="address_list_title">Daftar Alamat</string>
+    <string name="btn_add_address_new">Alamat Baru</string>
+    <string name="btn_add">Tambah</string>
+    <string name="btn_back">Kembali</string>
+
+    <string name="empty_address_title">Belum Ada Alamat</string>
+    <string name="empty_address_desc">Tambahkan alamat pengiriman agar proses checkoutmu lebih cepat dan mudah.</string>
+
+    <string name="label_main_address">Alamat Utama</string>
+    <string name="btn_delete">Hapus</string>
+    <string name="btn_edit">Ubah</string>
+
+    <string name="title_add_address">Tambah Alamat</string>
+    <string name="title_edit_address">Ubah Alamat</string>
+    <string name="btn_save_address">Simpan Alamat</string>
+    <string name="btn_save_changes">Simpan Perubahan</string>
+
+    <string name="label_address_label">Label Alamat</string>
+    <string name="hint_address_label">Contoh: Rumah, Kantor, Kos</string>
+    <string name="placeholder_address_label">Simpan sebagai...</string>
+
+    <string name="section_recipient_info">Info Penerima</string>
+    <string name="label_full_name">Nama Lengkap</string>
+    <string name="label_phone_number">Nomor HP</string>
+
+    <string name="section_location_detail">Detail Lokasi</string>
+    <string name="label_full_address">Alamat Lengkap</string>
+    <string name="placeholder_full_address">Nama Jalan, No. Rumah, RT/RW</string>
+    <string name="label_postal_code">Kode Pos</string>
+
+    <string name="section_area_id">Area Wilayah (ID)</string>
+    <string name="helper_area_id">Masukkan ID Wilayah (Sementara):</string>
+    <string name="label_province_id">Provinsi ID</string>
+    <string name="label_city_id">Kota ID</string>
+    <string name="label_district_id">Kec. ID</string>
+
+    <string name="title_set_main_address">Jadikan Alamat Utama</string>
+    <string name="desc_set_main_address">Alamat ini akan otomatis terpilih saat checkout.</string>
+
+
+
+</resources>
