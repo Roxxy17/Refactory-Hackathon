@@ -192,6 +192,15 @@
     <string name="title_set_main_address">Jadikan Alamat Utama</string>
     <string name="desc_set_main_address">Alamat ini akan otomatis terpilih saat checkout.</string>
 
+    // Home Screen
 
+    <string name="home_search_placeholder">Cari sayur, buah, bumbu...</string>
+    <string name="home_welcome">Selamat Datang,</string>
+    <string name="home_promo_header">Promo Spesial 🔥</string>
+    <string name="home_latest_products">Cek Update Terbaru</string>
+    <string name="home_see_all">Lihat Semua</string>
+    <string name="home_error_loading">Gagal memuat data.</string>
+    <string name="home_empty_product">Produk tidak ditemukan.</string>
+    <string name="currency_format">Rp%,d</string>
 
 </resources>

@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.res.stringResource // <--- Import Penting
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import org.koin.androidx.compose.koinViewModel
-import com.example.kalanacommerce.R // <--- Import Resource App kamu
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
 
@@ -56,9 +56,8 @@ fun AddressListScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    // ---------------------------
 
-    // Handle Toast
+    // --- TOAST HANDLER ---
     var showToast by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf("") }
     var toastType by remember { mutableStateOf(ToastType.Success) }
@@ -84,14 +83,14 @@ fun AddressListScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        stringResource(R.string.address_list_title),
+                        text = stringResource(R.string.address_list_title),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.btn_back)
                         )
                     }
@@ -105,10 +104,10 @@ fun AddressListScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
-                icon = { Icon(Icons.Default.Add, stringResource(R.string.btn_add)) },
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = {
                     Text(
-                        stringResource(R.string.btn_add_address_new),
+                        text = stringResource(R.string.btn_add_address_new),
                         fontWeight = FontWeight.SemiBold
                     )
                 },
@@ -132,6 +131,7 @@ fun AddressListScreen(
                     contentPadding = PaddingValues(bottom = 100.dp, top = 16.dp, start = 20.dp, end = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // Sortir: Default selalu di atas
                     val sortedAddresses = uiState.addresses.sortedByDescending { it.isDefault }
 
                     items(sortedAddresses) { address ->
@@ -206,16 +206,23 @@ fun AddressItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    // --- PERBAIKAN VISUAL (LIGHT MODE FIX) ---
+    // 1. Border: Jika utama, warnanya Primary. Jika tidak, outline tipis.
     val borderColor = if (isDefault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-    val borderWidth = if (isDefault) 1.5.dp else 1.dp
-    val containerColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
+
+    // 2. Ketebalan Border: Lebih tebal untuk alamat utama.
+    val borderWidth = if (isDefault) 2.dp else 1.dp
+
+    // 3. Background: Gunakan Surface (Putih bersih) untuk semua kartu agar clean.
+    // Tidak lagi menggunakan primaryContainer yang bikin kotor di Light Mode.
+    val containerColor = MaterialTheme.colorScheme.surface
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(borderWidth, borderColor),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isDefault) 4.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDefault) 4.dp else 0.5.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
 
@@ -224,19 +231,22 @@ fun AddressItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // 4. Icon Box: Gunakan pasangan warna PrimaryContainer + OnPrimaryContainer
+                // Ini menghasilkan warna solid pastel yang cantik di Light Mode.
+                val iconBoxColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                val iconTint = if (isDefault) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (isDefault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
+                        .background(iconBoxColor)
                 ) {
                     Icon(
                         imageVector = if(isDefault) Icons.Filled.LocationOn else Icons.Outlined.LocationOn,
                         contentDescription = null,
-                        tint = if (isDefault) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = iconTint,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -257,12 +267,12 @@ fun AddressItem(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = stringResource(R.string.label_main_address),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -272,8 +282,7 @@ fun AddressItem(
 
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(
-                color = if (isDefault) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                color = if (isDefault) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -307,6 +316,7 @@ fun AddressItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
+                // Tombol Hapus
                 TextButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -319,19 +329,35 @@ fun AddressItem(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Button(
-                    onClick = onEdit,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                    modifier = Modifier.height(40.dp)
-                ) {
-                    Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.btn_edit), fontWeight = FontWeight.Bold)
+                // Tombol Ubah (Logic: Jika Default, tombol outlined agar tidak terlalu ramai)
+                if (isDefault) {
+                    OutlinedButton(
+                        onClick = onEdit,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.btn_edit), fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Button(
+                        onClick = onEdit,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.btn_edit), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

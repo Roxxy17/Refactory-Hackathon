@@ -29,14 +29,15 @@ class SessionManager(context: Context) {
         isLenient = true
     }
 
-    // --- FUNGSI UTAMA YANG DIPANGGIL REPOSITORY ---
+    // --- FUNGSI UTAMA YANG DIPANGGIL REPOSITORY (LOGIN AWAL) ---
+    // Saya biarkan tetap sama agar tidak merusak kode Login yang sudah ada.
+    // Nanti jika API Login mengembalikan refresh token juga, update di sini.
     suspend fun saveSession(token: String, user: ProfileUserDto) {
-        // Kita panggil saveAuthData yang di bawah
         saveAuthData(token, true, user)
     }
     // ----------------------------------------------
 
-    // Fungsi internal untuk simpan data lengkap
+    // Fungsi internal untuk simpan data lengkap (Dipakai saat Login)
     suspend fun saveAuthData(
         token: String,
         isLoggedIn: Boolean,
@@ -51,16 +52,33 @@ class SessionManager(context: Context) {
         }
     }
 
+    // [BARU] Overload Fungsi untuk Refresh Token (Dipakai oleh NetworkModule)
+    // Ktor akan memanggil ini saat token diperbarui secara otomatis di background
+    suspend fun saveAuthData(accessToken: String, refreshToken: String) {
+        dataStore.edit { preferences ->
+            preferences[KEY_TOKEN] = accessToken
+            preferences[KEY_REFRESH_TOKEN] = refreshToken
+            preferences[KEY_IS_LOGGED_IN] = true // Pastikan user tetap dianggap login
+        }
+    }
+
     suspend fun clearAuthData() {
         dataStore.edit { preferences ->
             preferences.remove(KEY_TOKEN)
+            preferences.remove(KEY_REFRESH_TOKEN) // Hapus refresh token juga
             preferences[KEY_IS_LOGGED_IN] = false
             preferences.remove(KEY_USER_DATA)
         }
     }
 
+    // Flow untuk Access Token
     val tokenFlow: Flow<String?> = dataStore.data.map {
         it[KEY_TOKEN]
+    }
+
+    // [BARU] Flow untuk Refresh Token (Dibutuhkan NetworkModule)
+    val refreshTokenFlow: Flow<String?> = dataStore.data.map {
+        it[KEY_REFRESH_TOKEN]
     }
 
     val isLoggedInFlow: Flow<Boolean> = dataStore.data.map {
@@ -89,6 +107,7 @@ class SessionManager(context: Context) {
 
     companion object {
         private val KEY_TOKEN = stringPreferencesKey("auth_token")
+        private val KEY_REFRESH_TOKEN = stringPreferencesKey("refresh_token") // Key Baru
         private val KEY_IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
         private val KEY_USER_DATA = stringPreferencesKey("user_data_json")
         private val KEY_LAST_EMAIL = stringPreferencesKey("last_email")

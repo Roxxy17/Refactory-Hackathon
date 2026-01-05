@@ -1,625 +1,662 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.home
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.kalanacommerce.R
-import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.domain.model.Category
+import com.example.kalanacommerce.domain.model.Product
+import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper
+import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
+import java.util.Locale
 
-// --- Data Model (Tetap Sama) ---
-data class CategoryItem(val name: String, val icon: ImageVector)
-
-val dummyCategories = listOf(
-    CategoryItem("Sayur", Icons.Filled.LocalFlorist),
-    CategoryItem("Daging", Icons.Filled.Fastfood),
-    CategoryItem("Bumbu", Icons.Filled.SetMeal),
-    CategoryItem("Buah", Icons.Filled.Coronavirus),
-    CategoryItem("Snack", Icons.Filled.BakeryDining),
-    CategoryItem("Ikan", Icons.Filled.SetMeal),
-)
-
-data class ProductItem(
-    val id: Int,
-    val name: String,
-    val price: String,
-    val oldPrice: String,
-    val discount: String,
-    val imageRes: Int,
-    val tags: List<String> = emptyList()
-)
-
-val allProducts = listOf(
-    ProductItem(1, "Selada Air Segar", "Rp4.000", "Rp6.000", "33%", R.drawable.seladaair, listOf("sayur", "promo")),
-    ProductItem(2, "Jagung Manis", "Rp5.000", "Rp7.000", "28%", R.drawable.jagung, listOf("sayur", "promo")),
-    ProductItem(3, "Kentang Dieng", "Rp6.500", "Rp8.000", "18%", R.drawable.kentang, listOf("umbi", "promo")),
-    ProductItem(4, "Daging Ayam Fillet", "Rp20.000", "Rp25.000", "20%", R.drawable.ayam, listOf("daging", "sop")),
-    ProductItem(5, "Kol Putih", "Rp3.000", "Rp4.000", "25%", R.drawable.kol, listOf("sayur", "sop")),
-    ProductItem(6, "Wortel Import", "Rp4.000", "Rp5.000", "20%", R.drawable.wortel, listOf("sayur", "sop")),
-    ProductItem(7, "Seledri Lokal", "Rp2.000", "Rp3.000", "33%", R.drawable.seledri, listOf("sayur", "sop"))
-)
-
-// =====================================================================
-// === MAIN SCREEN ===
-// =====================================================================
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    var searchQuery by remember { mutableStateOf("") }
+fun HomeScreen(
+    viewModel: HomeViewModel = koinViewModel(),
+    themeSetting: ThemeSetting
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Scroll Behavior untuk TopBar yang dinamis (Menghilang/Mengecil saat scroll)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    // --- BACKGROUND LOGIC ---
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
 
-    Scaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            HomeTopAppBar(scrollBehavior)
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0.dp)// Latar belakang adaptif tema
-    ) { paddingValues ->
+    val bgImage = if (isDarkActive) R.drawable.background_home_black else R.drawable.background_home_white
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // --- SEARCH BAR AREA ---
-            // Diletakkan di sini agar ikut scroll, memberikan kesan "menyatu"
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        // Latar belakang header mengikuti warna container TopBar saat expanded
-                        MaterialTheme.colorScheme.surface
-                    )
-                    .padding(bottom = 16.dp, start = 16.dp, end = 16.dp, top = 8.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 1. STATIC BACKGROUND
+        Image(
+            painter = painterResource(id = bgImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // 2. MAIN CONTENT
+        Scaffold(
+            containerColor = Color.Transparent,
+
+        ) { paddingValues ->
+            // Wrapper dipasang DI DALAM Scaffold, membungkus LazyColumn
+            PullToRefreshWrapper(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = { viewModel.refreshData() },
+                modifier = Modifier.padding(paddingValues) // PENTING: Padding Scaffold dipasang di sini
             ) {
-                CustomSearchBar(searchQuery) { searchQuery = it }
-            }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    // --- SECTION 1: HEADER TEXT ---
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 20.dp)
+                        ) {
+                            Text(
+                                text = "Belanja Bahan\nMasakan Tanpa\nKeluar Rumah",
+                                style = MaterialTheme.typography.displaySmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    lineHeight = 42.sp,
+                                    letterSpacing = (-0.5).sp
+                                )
+                            )
+                        }
+                    }
 
-            // --- KATEGORI ---
-            CategoryRow(dummyCategories)
+                    // --- SECTION 2: SEARCH BAR (STICKY) ---
+                    stickyHeader {
+                        StickySearchBar(
+                            searchQuery = uiState.searchQuery,
+                            onSearchChange = viewModel::onSearchQueryChange,
+                            isDark = isDarkActive
+                        )
+                    }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                    // --- SECTION 3: HEADER "CEK UPDATE" & BANNER ---
+                    item {
+                        Column(modifier = Modifier.padding(top = 24.dp)) {
+                            PaddingWrapper {
+                                Text(
+                                    text = stringResource(R.string.home_latest_products),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            BannerCarousel(isDark = isDarkActive) // Fix Slider
+                        }
+                    }
 
-            // --- SLIDE BANNER ---
-            SlideBanner(Modifier.padding(horizontal = 16.dp))
+                    // --- SECTION 4: CATEGORY ROW (STICKY GLOSSY BAR) ---
+                    stickyHeader {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        StickyCategoryRow(
+                            categories = uiState.categories,
+                            selectedCategoryId = uiState.selectedCategoryId,
+                            onCategorySelect = viewModel::onCategorySelected,
+                            isDark = isDarkActive
+                        )
+                    }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    // --- SECTION 5: HEADER "PROMO BULAN INI" ---
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        PaddingWrapper {
+                            Text(
+                                text = "Promo Bulan Ini",
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
-            // --- LOGIKA FILTER PRODUK ---
-            val filteredProducts = filterProducts(allProducts, searchQuery)
-            val promoProducts = filteredProducts.filter { it.tags.contains("promo") }
-            val sopProducts = filteredProducts.filter { it.tags.contains("sop") }
-
-            // --- SECTION 1: PROMO SPESIAL ---
-            if (searchQuery.isBlank() || promoProducts.isNotEmpty()) {
-                SectionTitle("Promo Spesial 🔥", modifier = Modifier.padding(horizontal = 16.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                ProductRow(products = promoProducts)
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            // --- SECTION 2: PAKET MASAKAN ---
-            if (searchQuery.isBlank() || sopProducts.isNotEmpty()) {
-                SectionTitle("Bahan Sop Segar 🍲", modifier = Modifier.padding(horizontal = 16.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                ProductRow(products = sopProducts)
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            // --- EMPTY STATE ---
-            if (promoProducts.isEmpty() && sopProducts.isEmpty() && searchQuery.isNotBlank()) {
-                Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "Tidak ada hasil untuk \"$searchQuery\"",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    // --- SECTION 6: PRODUCT GRID ---
+                    if (uiState.isLoading) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    } else if (uiState.displayProducts.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    stringResource(R.string.home_empty_product),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        val chunkedProducts = uiState.displayProducts.chunked(2)
+                        items(chunkedProducts) { rowItems ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                for (product in rowItems) {
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        ProductCardItem(product = product)
+                                    }
+                                }
+                                if (rowItems.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
                 }
             }
-
-            // Bottom Padding untuk Floating Action Button atau BottomNav
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
-// =====================================================================
-// === COMPONENTS (THEME AWARE) ===
-// =====================================================================
-
-@OptIn(ExperimentalMaterial3Api::class)
+// --- HELPER WRAPPER ---
 @Composable
-fun HomeTopAppBar(scrollBehavior: TopAppBarScrollBehavior) {
-    LargeTopAppBar(
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Bisa ganti Text dengan Logo Image jika ada
-                Text(
-                    text = "Kalana",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-1).sp
+fun PaddingWrapper(content: @Composable () -> Unit) {
+    Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+        content()
+    }
+}
+
+// --- HELPER: THICK GLOSSY EFFECT ---
+@Composable
+fun thickGlossyModifier(
+    isDark: Boolean,
+    shape: androidx.compose.ui.graphics.Shape
+): Modifier {
+    val glassColor = if (isDark)
+        Color.Black.copy(alpha = 0.75f)
+    else
+        Color.White.copy(alpha = 0.90f) // Putih lebih solid
+
+    val borderColor = if (isDark)
+        Color.White.copy(alpha = 0.15f)
+    else
+        Color.White.copy(alpha = 0.5f)
+
+    return Modifier
+        .shadow(
+            elevation = 6.dp,
+            shape = shape,
+            spotColor = Color.Black.copy(alpha = 0.1f)
+        )
+        .background(glassColor, shape)
+        .border(1.dp, borderColor, shape)
+        .clip(shape)
+}
+
+// --- STICKY 1: SEARCH BAR ---
+@Composable
+fun StickySearchBar(
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    isDark: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Search Input (Glossy Bar)
+            TextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                placeholder = {
+                    Text(
+                        stringResource(R.string.home_search_placeholder),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
-                )
-                Text(
-                    text = ".",
-                    color = MaterialTheme.colorScheme.secondary, // Aksen titik warna oranye/secondary
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = { /* Notifikasi */ }) {
-                // Badge notifikasi (opsional)
-                Box {
+                },
+                leadingIcon = {
                     Icon(
-                        imageVector = Icons.Outlined.Notifications,
-                        contentDescription = "Notifikasi",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        Icons.Outlined.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error)
-                            .align(Alignment.TopEnd)
-                    )
-                }
-            }
-            IconButton(onClick = { /* Wishlist */ }) {
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchChange("") }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+                    .then(thickGlossyModifier(isDark, RoundedCornerShape(30.dp))), // Kapsul
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary
+                ),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Cart Button (Glossy Circle)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(56.dp)
+                    .then(thickGlossyModifier(isDark, CircleShape))
+                    .clickable { /* Cart Action */ }
+            ) {
                 Icon(
-                    imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Wishlist",
+                    imageVector = Icons.Outlined.ShoppingCart,
+                    contentDescription = "Cart",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
-        },
-        colors = TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surface, // Tetap solid saat scroll
-            titleContentColor = MaterialTheme.colorScheme.primary
-        ),
-        scrollBehavior = scrollBehavior
-    )
-}
-
-@Composable
-fun CustomSearchBar(query: String, onQueryChange: (String) -> Unit) {
-    TextField(
-        value = query,
-        onValueChange = onQueryChange,
-        placeholder = {
-            Text(
-                "Cari sayur, buah, bumbu...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        },
-        leadingIcon = {
-            Icon(
-                Icons.Outlined.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        },
-        trailingIcon = {
-            if (query.isNotBlank()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .shadow(elevation = 2.dp, shape = RoundedCornerShape(26.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(26.dp),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest, // Sedikit abu/terang
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = MaterialTheme.colorScheme.primary
-        ),
-        singleLine = true
-    )
-}
-
-@Composable
-fun CategoryRow(categories: List<CategoryItem>) {
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(categories) { item ->
-            CategoryItemCard(item)
         }
     }
 }
 
+// --- STICKY 2: CATEGORY ROW (REVISI: CAPSULE GLOSSY CONTAINER) ---
 @Composable
-fun CategoryItemCard(item: CategoryItem) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+fun StickyCategoryRow(
+    categories: List<Category>,
+    selectedCategoryId: String,
+    onCategorySelect: (String) -> Unit,
+    isDark: Boolean
+) {
+    // Container utama berbentuk KAPSUL PANJANG (seperti di foto)
+    Box(
         modifier = Modifier
-            .width(64.dp)
-            .clickable(onClick = { /* Handle category click */ })
-    ) {
-        // Container Ikon
-        Surface(
-            modifier = Modifier.size(64.dp),
-            shape = RoundedCornerShape(20.dp),
-            // Menggunakan warna container sekunder dari tema (biasanya soft color)
-            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.name,
-                    // Tint icon mengikuti onSecondaryContainer agar kontras
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = item.name,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-fun SlideBanner(modifier: Modifier = Modifier) {
-    // Warna gradient dinamis
-    val gradientColors = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.secondary
-    )
-
-    Card(
-        modifier = modifier
             .fillMaxWidth()
-            .height(170.dp),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.horizontalGradient(gradientColors))
+                .fillMaxWidth()
+                .height(64.dp) // Tinggi bar
+                .then(thickGlossyModifier(isDark, RoundedCornerShape(50))) // Full Rounded
         ) {
-            // Dekorasi lingkaran transparan
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.1f),
-                    center = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                    radius = size.height
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp), // Jarak antar item
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxSize()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Surface(
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "Promo Mingguan",
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Sayur Segar\nLangsung Petani!",
-                        color = Color.White,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        lineHeight = 28.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Diskon s.d 50%",
-                        color = Color.White.copy(alpha = 0.9f),
-                        style = MaterialTheme.typography.bodyMedium
+                items(categories) { category ->
+                    WhatsAppStylePill(
+                        category = category,
+                        isSelected = category.id == selectedCategoryId,
+                        onSelect = { onCategorySelect(category.id) }
                     )
                 }
+            }
+        }
+    }
+}
 
-                // Gambar/Icon Ilustrasi Banner
-                Icon(
-                    imageVector = Icons.Default.ShoppingBasket,
+@Composable
+fun WhatsAppStylePill(
+    category: Category,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    // Warna item: Hijau Solid jika dipilih, Transparan jika tidak
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) primaryColor else Color.Transparent,
+        label = "pillBg"
+    )
+
+    // Warna Icon/Text: Putih jika dipilih, Hijau jika tidak
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else primaryColor,
+        label = "pillContent"
+    )
+
+    Surface(
+        onClick = onSelect,
+        color = containerColor,
+        shape = RoundedCornerShape(50),
+        modifier = Modifier.height(44.dp) // Sedikit lebih kecil dari container
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Icon(
+                imageVector = getIconByCategoryName(category.name),
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(20.dp)
+            )
+
+            // Text hanya muncul saat dipilih
+            AnimatedVisibility(
+                visible = isSelected,
+                enter = fadeIn() + expandHorizontally(),
+                exit = fadeOut() + shrinkHorizontally()
+            ) {
+                Row {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- HELPER ICON ---
+fun getIconByCategoryName(name: String): ImageVector {
+    return when {
+        name.contains("Sayur", true) -> Icons.Default.Eco
+        name.contains("Buah", true) -> Icons.Default.LocalFlorist
+        name.contains("Daging", true) -> Icons.Default.SetMeal
+        name.contains("Bumbu", true) -> Icons.Default.SoupKitchen
+        name.contains("Snack", true) -> Icons.Default.Cookie
+        name.contains("Semua", true) -> Icons.Default.GridView
+        else -> Icons.Default.Category
+    }
+}
+
+// --- BANNER CAROUSEL (REVISI: SNAP FIX & SHADOW) ---
+// --- BANNER CAROUSEL (4 SLIDES) ---
+// --- BANNER CAROUSEL (UPDATED: Fix Slider & isDark) ---
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BannerCarousel(isDark: Boolean) { // Parameter isDark ditambahkan
+    val pagerState = rememberPagerState(pageCount = { 4 })
+
+    // Auto scroll logic (Safe)
+    LaunchedEffect(pagerState.currentPage) {
+        delay(3000)
+        var newPage = pagerState.currentPage + 1
+        if (newPage >= pagerState.pageCount) newPage = 0
+        // Menggunakan animateScrollToPage dengan safe check
+        pagerState.animateScrollToPage(newPage)
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            pageSpacing = 16.dp
+        ) { page ->
+            val imageRes = when(page) {
+                0 -> R.drawable.slide_1
+                1 -> R.drawable.slide_4
+                2 -> R.drawable.slide_1
+                else -> R.drawable.slide_4
+            }
+
+            // Card Banner dengan Border tipis sesuai tema Glossy
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(8.dp), // Shadow lebih tinggi
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp) // Sedikit ditinggikan
+                    // Tambahkan border tipis agar konsisten dengan glossy theme
+                    .border(
+                        1.dp,
+                        if(isDark) Color.White.copy(alpha=0.2f) else Color.White,
+                        RoundedCornerShape(24.dp)
+                    )
+            ) {
+                Image(
+                    painter = painterResource(id = imageRes),
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.9f),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Indicator
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Spacer(modifier = Modifier.width(24.dp))
+            repeat(pagerState.pageCount) { iteration ->
+                val isSelected = pagerState.currentPage == iteration
+                val color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    if(isDark) Color.White.copy(alpha = 0.3f) else Color.Black.copy(alpha = 0.2f)
+
+                val width by animateDpAsState(targetValue = if (isSelected) 32.dp else 12.dp, label = "width")
+
+                Box(
                     modifier = Modifier
-                        .size(100.dp)
-                        .padding(start = 16.dp)
+                        .padding(end = 6.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(color)
+                        .height(6.dp)
+                        .width(width)
                 )
             }
         }
     }
 }
 
-// =====================================================================
-// === PRODUCT CARD (Modern & Themed) ===
-// =====================================================================
-
+// --- PRODUCT CARD (Tetap Sama) ---
 @Composable
-fun ProductCard(item: ProductItem) {
-    var count by remember(item.id) { mutableIntStateOf(0) }
-    val isPromo = item.tags.contains("promo")
-
-    // Card menggunakan surface color dari tema
+fun ProductCardItem(product: Product) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow // Warna kartu sedikit beda dari background
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(4.dp),
         modifier = Modifier
-            .width(170.dp)
-            .clickable { /* Handle product click */ }
+            .fillMaxWidth()
+            .clickable { /* Detail Product */ }
     ) {
         Column {
-            // Image Area
             Box(
                 modifier = Modifier
-                    .height(130.dp)
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainer) // Placeholder color
+                    .height(140.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Image(
-                    painter = painterResource(id = item.imageRes),
-                    contentDescription = item.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (product.image.isNotEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(product.image)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = product.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
-                // Diskon Badge
-                if (isPromo) {
+                Surface(
+                    color = Color(0xFF4CAF50),
+                    shape = RoundedCornerShape(bottomEnd = 12.dp),
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    Text(
+                        text = "Fresh",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    color = Color(0xFFFF9800),
+                    shape = RoundedCornerShape(bottomStart = 12.dp),
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Text(
+                        text = "20%",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = product.name,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+
                     Surface(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .align(Alignment.TopEnd),
-                        color = MaterialTheme.colorScheme.error, // Warna merah/error untuk diskon
-                        shape = RoundedCornerShape(6.dp)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Transparent
                     ) {
                         Text(
-                            text = "-${item.discount}",
-                            color = MaterialTheme.colorScheme.onError,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            text = "250 gr",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
-            }
 
-            // Product Details
-            Column(modifier = Modifier.padding(12.dp)) {
-                // Nama Produk
+                Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.height(40.dp) // Fixed height untuk alignment
+                    text = String.format(Locale("id", "ID"), "Rp%,d", product.price),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = String.format(Locale("id", "ID"), "Rp%,d", product.price + 2000),
+                    style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
 
-                // Harga
-                Column {
-                    if (isPromo) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = item.oldPrice,
-                            style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Kesegaran 78%",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
                         )
+                        Row(modifier = Modifier.padding(top = 2.dp)) {
+                            repeat(8) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 2.dp)
+                                        .size(width = 4.dp, height = 4.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                )
+                            }
+                            repeat(2) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 2.dp)
+                                        .size(width = 4.dp, height = 4.dp)
+                                        .background(MaterialTheme.colorScheme.outline.copy(alpha=0.3f), CircleShape)
+                                )
+                            }
+                        }
                     }
-                    Text(
-                        text = item.price,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp).clickable { }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Tombol Tambah / Counter
-                ProductQuantityControl(count) { newCount -> count = newCount }
             }
         }
     }
+
 }
 
-@Composable
-fun ProductQuantityControl(count: Int, onCountChange: (Int) -> Unit) {
-    if (count == 0) {
-        // Tombol "+ Keranjang" Penuh
-        Button(
-            onClick = { onCountChange(count + 1) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Text(
-                text = "+ Keranjang",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-            )
-        }
-    } else {
-        // Counter Control
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp)
-                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            // Minus Button
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable { onCountChange(count - 1) }
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Remove, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-            }
-
-            // Count Text
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = count.toString(),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // Plus Button
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable { onCountChange(count + 1) }
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
-            }
-        }
-    }
-}
-
-// --- Helper Functions ---
-fun filterProducts(products: List<ProductItem>, query: String): List<ProductItem> {
-    if (query.isBlank()) return products
-    val lowerQuery = query.trim().lowercase()
-    return products.filter { item ->
-        item.name.lowercase().contains(lowerQuery) ||
-                item.tags.any { it.contains(lowerQuery) }
-    }
-}
-
-@Composable
-fun SectionTitle(title: String, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            ),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        TextButton(onClick = { /* Navigasi lihat semua */ }) {
-            Text(
-                text = "Lihat Semua",
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-fun ProductRow(products: List<ProductItem>) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(products) { item ->
-            ProductCard(item)
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreviewLight() {
-    KalanaCommerceTheme(darkTheme = false) {
-        HomeScreen()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreviewDark() {
-    KalanaCommerceTheme(darkTheme = true) {
-        HomeScreen()
-    }
-}

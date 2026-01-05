@@ -11,6 +11,7 @@ import com.example.kalanacommerce.data.remote.service.AddressServiceImpl
 import com.example.kalanacommerce.data.repository.AddressRepositoryImpl
 import com.example.kalanacommerce.domain.repository.AddressRepository
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfileViewModel
@@ -66,4 +67,6 @@ val appModule = module {
             sessionManager = get()     // Inject SessionManager (PENTING untuk update data lokal)
         )
     }
+
+    viewModel { HomeViewModel(get(), get()) }
 }

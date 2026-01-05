@@ -15,14 +15,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource // <--- Import Penting
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
-import com.example.kalanacommerce.R // <--- Import Resource App kamu
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
 
@@ -104,15 +104,14 @@ fun AddressFormScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        if (isEditMode) stringResource(R.string.title_edit_address)
-                        else stringResource(R.string.title_add_address),
+                        text = if (isEditMode) stringResource(R.string.title_edit_address) else stringResource(R.string.title_add_address),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.btn_back)
                         )
                     }
@@ -165,8 +164,7 @@ fun AddressFormScreen(
                             Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (isEditMode) stringResource(R.string.btn_save_changes)
-                                else stringResource(R.string.btn_save_address),
+                                text = if (isEditMode) stringResource(R.string.btn_save_changes) else stringResource(R.string.btn_save_address),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -191,8 +189,8 @@ fun AddressFormScreen(
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text(stringResource(R.string.hint_address_label)) }, // Contoh: Rumah...
-                    placeholder = { Text(stringResource(R.string.placeholder_address_label)) }, // Simpan sebagai...
+                    label = { Text(stringResource(R.string.hint_address_label)) },
+                    placeholder = { Text(stringResource(R.string.placeholder_address_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -287,7 +285,7 @@ fun AddressFormScreen(
                 }
             }
 
-            // --- SECTION 4: DATA WILAYAH (CARD STYLE) ---
+            // --- SECTION 4: DATA WILAYAH ---
             FormSection(
                 title = stringResource(R.string.section_area_id),
                 icon = Icons.Outlined.Map
@@ -303,7 +301,7 @@ fun AddressFormScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            stringResource(R.string.helper_area_id),
+                            text = stringResource(R.string.helper_area_id),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -349,20 +347,14 @@ fun AddressFormScreen(
                 }
             }
 
-            // --- SECTION 5: UTAMA SWITCH (CARD STYLE) ---
+            // --- SECTION 5: UTAMA SWITCH ---
+            val switchBorderColor = if (isDefault) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            val switchContainerColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface
+
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer.copy(
-                        alpha = 0.3f
-                    )
-                    else MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(
-                    1.dp,
-                    if (isDefault) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                ),
+                colors = CardDefaults.cardColors(containerColor = switchContainerColor),
+                border = BorderStroke(1.dp, switchBorderColor),
                 onClick = { isDefault = !isDefault },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -375,12 +367,12 @@ fun AddressFormScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            stringResource(R.string.title_set_main_address),
+                            text = stringResource(R.string.title_set_main_address),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            stringResource(R.string.desc_set_main_address),
+                            text = stringResource(R.string.desc_set_main_address),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
