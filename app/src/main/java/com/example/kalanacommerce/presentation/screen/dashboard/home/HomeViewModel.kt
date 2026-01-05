@@ -16,6 +16,7 @@ class HomeViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase
 ) : ViewModel() {
 
+    // Pastikan HomeUiState sudah punya val successMessage: String? = null
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -23,47 +24,82 @@ class HomeViewModel(
         loadHomeData()
     }
 
-    fun loadHomeData() {
+    // [MODIFIKASI 1] Tambahkan parameter isPullRefresh
+    fun loadHomeData(isPullRefresh: Boolean = false) {
+        // Set loading state awal
+        if (isPullRefresh) {
+            _uiState.update { it.copy(isRefreshing = true) }
+        } else {
+            // Jika bukan refresh (awal buka), set isLoading true
+            // (Hanya jika data kosong agar tidak flickering saat refresh diam-diam)
+            if (_uiState.value.products.isEmpty()) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+        }
+
+        // 1. Load Categories (Dijalankan parallel di coroutine sendiri)
         viewModelScope.launch {
-            // 1. Load Categories
             getCategoriesUseCase().collect { result ->
                 when (result) {
                     is Resource.Success -> {
-                        // Tambahkan opsi "Semua" manual di depan
                         val allCategory = Category(id = "ALL", name = "Semua")
                         val list = listOf(allCategory) + (result.data ?: emptyList())
                         _uiState.update { it.copy(categories = list) }
-                        _uiState.update { it.copy(isLoading = false, isRefreshing = false) }
                     }
-                    else -> {} // Handle error silent or show toast
+                    else -> {} // Error categories bisa di-silent atau handle terpisah
                 }
             }
         }
 
+        // 2. Load Products (Ini data utama, kita taruh logic finish refresh di sini)
         viewModelScope.launch {
-            // 2. Load Products (Ambil 10 terbaru)
             getProductsUseCase().collect { result ->
                 when (result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Loading -> {
+                        // Loading dihandle di atas (awal fungsi), jadi di sini skip saja
+                        // atau biarkan jika ingin update parsial
+                    }
                     is Resource.Success -> {
                         val allData = result.data ?: emptyList()
-                        // Ambil 10 produk terbaru (asumsi backend sort by date, kalau tidak, bisa sort manual di sini)
                         val latestProducts = allData.take(10)
+
+                        // [MODIFIKASI 2] Siapkan pesan sukses jika ini dari refresh
+                        val msg = if (isPullRefresh) "Beranda diperbarui" else null
 
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
+                                isRefreshing = false, // Matikan loading refresh
                                 products = latestProducts,
-                                displayProducts = latestProducts
+                                displayProducts = latestProducts, // Reset display ke awal
+                                successMessage = msg // <-- Tampilkan pesan
                             )
                         }
+                        // Jika ada filter yang aktif sebelumnya, mungkin perlu panggil filterData() lagi di sini
+                        // Tapi untuk simple refresh, reset ke latestProducts sudah oke.
                     }
                     is Resource.Error -> {
-                        _uiState.update { it.copy(isLoading = false, error = result.message) }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isRefreshing = false, // Matikan loading refresh walau error
+                                error = result.message
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    // [MODIFIKASI 3] Update fungsi refreshData memanggil loadHomeData dengan parameter true
+    fun refreshData() {
+        loadHomeData(isPullRefresh = true)
+    }
+
+    // [MODIFIKASI 4] Helper untuk membersihkan pesan (dipanggil UI setelah Toast muncul)
+    fun clearMessages() {
+        _uiState.update { it.copy(error = null, successMessage = null) }
     }
 
     fun onSearchQueryChange(query: String) {
@@ -83,26 +119,16 @@ class HomeViewModel(
 
         val filtered = currentState.products.filter { product ->
             val matchesSearch = product.name.lowercase().contains(query)
-            val matchesCategory = if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId) // Note: Idealnya filter by ID di object Product
+            // Note: Pastikan getCategoryNameById aman
+            val matchesCategory = if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId)
 
-            matchesSearch // Disederhanakan: Filter search dulu, kategori opsional
+            matchesSearch && matchesCategory // Gabungkan kedua filter
         }
 
         _uiState.update { it.copy(displayProducts = filtered) }
     }
 
-    // Helper sementara karena di Product Domain kita simpan categoryName, bukan ID (sesuai mapper sebelumnya)
-    // Nanti bisa disesuaikan mapper-nya kalau mau strict by ID
     private fun getCategoryNameById(id: String): String {
         return _uiState.value.categories.find { it.id == id }?.name ?: ""
     }
-
-    fun refreshData() {
-        // 1. Set status refreshing jadi TRUE
-        _uiState.update { it.copy(isRefreshing = true) }
-
-        // 2. Panggil ulang data (Gunakan viewModelScope.launch seperti biasa)
-        loadHomeData()
-    }
 }
-

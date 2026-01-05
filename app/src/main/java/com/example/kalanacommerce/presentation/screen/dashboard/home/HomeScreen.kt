@@ -49,7 +49,9 @@ import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.Category
 import com.example.kalanacommerce.domain.model.Product
+import com.example.kalanacommerce.presentation.components.CustomToast // Pastikan import ini ada
 import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper
+import com.example.kalanacommerce.presentation.components.ToastType
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
@@ -62,6 +64,11 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // --- STATE UNTUK TOAST ---
+    var showToast by remember { mutableStateOf(false) }
+    var toastMessage by remember { mutableStateOf("") }
+    var toastType by remember { mutableStateOf(ToastType.Success) }
+
     // --- BACKGROUND LOGIC ---
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
@@ -72,8 +79,28 @@ fun HomeScreen(
         }
     }
 
+    // --- LISTENER PESAN DARI VIEWMODEL ---
+    LaunchedEffect(uiState.error, uiState.successMessage) {
+        // Handle Error
+        if (uiState.error != null) {
+            toastMessage = uiState.error!!
+            toastType = ToastType.Error
+            showToast = true
+            viewModel.clearMessages()
+        }
+
+        // Handle Success (Untuk Refresh)
+        if (uiState.successMessage != null) {
+            toastMessage = uiState.successMessage!!
+            toastType = ToastType.Success
+            showToast = true
+            viewModel.clearMessages()
+        }
+    }
+
     val bgImage = if (isDarkActive) R.drawable.background_home_black else R.drawable.background_home_white
 
+    // ROOT BOX
     Box(modifier = Modifier.fillMaxSize()) {
         // 1. STATIC BACKGROUND
         Image(
@@ -86,17 +113,15 @@ fun HomeScreen(
         // 2. MAIN CONTENT
         Scaffold(
             containerColor = Color.Transparent,
-
         ) { paddingValues ->
             // Wrapper dipasang DI DALAM Scaffold, membungkus LazyColumn
             PullToRefreshWrapper(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = { viewModel.refreshData() },
-                modifier = Modifier.padding(paddingValues) // PENTING: Padding Scaffold dipasang di sini
+                modifier = Modifier.padding(paddingValues) // Padding Scaffold masuk ke sini
             ) {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
 
@@ -139,7 +164,7 @@ fun HomeScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.height(16.dp))
-                            BannerCarousel(isDark = isDarkActive) // Fix Slider
+                            BannerCarousel(isDark = isDarkActive)
                         }
                     }
 
@@ -168,10 +193,12 @@ fun HomeScreen(
                     }
 
                     // --- SECTION 6: PRODUCT GRID ---
-                    if (uiState.isLoading) {
+                    if (uiState.isLoading && !uiState.isRefreshing) { // Loading awal
                         item {
                             Box(
-                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularProgressIndicator()
@@ -180,7 +207,9 @@ fun HomeScreen(
                     } else if (uiState.displayProducts.isEmpty()) {
                         item {
                             Box(
-                                modifier = Modifier.fillMaxWidth().height(200.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -212,6 +241,15 @@ fun HomeScreen(
                 }
             }
         }
+
+        // [PENTING: TAMBAHAN LOGIC UI TOAST DI SINI]
+        // Ini dirender di luar Scaffold agar menumpuk di atas segalanya (Z-Index tinggi)
+        CustomToast(
+            message = toastMessage,
+            isVisible = showToast,
+            type = toastType,
+            onDismiss = { showToast = false }
+        )
     }
 }
 
@@ -232,7 +270,7 @@ fun thickGlossyModifier(
     val glassColor = if (isDark)
         Color.Black.copy(alpha = 0.75f)
     else
-        Color.White.copy(alpha = 0.90f) // Putih lebih solid
+        Color.White.copy(alpha = 0.90f)
 
     val borderColor = if (isDark)
         Color.White.copy(alpha = 0.15f)
@@ -263,7 +301,7 @@ fun StickySearchBar(
             .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Search Input (Glossy Bar)
+            // Search Input
             TextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
@@ -291,7 +329,7 @@ fun StickySearchBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp)
-                    .then(thickGlossyModifier(isDark, RoundedCornerShape(30.dp))), // Kapsul
+                    .then(thickGlossyModifier(isDark, RoundedCornerShape(30.dp))),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -304,7 +342,7 @@ fun StickySearchBar(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Cart Button (Glossy Circle)
+            // Cart Button
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -322,7 +360,7 @@ fun StickySearchBar(
     }
 }
 
-// --- STICKY 2: CATEGORY ROW (REVISI: CAPSULE GLOSSY CONTAINER) ---
+// --- STICKY 2: CATEGORY ROW ---
 @Composable
 fun StickyCategoryRow(
     categories: List<Category>,
@@ -330,7 +368,6 @@ fun StickyCategoryRow(
     onCategorySelect: (String) -> Unit,
     isDark: Boolean
 ) {
-    // Container utama berbentuk KAPSUL PANJANG (seperti di foto)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -339,12 +376,12 @@ fun StickyCategoryRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp) // Tinggi bar
-                .then(thickGlossyModifier(isDark, RoundedCornerShape(50))) // Full Rounded
+                .height(64.dp)
+                .then(thickGlossyModifier(isDark, RoundedCornerShape(50)))
         ) {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp), // Jarak antar item
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -368,13 +405,11 @@ fun WhatsAppStylePill(
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    // Warna item: Hijau Solid jika dipilih, Transparan jika tidak
     val containerColor by animateColorAsState(
         targetValue = if (isSelected) primaryColor else Color.Transparent,
         label = "pillBg"
     )
 
-    // Warna Icon/Text: Putih jika dipilih, Hijau jika tidak
     val contentColor by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else primaryColor,
         label = "pillContent"
@@ -384,7 +419,7 @@ fun WhatsAppStylePill(
         onClick = onSelect,
         color = containerColor,
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(44.dp) // Sedikit lebih kecil dari container
+        modifier = Modifier.height(44.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -397,7 +432,6 @@ fun WhatsAppStylePill(
                 modifier = Modifier.size(20.dp)
             )
 
-            // Text hanya muncul saat dipilih
             AnimatedVisibility(
                 visible = isSelected,
                 enter = fadeIn() + expandHorizontally(),
@@ -416,7 +450,6 @@ fun WhatsAppStylePill(
     }
 }
 
-// --- HELPER ICON ---
 fun getIconByCategoryName(name: String): ImageVector {
     return when {
         name.contains("Sayur", true) -> Icons.Default.Eco
@@ -429,20 +462,16 @@ fun getIconByCategoryName(name: String): ImageVector {
     }
 }
 
-// --- BANNER CAROUSEL (REVISI: SNAP FIX & SHADOW) ---
-// --- BANNER CAROUSEL (4 SLIDES) ---
-// --- BANNER CAROUSEL (UPDATED: Fix Slider & isDark) ---
+// --- BANNER CAROUSEL ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BannerCarousel(isDark: Boolean) { // Parameter isDark ditambahkan
+fun BannerCarousel(isDark: Boolean) {
     val pagerState = rememberPagerState(pageCount = { 4 })
 
-    // Auto scroll logic (Safe)
     LaunchedEffect(pagerState.currentPage) {
         delay(3000)
         var newPage = pagerState.currentPage + 1
         if (newPage >= pagerState.pageCount) newPage = 0
-        // Menggunakan animateScrollToPage dengan safe check
         pagerState.animateScrollToPage(newPage)
     }
 
@@ -462,14 +491,12 @@ fun BannerCarousel(isDark: Boolean) { // Parameter isDark ditambahkan
                 else -> R.drawable.slide_4
             }
 
-            // Card Banner dengan Border tipis sesuai tema Glossy
             Card(
                 shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(8.dp), // Shadow lebih tinggi
+                elevation = CardDefaults.cardElevation(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(170.dp) // Sedikit ditinggikan
-                    // Tambahkan border tipis agar konsisten dengan glossy theme
+                    .height(170.dp)
                     .border(
                         1.dp,
                         if(isDark) Color.White.copy(alpha=0.2f) else Color.White,
@@ -487,7 +514,6 @@ fun BannerCarousel(isDark: Boolean) { // Parameter isDark ditambahkan
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Indicator
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
@@ -515,7 +541,7 @@ fun BannerCarousel(isDark: Boolean) { // Parameter isDark ditambahkan
     }
 }
 
-// --- PRODUCT CARD (Tetap Sama) ---
+// --- PRODUCT CARD ---
 @Composable
 fun ProductCardItem(product: Product) {
     Card(
@@ -573,7 +599,7 @@ fun ProductCardItem(product: Product) {
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -647,7 +673,9 @@ fun ProductCardItem(product: Product) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp).clickable { }
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clickable { }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -657,6 +685,4 @@ fun ProductCardItem(product: Product) {
             }
         }
     }
-
 }
-

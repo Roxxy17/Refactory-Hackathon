@@ -5,8 +5,10 @@ import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
 
 data class ProfileUiState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val user: ProfileUserDto? = null,
     val error: String? = null,
+    val successMessage: String? = null,
 
     // Settingan Tampilan
     val isDarkTheme: Boolean = false, // Hasil kalkulasi (untuk UI render)

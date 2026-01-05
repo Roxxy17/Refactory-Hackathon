@@ -34,6 +34,7 @@ import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
+import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper // Import Wrapper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +46,6 @@ fun AddressListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // --- AUTO REFRESH LOGIC ---
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -57,7 +57,6 @@ fun AddressListScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // --- TOAST HANDLER ---
     var showToast by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf("") }
     var toastType by remember { mutableStateOf(ToastType.Success) }
@@ -117,47 +116,52 @@ fun AddressListScreen(
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
+        // --- IMPLEMENTASI PULL TO REFRESH ---
+        PullToRefreshWrapper(
+            isRefreshing = uiState.isRefreshing, // Pastikan ada state ini di AddressUiState
+            onRefresh = { viewModel.refreshAddresses() }, // Pastikan ada fungsi ini di AddressViewModel
+            modifier = Modifier.padding(padding) // Padding Scaffold diberikan ke Wrapper
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (uiState.addresses.isEmpty()) {
-                EmptyAddressState(modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 100.dp, top = 16.dp, start = 20.dp, end = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Sortir: Default selalu di atas
-                    val sortedAddresses = uiState.addresses.sortedByDescending { it.isDefault }
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (uiState.isLoading && !uiState.isRefreshing) { // Loading awal saja (spinner tengah)
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (uiState.addresses.isEmpty()) {
+                    EmptyAddressState(modifier = Modifier.align(Alignment.Center))
+                } else {
+                    LazyColumn(
+                        // HAPUS padding atas dari sini karena sudah dihandle wrapper/scaffold logic
+                        contentPadding = PaddingValues(bottom = 100.dp, top = 16.dp, start = 20.dp, end = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val sortedAddresses = uiState.addresses.sortedByDescending { it.isDefault }
 
-                    items(sortedAddresses) { address ->
-                        AddressItem(
-                            label = address.label,
-                            name = address.recipientName,
-                            phone = address.phoneNumber,
-                            fullAddress = address.fullAddress,
-                            isDefault = address.isDefault,
-                            onEdit = { onNavigateToEdit(address.id) },
-                            onDelete = { viewModel.deleteAddress(address.id) }
-                        )
+                        items(sortedAddresses) { address ->
+                            AddressItem(
+                                label = address.label,
+                                name = address.recipientName,
+                                phone = address.phoneNumber,
+                                fullAddress = address.fullAddress,
+                                isDefault = address.isDefault,
+                                onEdit = { onNavigateToEdit(address.id) },
+                                onDelete = { viewModel.deleteAddress(address.id) }
+                            )
+                        }
                     }
                 }
-            }
 
-            CustomToast(
-                message = toastMessage,
-                isVisible = showToast,
-                type = toastType,
-                onDismiss = { showToast = false }
-            )
+                CustomToast(
+                    message = toastMessage,
+                    isVisible = showToast,
+                    type = toastType,
+                    onDismiss = { showToast = false }
+                )
+            }
         }
     }
 }
-
 @Composable
 fun EmptyAddressState(modifier: Modifier = Modifier) {
     Column(

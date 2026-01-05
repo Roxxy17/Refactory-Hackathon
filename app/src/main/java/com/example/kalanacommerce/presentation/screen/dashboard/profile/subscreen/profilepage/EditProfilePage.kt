@@ -14,7 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountBalanceWallet // Icon Dompet
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Email
@@ -38,6 +38,7 @@ import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
+import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper // [1] Import Wrapper
 import org.koin.androidx.compose.koinViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -53,9 +54,7 @@ fun EditProfilePage(
 
     // Helper untuk Format Rupiah
     fun formatRupiah(amountString: String?): String {
-        // Konversi String "50000" ke Long 50000, kalau null/gagal jadi 0
         val amount = amountString?.toLongOrNull() ?: 0L
-
         val localeID = Locale("in", "ID")
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
         return numberFormat.format(amount).replace("Rp", "Rp ")
@@ -93,8 +92,6 @@ fun EditProfilePage(
         }
     }
 
-
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -117,145 +114,154 @@ fun EditProfilePage(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // --- FOTO PROFIL ---
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (uiState.profileImage != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(uiState.profileImage)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "Profile Picture",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(60.dp)
-                            )
-                        }
-                    }
 
-                    Box(
-                        modifier = Modifier
-                            .offset(x = 4.dp, y = 4.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable {
-                                singlePhotoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            // [2] IMPLEMENTASI PULL TO REFRESH
+            // Pastikan viewModel.refreshData() & uiState.isRefreshing sudah dibuat di ViewModel
+            PullToRefreshWrapper(
+                isRefreshing = uiState.isRefreshing, // Ambil dari state
+                onRefresh = { viewModel.refreshData() }, // Panggil fungsi refresh di VM
+                modifier = Modifier.padding(paddingValues) // Padding Scaffold masuk ke sini
+            ) {
+                // [3] Konten Scrollable
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(24.dp), // Padding konten
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // --- FOTO PROFIL ---
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState.profileImage != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(uiState.profileImage)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Profile Picture",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(60.dp)
                                 )
                             }
-                            .border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (uiState.isLoading && uiState.profileImage == null) {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                Icons.Outlined.CameraAlt,
-                                contentDescription = "Ubah Foto",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .offset(x = 4.dp, y = 4.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clickable {
+                                    singlePhotoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                }
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (uiState.isLoading && uiState.profileImage == null) {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.CameraAlt,
+                                    contentDescription = "Ubah Foto",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                // --- INPUT FIELDS ---
+                    // --- INPUT FIELDS ---
 
-                // 1. SALDO (BALANCE) - Read Only & Highlighted
-                CustomTextField(
-                    value = formatRupiah(uiState.balance),
-                    onValueChange = { },
-                    label = "Saldo / Balance", // Atau stringResource(R.string.balance)
-                    icon = Icons.Default.AccountBalanceWallet,
-                    enabled = false, // Tidak bisa diedit
-                    isHighlight = true // Opsi tambahan (baca penjelasan di bawah)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 2. NAMA
-                CustomTextField(
-                    value = uiState.name,
-                    onValueChange = { viewModel.onNameChange(it) },
-                    label = stringResource(R.string.full_name),
-                    icon = Icons.Outlined.Person
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 3. EMAIL (Read Only)
-                CustomTextField(
-                    value = uiState.email,
-                    onValueChange = { },
-                    label = stringResource(R.string.email), // Pastikan ini ada di strings.xml
-                    icon = Icons.Outlined.Email,
-                    keyboardType = KeyboardType.Email,
-                    enabled = false
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 4. TELEPON
-                CustomTextField(
-                    value = uiState.phoneNumber,
-                    onValueChange = { viewModel.onPhoneChange(it) },
-                    label = stringResource(R.string.phone_number),
-                    icon = Icons.Outlined.Phone,
-                    keyboardType = KeyboardType.Phone
-                )
-
-                Spacer(modifier = Modifier.height(40.dp))
-
-                // --- TOMBOL SIMPAN ---
-                Button(
-                    onClick = { viewModel.updateProfile() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    // 1. SALDO (BALANCE)
+                    CustomTextField(
+                        value = formatRupiah(uiState.balance),
+                        onValueChange = { },
+                        label = "Saldo / Balance",
+                        icon = Icons.Default.AccountBalanceWallet,
+                        enabled = false,
+                        isHighlight = true
                     )
-                ) {
-                    if (uiState.isLoading && uiState.profileImage != null) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(24.dp)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 2. NAMA
+                    CustomTextField(
+                        value = uiState.name,
+                        onValueChange = { viewModel.onNameChange(it) },
+                        label = stringResource(R.string.full_name),
+                        icon = Icons.Outlined.Person
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 3. EMAIL
+                    CustomTextField(
+                        value = uiState.email,
+                        onValueChange = { },
+                        label = stringResource(R.string.email),
+                        icon = Icons.Outlined.Email,
+                        keyboardType = KeyboardType.Email,
+                        enabled = false
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 4. TELEPON
+                    CustomTextField(
+                        value = uiState.phoneNumber,
+                        onValueChange = { viewModel.onPhoneChange(it) },
+                        label = stringResource(R.string.phone_number),
+                        icon = Icons.Outlined.Phone,
+                        keyboardType = KeyboardType.Phone
+                    )
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    // --- TOMBOL SIMPAN ---
+                    Button(
+                        onClick = { viewModel.updateProfile() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !uiState.isLoading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
-                    } else {
-                        Text(
-                            stringResource(R.string.save_changes),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    ) {
+                        if (uiState.isLoading && uiState.profileImage != null) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Text(
+                                stringResource(R.string.save_changes),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -270,7 +276,7 @@ fun EditProfilePage(
     }
 }
 
-// Update Komponen CustomTextField untuk handle Highlight/Color
+// ... CustomTextField Component Tetap Sama ...
 @Composable
 private fun CustomTextField(
     value: String,
@@ -279,7 +285,7 @@ private fun CustomTextField(
     icon: ImageVector,
     keyboardType: KeyboardType = KeyboardType.Text,
     enabled: Boolean = true,
-    isHighlight: Boolean = false // Parameter baru
+    isHighlight: Boolean = false
 ) {
     OutlinedTextField(
         value = value,

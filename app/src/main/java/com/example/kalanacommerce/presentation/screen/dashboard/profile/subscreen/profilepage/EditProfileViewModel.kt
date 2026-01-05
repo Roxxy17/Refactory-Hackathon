@@ -8,9 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.data.local.datastore.SessionManager
-import com.example.kalanacommerce.data.mapper.toDto // <--- [PENTING] Import Mapper
+import com.example.kalanacommerce.data.mapper.toDto
 import com.example.kalanacommerce.data.remote.dto.user.ProfileUserDto
-import com.example.kalanacommerce.domain.model.User // <--- [PENTING] Import User Domain
+import com.example.kalanacommerce.domain.model.User
 import com.example.kalanacommerce.domain.repository.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,26 +28,33 @@ class EditProfileViewModel(
     val uiState = _uiState.asStateFlow()
 
     init {
-        fetchProfileData()
+        loadUserProfile()
     }
 
-    private fun fetchProfileData() {
+    // --- FUNGSI LOAD DATA (UTAMA) ---
+    // isPullRefresh = true jika dipanggil dari tarik-layar (PullToRefresh)
+    private fun loadUserProfile(isPullRefresh: Boolean = false) {
         viewModelScope.launch {
-            // 1. Load dari Cache (SessionManager menyimpan DTO) - Tidak perlu ubah
-            val cachedUserDto = sessionManager.userFlow.firstOrNull()
-            if (cachedUserDto != null) {
-                updateLocalUi(cachedUserDto)
+            // 1. Load dari Cache (Hanya jika BUKAN refresh tarik, agar data tidak 'lompat')
+            // Atau bisa tetap diload untuk memastikan UI terisi dulu
+            if (!isPullRefresh) {
+                val cachedUserDto = sessionManager.userFlow.firstOrNull()
+                if (cachedUserDto != null) {
+                    updateLocalUi(cachedUserDto)
+                }
             }
 
-            // 2. Ambil data terbaru dari Server (Return: Resource<User>)
+            // 2. Ambil data terbaru dari Server
             profileRepository.getProfile().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
-                        if (cachedUserDto == null) {
+                        // Jika bukan pull refresh dan data kosong, tampilkan loading tengah
+                        if (!isPullRefresh && _uiState.value.name.isEmpty()) {
                             _uiState.update { it.copy(isLoading = true) }
                         }
                     }
                     is Resource.Success -> {
+                        val msg = if (isPullRefresh) "Data profile diperbarui" else null
                         val freshUserDomain: User? = result.data
 
                         if (freshUserDomain != null) {
@@ -63,12 +70,14 @@ class EditProfileViewModel(
                                 sessionManager.saveSession(token, userDto)
                             }
                         }
-                        _uiState.update { it.copy(isLoading = false) }
+                        // Matikan kedua jenis loading
+                        _uiState.update { it.copy(isLoading = false, isRefreshing = false, successMessage = msg) }
                     }
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
+                                isRefreshing = false, // Pastikan refresh stop saat error
                                 errorMessage = result.message
                             )
                         }
@@ -78,7 +87,14 @@ class EditProfileViewModel(
         }
     }
 
-    // Fungsi ini tetap menerima DTO karena UI State masih pakai struktur data lama
+    // Fungsi refresh yang dipanggil dari UI (PullToRefresh)
+    fun refreshData() {
+        // Nyalakan indikator refreshing
+        _uiState.update { it.copy(isRefreshing = true) }
+        // Panggil load data dengan mode refresh
+        loadUserProfile(isPullRefresh = true)
+    }
+
     private fun updateLocalUi(user: ProfileUserDto) {
         _uiState.update {
             it.copy(
@@ -98,7 +114,6 @@ class EditProfileViewModel(
         viewModelScope.launch {
             val currentState = _uiState.value
 
-            // Repository.updateProfile return String (Pesan), jadi tidak ada perubahan tipe data
             profileRepository.updateProfile(
                 name = currentState.name,
                 email = currentState.email,
@@ -107,7 +122,7 @@ class EditProfileViewModel(
                 when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                     is Resource.Success -> {
-                        refreshSessionData() // Panggil refresh setelah update sukses
+                        refreshSessionData() // Panggil refresh session internal setelah update
                         _uiState.update { it.copy(isLoading = false, successMessage = "Profil berhasil diperbarui") }
                     }
                     is Resource.Error -> {
@@ -139,7 +154,7 @@ class EditProfileViewModel(
                         when (result) {
                             is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                             is Resource.Success -> {
-                                refreshSessionData() // Panggil refresh setelah upload sukses
+                                refreshSessionData()
                                 _uiState.update { it.copy(isLoading = false, successMessage = "Foto berhasil diubah") }
                             }
                             is Resource.Error -> {
@@ -165,7 +180,6 @@ class EditProfileViewModel(
     }
 
     private suspend fun refreshSessionData() {
-        // Return Repo sekarang Resource<User>
         profileRepository.getProfile().collect { result ->
             if (result is Resource.Success && result.data != null) {
                 val userDomain = result.data // Tipe: User

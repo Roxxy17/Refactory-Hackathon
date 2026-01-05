@@ -4,8 +4,9 @@ import com.example.kalanacommerce.domain.model.Address
 
 data class AddressUiState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val addresses: List<Address> = emptyList(),
     val selectedAddress: Address? = null, // <--- Field ini wajib ada untuk Form
     val error: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
 )
