@@ -193,14 +193,25 @@
     <string name="desc_set_main_address">Alamat ini akan otomatis terpilih saat checkout.</string>
 
     // Home Screen
+    <string name="home_hero_title">Belanja Bahan\nMasakan Tanpa\nKeluar Rumah</string>
+    <string name="home_search_placeholder">Cari sayur, bumbu...</string>
+    <string name="home_latest_products">Cek Update</string>
+    <string name="home_promo_title">Promo Bulan Ini</string>
+    <string name="home_empty_product">Produk tidak tersedia</string>
 
-    <string name="home_search_placeholder">Cari sayur, buah, bumbu...</string>
-    <string name="home_welcome">Selamat Datang,</string>
-    <string name="home_promo_header">Promo Spesial 🔥</string>
-    <string name="home_latest_products">Cek Update Terbaru</string>
-    <string name="home_see_all">Lihat Semua</string>
-    <string name="home_error_loading">Gagal memuat data.</string>
-    <string name="home_empty_product">Produk tidak ditemukan.</string>
+    <string name="product_tag_fresh">Segar</string>
+    <string name="product_freshness_label">Kesegaran %1$d%%</string>
+    <string name="product_weight_format">%1$s %2$s</string>
     <string name="currency_format">Rp%,d</string>
 
+    <string name="cat_vegetable">Sayuran</string>
+    <string name="cat_fruit">Buah-buahan</string>
+    <string name="cat_meat">Daging</string>
+    <string name="cat_spice">Bumbu</string>
+    <string name="cat_snack">Camilan</string>
+    <string name="cat_other">Semuanya</string>
+
+    <string name="unit_bunch">Ikat</string>
+    <string name="unit_gram">Gram</string>
+    <string name="unit_pcs">Pcs</string>
 </resources>

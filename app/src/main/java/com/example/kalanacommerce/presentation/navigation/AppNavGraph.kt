@@ -125,6 +125,7 @@ fun AppNavGraph(
         composable(route = Screen.TermsAndConditions.route) {
             TermsAndConditionsScreen(onBack = { navController.popBackStack() })
         }
+
         composable(route = Screen.HelpCenter.route) {
             HelpCenterScreen(onNavigateBack = { navController.popBackStack() })
         }
@@ -140,7 +141,9 @@ fun AppNavGraph(
         }
         composable(route = "chat_screen") {
             val sessionManager: SessionManager = get()
-            RequireAuth(sessionManager, navController) { ChatScreen() }
+            RequireAuth(sessionManager, navController) { ChatScreen(onBackClick = {
+                navController.popBackStack()
+            }) }
         }
 
         // Profile & Settings

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface ProductRepository {
     // Products
-    fun getProducts(): Flow<Resource<List<Product>>>
+    fun getProducts(query: String = ""): Flow<Resource<List<Product>>>
     fun getProductDetail(id: String): Flow<Resource<Product>>
 
     // Outlets

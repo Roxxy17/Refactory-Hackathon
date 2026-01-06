@@ -6,6 +6,8 @@ import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.remote.dto.refreshtoken.RefreshTokenResponseDto
 import com.example.kalanacommerce.data.remote.service.AuthService
 import com.example.kalanacommerce.data.remote.service.AuthServiceImpl
+import com.example.kalanacommerce.data.remote.service.ChatApiService
+import com.example.kalanacommerce.data.remote.service.ChatApiServiceImpl
 import com.example.kalanacommerce.data.remote.service.ProfileService
 import com.example.kalanacommerce.data.remote.service.ProfileServiceImpl
 import io.ktor.client.HttpClient
@@ -32,6 +34,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Dns
 import org.koin.dsl.module
+import retrofit2.Retrofit
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
@@ -187,6 +190,7 @@ val networkModule = module {
 
     single<AuthService> { AuthServiceImpl(get()) }
     single<ProfileService> { ProfileServiceImpl(get()) }
+    single<ChatApiService> { ChatApiServiceImpl(get()) }
 }
 
 // --- DTO KHUSUS UNTUK REFRESH TOKEN ---

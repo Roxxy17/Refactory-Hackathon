@@ -9,8 +9,14 @@ class ProductApiServiceImpl(
     private val client: HttpClient
 ) : ProductApiService {
 
-    override suspend fun getProducts(): BaseResponse<List<ProductDto>> {
-        return client.get("products").body()
+    // [PERBAIKAN] Override sekarang cocok dengan interface
+    override suspend fun getProducts(search: String?): BaseResponse<List<ProductDto>> {
+        return client.get("products") {
+            // [LOGIKA KTOR] Tambahkan parameter query ?search=... jika ada
+            if (!search.isNullOrBlank()) {
+                parameter("search", search)
+            }
+        }.body()
     }
 
     override suspend fun getProductById(id: String): BaseResponse<ProductDto> {

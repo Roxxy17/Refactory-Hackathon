@@ -22,21 +22,22 @@ val useCaseModule = module {
     factory { SignInUseCase(get()) }
     factory { RegisterUseCase(get()) }
     factory { LogoutUseCase(get()) }
+
     single { ForgotPasswordUseCase(get()) }
     single { ResetPasswordUseCase(get()) }
+
     factory { GetProfileUseCase(get()) }
     factory { UpdateProfileUseCase(get()) }
     factory { UpdatePhotoUseCase(get()) }
 
-// List
     factory { GetProductsUseCase(get()) }
     factory { GetOutletsUseCase(get()) }
     factory { GetCategoriesUseCase(get()) }
     factory { GetUnitsUseCase(get()) }
 
-    // Detail
     factory { GetProductDetailUseCase(get()) }
-    factory { GetOutletDetailUseCase(get()) }   // <-- Baru
-    factory { GetCategoryDetailUseCase(get()) } // <-- Baru
-    factory { GetUnitDetailUseCase(get()) }     // <-- Baru
+    factory { GetOutletDetailUseCase(get()) }
+    factory { GetCategoryDetailUseCase(get()) }
+    factory { GetUnitDetailUseCase(get()) }
+
 }

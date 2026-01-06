@@ -11,6 +11,8 @@ import com.example.kalanacommerce.data.remote.service.AddressServiceImpl
 import com.example.kalanacommerce.data.repository.AddressRepositoryImpl
 import com.example.kalanacommerce.domain.repository.AddressRepository
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
@@ -69,4 +71,9 @@ val appModule = module {
     }
 
     viewModel { HomeViewModel(get(), get()) }
+
+    // ViewModel tetap sama, dia minta Interface
+    viewModel { ChatViewModel(get()) }
+
+    viewModel { ExploreViewModel(get()) }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <resources>
+<resources>
     <string name="app_name">KalanaCommerce</string>
 
     // Get Started
@@ -194,15 +194,25 @@
     <string name="desc_set_main_address">This address will be automatically selected during checkout.</string>
 
     // Home Screen
-    <string name="home_search_placeholder">Search vegetables, fruit...</string>
-    <string name="home_welcome">Welcome,</string>
-    <string name="home_promo_header">Special Promo 🔥</string>
-    <string name="home_latest_products">Latest Updates</string>
-    <string name="home_see_all">See All</string>
-    <string name="home_error_loading">Failed to load data.</string>
-    <string name="home_empty_product">No products found.</string>
+    <string name="home_hero_title">Shop Groceries\nWithout Leaving\nYour Home</string>
+    <string name="home_search_placeholder">Search vegetables, spices...</string>
+    <string name="home_latest_products">Check Updates</string>
+    <string name="home_promo_title">Promo of The Month</string>
+    <string name="home_empty_product">No products available</string>
+    <string name="product_tag_fresh">Fresh</string>
+    <string name="product_freshness_label">Freshness %1$d%%</string>
+    <string name="product_weight_format">%1$s %2$s</string>
     <string name="currency_format">Rp%,d</string>
 
+    <string name="cat_vegetable">Vegetables</string>
+    <string name="cat_fruit">Fruits</string>
+    <string name="cat_meat">Meat</string>
+    <string name="cat_spice">Spices</string>
+    <string name="cat_snack">Snacks</string>
+    <string name="cat_other">All</string>
 
+    <string name="unit_bunch">Bunch</string>
+    <string name="unit_gram">Gram</string>
+    <string name="unit_pcs">Pcs</string>
 
 </resources>

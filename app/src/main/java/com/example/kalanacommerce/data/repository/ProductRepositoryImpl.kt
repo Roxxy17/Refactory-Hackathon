@@ -15,10 +15,15 @@ class ProductRepositoryImpl(
     private val apiService: ProductApiService
 ) : ProductRepository {
 
-    override fun getProducts(): Flow<Resource<List<Product>>> = flow {
+    // [PERBAIKAN] Tangkap query dan kirim ke apiService
+    override fun getProducts(query: String): Flow<Resource<List<Product>>> = flow {
         emit(Resource.Loading())
         try {
-            val response = apiService.getProducts()
+            // Jika query kosong, kirim null (agar API mengembalikan semua data)
+            val searchParam = if (query.isBlank()) null else query
+
+            val response = apiService.getProducts(search = searchParam)
+
             if (response.status) {
                 val products = response.data.map { it.toDomain() }
                 emit(Resource.Success(products))

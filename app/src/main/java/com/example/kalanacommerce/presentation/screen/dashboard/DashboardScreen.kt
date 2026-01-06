@@ -20,14 +20,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.data.local.datastore.SessionManager
-import com.example.kalanacommerce.data.local.datastore.ThemeManager // [PENTING] Import ThemeManager
+import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.presentation.components.AppBottomNavigationBar
 import com.example.kalanacommerce.presentation.navigation.BottomBarScreen
 import com.example.kalanacommerce.presentation.navigation.Graph
 import com.example.kalanacommerce.presentation.navigation.Screen
+import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.search.SearchingScreen
 // import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen // Uncomment jika sudah ada
 
 import kotlinx.coroutines.launch
@@ -41,13 +41,12 @@ fun DashboardScreen(
 
     // Inject Manager
     val sessionManager: SessionManager = get()
-    val themeManager: ThemeManager = get() // [BARU] Inject ThemeManager
+    val themeManager: ThemeManager = get()
 
     val scope = rememberCoroutineScope()
 
     // Observasi status Login & Tema
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
-    // [BARU] Ambil state tema dari ThemeManager
     val themeSetting by themeManager.themeSettingFlow.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -65,15 +64,24 @@ fun DashboardScreen(
             ) {
                 // --- TAB 1: HOME ---
                 composable(BottomBarScreen.Eksplor.route) {
-                    // [PERBAIKAN ERROR DISINI]
-                    // 1. Hapus parameter 'modifier' (karena HomeScreen sudah handle modifier sendiri)
-                    // 2. Masukkan parameter 'themeSetting' yang wajib
                     HomeScreen(themeSetting = themeSetting)
                 }
 
-                // --- TAB 2: PENCARIAN ---
+                // --- TAB 2: PENCARIAN (EXPLORE) ---
                 composable(BottomBarScreen.Pencarian.route) {
-                    SearchingScreen(onBack = { dashboardNavController.popBackStack() })
+                    // [PERBAIKAN] Menggunakan parameter 'onBackClick' yang benar
+                    ExploreScreen(
+                        onBackClick = {
+                            // Kembali ke Home jika diback dari Explore
+                            dashboardNavController.navigate(BottomBarScreen.Eksplor.route) {
+                                popUpTo(dashboardNavController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
 
                 // --- TAB 3: RIWAYAT ---
@@ -82,7 +90,7 @@ fun DashboardScreen(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Halaman Riwayat")
                     }
-                    // HistoryScreen(onBack = { dashboardNavController.popBackStack() })
+                    // HistoryScreen(onBackClick = { dashboardNavController.popBackStack() })
                 }
 
                 // --- TAB 4: PROFILE ---
