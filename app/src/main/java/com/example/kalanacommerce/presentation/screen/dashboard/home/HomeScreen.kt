@@ -1,4 +1,4 @@
-    package com.example.kalanacommerce.presentation.screen.dashboard.home
+package com.example.kalanacommerce.presentation.screen.dashboard.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -56,6 +56,13 @@ import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.material.icons.outlined.Inventory2 // Untuk Paket
+import androidx.compose.material.icons.outlined.Eco        // Untuk Sayur
+import androidx.compose.material.icons.outlined.Spa        // Untuk Nabati
+import androidx.compose.material.icons.outlined.ShoppingBag // Untuk Bahan Pokok
+import androidx.compose.material.icons.outlined.DinnerDining // Untuk Olahan
+import androidx.compose.material.icons.outlined.RamenDining // Untuk Instan
+import androidx.compose.material.icons.outlined.Category // Fallback
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -96,7 +103,8 @@ fun HomeScreen(
         }
     }
 
-    val bgImage = if (isDarkActive) R.drawable.background_home_black else R.drawable.background_home_white
+    val bgImage =
+        if (isDarkActive) R.drawable.background_home_black else R.drawable.background_home_white
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -253,8 +261,10 @@ fun PaddingWrapper(content: @Composable () -> Unit) {
 // --- HELPER: THICK GLOSSY EFFECT ---
 @Composable
 fun thickGlossyModifier(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
-    val glassColor = if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.90f)
-    val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
+    val glassColor =
+        if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.90f)
+    val borderColor =
+        if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
     return Modifier
         .shadow(elevation = 6.dp, shape = shape, spotColor = Color.Black.copy(alpha = 0.1f))
         .background(glassColor, shape)
@@ -265,9 +275,11 @@ fun thickGlossyModifier(isDark: Boolean, shape: androidx.compose.ui.graphics.Sha
 // --- STICKY 1: SEARCH BAR ---
 @Composable
 fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDark: Boolean) {
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 24.dp, vertical = 8.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextField(
                 value = searchQuery,
@@ -279,11 +291,21 @@ fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDar
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 },
-                leadingIcon = { Icon(Icons.Outlined.Search, "Search", tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Search,
+                        "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Close, "Clear", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(
+                                Icons.Default.Close,
+                                "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 },
@@ -308,7 +330,11 @@ fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDar
                     .then(thickGlossyModifier(isDark, CircleShape))
                     .clickable { /* Cart */ }
             ) {
-                Icon(Icons.Outlined.ShoppingCart, "Cart", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(
+                    Icons.Outlined.ShoppingCart,
+                    "Cart",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
@@ -317,23 +343,38 @@ fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDar
 // --- STICKY 2: CATEGORY ROW (STATIC) ---
 @Composable
 fun StickyCategoryRow(
-    availableCategories: List<Category>, // Kategori asli dari backend (untuk ambil ID)
+    availableCategories: List<Category>,
     selectedCategoryId: String,
     onCategorySelect: (String) -> Unit,
     isDark: Boolean
 ) {
-    // [MODIFIKASI] Definisi List Kategori Statis (Urutan Tetap)
-    val staticTypes = listOf("Semua", "Sayur", "Buah", "Daging", "Bumbu", "Snack")
+    // [MODIFIKASI] Daftar kategori LENGKAP (Sama dengan Explore)
+    val staticTypes = listOf(
+        "Semua",
+        "Paket Masak",
+        "Sayur Segar",
+        "Buah Segar",
+        "Protein Hewani",
+        "Protein Nabati",
+        "Bahan Pokok",
+        "Bumbu",
+        "Produk Olahan",
+        "Bahan Instan",
+        "Snack"
+    )
 
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Box(modifier = Modifier
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .then(thickGlossyModifier(isDark, RoundedCornerShape(50)))) {
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .then(thickGlossyModifier(isDark, RoundedCornerShape(50)))
+        ) {
 
-            // Loop menggunakan staticTypes, bukan category backend
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -342,35 +383,41 @@ fun StickyCategoryRow(
             ) {
                 items(staticTypes) { typeName ->
 
-                    // 1. Logika Mencari ID Asli Backend
-                    // Kita cari di list backend, mana yang namanya mirip dengan typeName
-                    val matchedCategory = if (typeName == "Semua") null else availableCategories.find {
-                        it.name.contains(typeName, ignoreCase = true)
+                    // Logic pencocokan ID Backend (agar filter berfungsi)
+                    val keyword = when (typeName) {
+                        "Paket Masak" -> "Paket"
+                        "Sayur Segar" -> "Sayur"
+                        "Buah Segar" -> "Buah"
+                        "Protein Hewani" -> "Daging"
+                        "Protein Nabati" -> "Nabati"
+                        "Bahan Pokok" -> "Sembako"
+                        "Bumbu" -> "Bumbu Dapur"
+                        "Produk Olahan" -> "Olahan"
+                        "Bahan Instan" -> "Instan"
+                        else -> typeName
                     }
+
+                    val matchedCategory =
+                        if (typeName == "Semua") null else availableCategories.find {
+                            it.name.contains(keyword, ignoreCase = true)
+                        }
                     val realId = if (typeName == "Semua") "ALL" else matchedCategory?.id
 
-                    // 2. Cek Seleksi
+                    // Cek Seleksi
                     val isSelected = if (typeName == "Semua") {
                         selectedCategoryId == "ALL"
                     } else {
-                        realId == selectedCategoryId
+                        realId == selectedCategoryId || (realId == null && selectedCategoryId == "DUMMY_${typeName}")
                     }
 
-                    // 3. Render Item
-                    // Kita buat object Category 'palsu' hanya untuk passing ke visual (biar icon & teks muncul)
                     val visualCategory = Category(id = realId ?: "STATIC", name = typeName)
 
                     WhatsAppStylePill(
                         category = visualCategory,
                         isSelected = isSelected,
                         onSelect = {
-                            if (realId != null) {
-                                onCategorySelect(realId)
-                            } else {
-                                // Fallback: Jika backend belum punya kategori ini (misal "Daging" belum ada di DB)
-                                // Kita kirim ID dummy biar list jadi kosong (karena filter tidak match)
-                                onCategorySelect("DUMMY_${typeName}")
-                            }
+                            if (realId != null) onCategorySelect(realId)
+                            else onCategorySelect("DUMMY_${typeName}")
                         }
                     )
                 }
@@ -386,8 +433,14 @@ fun WhatsAppStylePill(
     onSelect: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val containerColor by animateColorAsState(if (isSelected) primaryColor else Color.Transparent, label = "pillBg")
-    val contentColor by animateColorAsState(if (isSelected) MaterialTheme.colorScheme.onPrimary else primaryColor, label = "pillContent")
+    val containerColor by animateColorAsState(
+        if (isSelected) primaryColor else Color.Transparent,
+        label = "pillBg"
+    )
+    val contentColor by animateColorAsState(
+        if (isSelected) MaterialTheme.colorScheme.onPrimary else primaryColor,
+        label = "pillContent"
+    )
 
     Surface(
         onClick = onSelect,
@@ -395,7 +448,10 @@ fun WhatsAppStylePill(
         shape = RoundedCornerShape(50),
         modifier = Modifier.height(44.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
             // Icon Statis dari PNG
             val iconData = getCategoryIcon(category.name)
 
@@ -408,6 +464,7 @@ fun WhatsAppStylePill(
                         modifier = Modifier.size(20.dp)
                     )
                 }
+
                 is CategoryIcon.Drawable -> {
                     Icon(
                         painter = painterResource(id = iconData.resId),
@@ -459,8 +516,12 @@ fun BannerCarousel(isDark: Boolean) {
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        HorizontalPager(state = pagerState, contentPadding = PaddingValues(horizontal = 24.dp), pageSpacing = 16.dp) { page ->
-            val imageRes = when(page) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            pageSpacing = 16.dp
+        ) { page ->
+            val imageRes = when (page) {
                 0 -> R.drawable.slide_1
                 1 -> R.drawable.slide_2 // Diganti slide_2 biar variatif
                 2 -> R.drawable.slide_3 // Diganti slide_3
@@ -472,9 +533,18 @@ fun BannerCarousel(isDark: Boolean) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(170.dp)
-                    .border(1.dp, if(isDark) Color.White.copy(alpha=0.2f) else Color.White, RoundedCornerShape(24.dp))
+                    .border(
+                        1.dp,
+                        if (isDark) Color.White.copy(alpha = 0.2f) else Color.White,
+                        RoundedCornerShape(24.dp)
+                    )
             ) {
-                Image(painter = painterResource(id = imageRes), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                Image(
+                    painter = painterResource(id = imageRes),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -484,16 +554,24 @@ fun BannerCarousel(isDark: Boolean) {
             Spacer(modifier = Modifier.width(24.dp))
             repeat(pagerState.pageCount) { iteration ->
                 val isSelected = pagerState.currentPage == iteration
-                val color = if (isSelected) MaterialTheme.colorScheme.primary else if(isDark) Color.White.copy(alpha = 0.3f) else Color.Black.copy(alpha = 0.2f)
+                val color =
+                    if (isSelected) MaterialTheme.colorScheme.primary else if (isDark) Color.White.copy(
+                        alpha = 0.3f
+                    ) else Color.Black.copy(alpha = 0.2f)
                 // Animasi lebar dot
-                val width by animateDpAsState(targetValue = if (isSelected) 32.dp else 12.dp, label = "width")
+                val width by animateDpAsState(
+                    targetValue = if (isSelected) 32.dp else 12.dp,
+                    label = "width"
+                )
 
-                Box(modifier = Modifier
-                    .padding(end = 6.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(color)
-                    .height(6.dp)
-                    .width(width))
+                Box(
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(color)
+                        .height(6.dp)
+                        .width(width)
+                )
             }
         }
     }
@@ -519,7 +597,8 @@ fun ProductCardItem(product: Product) {
             ) {
                 if (product.image.isNotEmpty()) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(product.image).crossfade(true).build(),
+                        model = ImageRequest.Builder(LocalContext.current).data(product.image)
+                            .crossfade(true).build(),
                         contentDescription = product.name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -575,13 +654,19 @@ fun ProductCardItem(product: Product) {
 
                     // Variant Name (Langsung dari API)
                     Surface(
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        ),
                         shape = RoundedCornerShape(6.dp),
                         color = Color.Transparent
                     ) {
                         Text(
                             text = product.variantName, // Sudah diperbaiki di tahap sebelumnya
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -592,7 +677,11 @@ fun ProductCardItem(product: Product) {
 
                 // Harga Sekarang
                 Text(
-                    text = String.format(Locale("id", "ID"), stringResource(R.string.currency_format), product.price),
+                    text = String.format(
+                        Locale("id", "ID"),
+                        stringResource(R.string.currency_format),
+                        product.price
+                    ),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -600,7 +689,11 @@ fun ProductCardItem(product: Product) {
                 // Harga Coret
                 if (product.discountPercentage > 0 && product.originalPrice != null) {
                     Text(
-                        text = String.format(Locale("id", "ID"), stringResource(R.string.currency_format), product.originalPrice),
+                        text = String.format(
+                            Locale("id", "ID"),
+                            stringResource(R.string.currency_format),
+                            product.originalPrice
+                        ),
                         style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
@@ -612,7 +705,10 @@ fun ProductCardItem(product: Product) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.product_freshness_label, product.freshness),
+                            text = stringResource(
+                                R.string.product_freshness_label,
+                                product.freshness
+                            ),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -622,10 +718,23 @@ fun ProductCardItem(product: Product) {
 
                         Row(modifier = Modifier.padding(top = 2.dp)) {
                             repeat(activeDots) {
-                                Box(modifier = Modifier.padding(end = 2.dp).size(4.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 2.dp)
+                                        .size(4.dp)
+                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                )
                             }
                             repeat(dots - activeDots) {
-                                Box(modifier = Modifier.padding(end = 2.dp).size(4.dp).background(MaterialTheme.colorScheme.outline.copy(alpha=0.3f), CircleShape))
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 2.dp)
+                                        .size(4.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                            CircleShape
+                                        )
+                                )
                             }
                         }
                     }
@@ -633,10 +742,17 @@ fun ProductCardItem(product: Product) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp).clickable { /* Add to Cart */ }
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clickable { /* Add to Cart */ }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.Add,
+                                null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -648,32 +764,71 @@ fun ProductCardItem(product: Product) {
 // --- HELPER FUNCTIONS FOR MAPPING & ICONS ---
 fun getCategoryIcon(name: String): CategoryIcon {
     return when {
-        // [KHUSUS SAYUR] Pakai Vector (Mirip Lucide)
-        name.contains("Sayur", true) -> CategoryIcon.Vector(Icons.Outlined.Eco)
-
-        // [SISANYA] Tetap pakai PNG Drawable
+        // 1. Kategori yang Anda Minta Pakai GAMBAR (Drawable)
+        name.contains(
+            "Semua",
+            true
+        ) -> CategoryIcon.Drawable(R.drawable.ic_sayur) // Pakai ic_sayur untuk 'Semua'
         name.contains("Buah", true) -> CategoryIcon.Drawable(R.drawable.ic_buah2)
-        name.contains("Daging", true) -> CategoryIcon.Drawable(R.drawable.ic_daging)
+        name.contains("Daging", true) || name.contains(
+            "Hewani",
+            true
+        ) -> CategoryIcon.Drawable(R.drawable.ic_daging)
+
         name.contains("Bumbu", true) -> CategoryIcon.Drawable(R.drawable.ic_bumbu2)
         name.contains("Snack", true) -> CategoryIcon.Drawable(R.drawable.ic_snack)
-        name.contains("Semua", true) -> CategoryIcon.Drawable(R.drawable.ic_sayur) // Atau icon lain
-        else -> CategoryIcon.Drawable(R.drawable.ic_sayur)
+
+        // 2. Kategori Sisanya Pakai VECTOR ICON (Bawaan Android)
+        name.contains("Sayur", true) -> CategoryIcon.Vector(Icons.Outlined.Eco) // Daun
+        name.contains(
+            "Paket",
+            true
+        ) -> CategoryIcon.Vector(Icons.Outlined.Inventory2) // Kotak Kardus
+        name.contains("Nabati", true) -> CategoryIcon.Vector(Icons.Outlined.Spa) // Tunas/Kedelai
+        name.contains("Pokok", true) || name.contains(
+            "Sembako",
+            true
+        ) -> CategoryIcon.Vector(Icons.Outlined.ShoppingBag) // Tas Belanja
+        name.contains(
+            "Olahan",
+            true
+        ) -> CategoryIcon.Vector(Icons.Outlined.DinnerDining) // Makanan Jadi
+        name.contains(
+            "Instan",
+            true
+        ) -> CategoryIcon.Vector(Icons.Outlined.RamenDining) // Mangkok Mie
+
+        // Fallback
+        else -> CategoryIcon.Vector(Icons.Outlined.Category)
     }
 }
+
 fun getCategoryNameResId(apiName: String): Int {
     return when {
-        apiName.contains("Sayur", true) -> R.string.cat_vegetable
-        apiName.contains("Buah", true) -> R.string.cat_fruit
-        apiName.contains("Daging", true) -> R.string.cat_meat
-        apiName.contains("Bumbu", true) -> R.string.cat_spice
+        apiName.contains("Semua", true) -> R.string.cat_other // Atau buat string "Semua"
+        apiName.contains("Paket", true) -> R.string.cat_exp_packet
+        apiName.contains("Sayur", true) -> R.string.cat_exp_vegetable
+        apiName.contains("Buah", true) -> R.string.cat_exp_fruit
+        apiName.contains("Daging", true) || apiName.contains(
+            "Hewani",
+            true
+        ) -> R.string.cat_exp_meat
+
+        apiName.contains("Nabati", true) -> R.string.cat_plant_protein
+        apiName.contains("Pokok", true) || apiName.contains("Sembako", true) -> R.string.cat_staple
+        apiName.contains("Bumbu", true) -> R.string.cat_exp_spice
+        apiName.contains("Olahan", true) -> R.string.cat_processed
+        apiName.contains("Instan", true) -> R.string.cat_instant
         apiName.contains("Snack", true) -> R.string.cat_snack
-        else -> R.string.cat_other
+        else -> 0
     }
 }
 
 // Helper class untuk menampung jenis icon (bisa Vector atau Drawable)
 sealed class CategoryIcon {
-    data class Vector(val imageVector: androidx.compose.ui.graphics.vector.ImageVector) : CategoryIcon()
+    data class Vector(val imageVector: androidx.compose.ui.graphics.vector.ImageVector) :
+        CategoryIcon()
+
     data class Drawable(val resId: Int) : CategoryIcon()
 }
 

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.kalanacommerce.R
+import com.example.kalanacommerce.R // Pastikan import ini ada
 
 class ExploreViewModel(
     private val repository: ProductRepository
@@ -27,83 +27,26 @@ class ExploreViewModel(
     // Daftar Kategori Statis (Sesuai UI dan strings.xml)
     private val staticUiCategories = listOf(
         UiCategory("CAT_PAKET", R.string.cat_exp_packet, "Paket Masak", listOf("paket", "kit")),
-        UiCategory(
-            "CAT_SAYUR",
-            R.string.cat_exp_vegetable,
-            "Sayuran",
-            listOf("sayur", "vegetable", "hijau", "daun")
-        ),
+        UiCategory("CAT_SAYUR", R.string.cat_exp_vegetable, "Sayuran", listOf("sayur", "vegetable", "hijau", "daun")),
         UiCategory("CAT_BUAH", R.string.cat_exp_fruit, "Buah", listOf("buah", "fruit")),
-        UiCategory(
-            "CAT_DAGING",
-            R.string.cat_exp_meat,
-            "Daging Ikan Ayam",
-            listOf(
-                "daging",
-                "meat",
-                "ayam",
-                "chicken",
-                "ikan",
-                "fish",
-                "sapi",
-                "beef",
-                "seafood",
-                "udang"
-            )
-        ),
-        UiCategory(
-            "CAT_NABATI",
-            R.string.cat_plant_protein,
-            "Tahu Tempe",
-            listOf("tahu", "tofu", "tempe", "tempeh", "nabati")
-        ),
-        UiCategory(
-            "CAT_POKOK",
-            R.string.cat_staple,
-            "Beras Minyak Telur",
-            listOf(
-                "beras",
-                "rice",
-                "minyak",
-                "oil",
-                "telur",
-                "egg",
-                "gula",
-                "sugar",
-                "pokok",
-                "staple",
-                "sembako"
-            )
-        ),
-        UiCategory(
-            "CAT_BUMBU",
-            R.string.cat_exp_spice,
-            "Bumbu",
-            listOf("bumbu", "spice", "rempah", "kunyit", "jahe", "bawang")
-        ),
-        UiCategory(
-            "CAT_OLAHAN",
-            R.string.cat_processed,
-            "Sosis Nugget Bakso",
-            listOf("sosis", "sausage", "nugget", "bakso", "meatball", "olahan", "processed")
-        ),
-        UiCategory(
-            "CAT_INSTAN",
-            R.string.cat_instant,
-            "Mie Instan",
-            listOf("mie", "noodle", "instan", "instant", "pasta")
-        )
+        UiCategory("CAT_DAGING", R.string.cat_exp_meat, "Daging Ikan Ayam", listOf("daging", "meat", "ayam", "chicken", "ikan", "fish", "sapi", "beef", "seafood", "udang")),
+        UiCategory("CAT_NABATI", R.string.cat_plant_protein, "Tahu Tempe", listOf("tahu", "tofu", "tempe", "tempeh", "nabati")),
+        UiCategory("CAT_POKOK", R.string.cat_staple, "Beras Minyak Telur", listOf("beras", "rice", "minyak", "oil", "telur", "egg", "gula", "sugar", "pokok", "staple", "sembako")),
+        UiCategory("CAT_BUMBU", R.string.cat_exp_spice, "Bumbu", listOf("bumbu", "spice", "rempah", "kunyit", "jahe", "bawang")),
+        UiCategory("CAT_OLAHAN", R.string.cat_processed, "Sosis Nugget Bakso", listOf("sosis", "sausage", "nugget", "bakso", "meatball", "olahan", "processed")),
+        UiCategory("CAT_INSTAN", R.string.cat_instant, "Mie Instan", listOf("mie", "noodle", "instan", "instant", "pasta"))
     )
 
     init {
-        // Konversi UiCategory ke Domain Category agar kompatibel dengan UI lama
+        // Mapping UiCategory ke Domain Category
+        // name diisi ID ("CAT_...") agar nanti UI bisa membedakannya dan mengambil string resource yang tepat
         val mappedCategories = staticUiCategories.map {
             Category(id = it.id, name = it.id)
         }
         _uiState.update { it.copy(categories = mappedCategories) }
     }
 
-    // --- Search Logic (User mengetik manual) ---
+    // --- Search Logic ---
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query, selectedCategory = null) }
 
@@ -111,7 +54,7 @@ class ExploreViewModel(
         searchJob = viewModelScope.launch {
             if (query.isNotEmpty()) {
                 delay(500)
-                // [FIX] Menggunakan nama parameter yang benar: validationKeywords
+                // Pencarian manual: validationKeywords = null
                 searchProducts(query, validationKeywords = null)
             } else {
                 _uiState.update { it.copy(searchResults = emptyList()) }
@@ -119,7 +62,7 @@ class ExploreViewModel(
         }
     }
 
-    // --- Category Logic (User klik kategori) ---
+    // --- Category Logic ---
     fun onCategorySelected(category: Category) {
         _uiState.update {
             it.copy(
@@ -128,7 +71,7 @@ class ExploreViewModel(
             )
         }
 
-        // Cari konfigurasi berdasarkan ID kategori
+        // Cari config berdasarkan ID
         val config = staticUiCategories.find { it.id == category.id }
 
         if (config != null) {
@@ -155,30 +98,38 @@ class ExploreViewModel(
                         val rawData = result.data ?: emptyList()
 
                         val filteredData = if (validationKeywords != null) {
+                            // 1. Logic Filter Kategori (Strict)
                             rawData.filter { product ->
                                 val prodName = product.name.lowercase()
                                 val prodCat = product.categoryName.lowercase()
 
-                                // Cek apakah Nama Produk ATAU Kategori mengandung salah satu keyword
                                 validationKeywords.any { keyword ->
                                     prodName.contains(keyword) || prodCat.contains(keyword)
                                 }
                             }
                         } else {
-                            rawData
+                            // 2. Logic Filter Pencarian Manual (Query)
+                            // [PERBAIKAN] Filter manual berdasarkan query user
+                            if (query.isNotBlank()) {
+                                val lowerQuery = query.lowercase()
+                                rawData.filter { product ->
+                                    product.name.lowercase().contains(lowerQuery) ||
+                                            product.categoryName.lowercase().contains(lowerQuery)
+                                }
+                            } else {
+                                rawData
+                            }
                         }
 
                         _uiState.update {
                             it.copy(isLoading = false, searchResults = filteredData)
                         }
                     }
-
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(isLoading = false, error = result.message)
                         }
                     }
-
                     else -> Unit
                 }
             }

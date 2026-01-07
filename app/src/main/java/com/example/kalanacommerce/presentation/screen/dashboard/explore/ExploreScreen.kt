@@ -17,6 +17,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Search
@@ -26,10 +27,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource // Import
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,8 +44,6 @@ import com.example.kalanacommerce.domain.model.Product
 import com.example.kalanacommerce.presentation.screen.dashboard.home.ProductCardItem
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun ExploreScreen(
@@ -52,7 +53,6 @@ fun ExploreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Logika Tema
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
         when (themeSetting) {
@@ -62,7 +62,12 @@ fun ExploreScreen(
         }
     }
 
-    val backgroundColor = if (isDarkActive) Color(0xFF121212) else Color.White
+    val backgroundImage = if (isDarkActive) {
+        R.drawable.splash_background_black
+    } else {
+        R.drawable.splash_background_white
+    }
+
     val contentColor = if (isDarkActive) Color.White else Color.Black
 
     BackHandler(enabled = true) {
@@ -73,22 +78,25 @@ fun ExploreScreen(
         }
     }
 
-    Scaffold(
-        containerColor = backgroundColor,
-        topBar = {
-            ExploreHeader(
-                searchQuery = uiState.searchQuery,
-                onSearchChange = viewModel::onSearchQueryChange,
-                isDark = isDarkActive
-            )
-        }
-    ) { paddingValues ->
-        Column(modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // LAYER 1: Background Image (Paling Bawah)
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
-            // --- 1. ACTIVE FILTER CHIPS ---
+        // LAYER 2: Konten Utama (Scrollable)
+        // Kita tidak pakai Scaffold, tapi langsung Column/LazyGrid
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // Logika Konten (Grid / Search Results)
             if (uiState.searchQuery.isNotEmpty() || uiState.selectedCategory != null) {
+                // ... (Kode Active Filters & Search Result tetap sama, tapi tambahkan spacer di atas) ...
+                // Spacer agar tidak ketabrak Header yang mengambang nanti
+                Spacer(modifier = Modifier.height(100.dp))
+
                 ActiveFiltersRow(
                     searchQuery = uiState.searchQuery,
                     selectedCategory = uiState.selectedCategory,
@@ -102,38 +110,30 @@ fun ExploreScreen(
                     }
                 } else if (uiState.searchResults.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.empty_search), color = Color.Gray)
+                        Text(stringResource(R.string.empty_search), color = contentColor)
                     }
                 } else {
                     ProductSearchResults(products = uiState.searchResults)
                 }
-            }
-            // --- TAMPILAN AWAL ---
-            else {
+            } else {
+                // Tampilan Awal (Grid Kategori)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    // [PENTING] Tambahkan top padding yang cukup besar agar konten awal
+                    // muncul DI BAWAH Search Bar, bukan di belakangnya.
+                    // bottom padding agar tidak tertutup nav bar.
+                    contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp)
                 ) {
-                    // [FIX POIN 2] Memberi jarak antara SearchBar (TopBar) dengan Slider
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    item {
-                        AutoSlidingBanner(isDark = isDarkActive)
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-
+                    item { AutoSlidingBanner(isDark = isDarkActive) }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
                     item {
                         Text(
-                            // [FIX POIN 3] String Resource Indonesia/Inggris
                             text = stringResource(R.string.home_category_header),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             color = contentColor
                         )
                     }
-
                     item {
                         CategoryGridSection(
                             categories = uiState.categories,
@@ -144,48 +144,78 @@ fun ExploreScreen(
                 }
             }
         }
+
+        ExploreHeader(
+            searchQuery = uiState.searchQuery,
+            onSearchChange = viewModel::onSearchQueryChange,
+            isDark = isDarkActive,
+            modifier = Modifier.align(Alignment.TopCenter) // Pastikan nempel di atas
+        )
     }
 }
 
-// --- HEADER SEARCH ---
 @Composable
-fun ExploreHeader(searchQuery: String, onSearchChange: (String) -> Unit, isDark: Boolean) {
-    val searchBg = if(isDark) Color(0xFF2C2C2C) else Color(0xFFF5F5F5)
+fun thickGlossyModifier(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
+    val glassColor = if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.90f)
+    val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
+    return Modifier
+        .shadow(elevation = 6.dp, shape = shape, spotColor = Color.Black.copy(alpha = 0.1f))
+        .background(glassColor, shape)
+        .border(1.dp, borderColor, shape)
+        .clip(shape)
+}
+
+// --- [UPDATE] Explore Header (Search Bar + Cart) menjadi Glossy ---
+@Composable
+fun ExploreHeader(
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier // Terima modifier agar bisa diatur posisinya
+) {
     val iconColor = if(isDark) Color.Gray else Color.Black
+    val placeholderColor = Color.Gray
+    val textColor = if(isDark) Color.White else Color.Black
 
     Row(
-        modifier = Modifier
+        modifier = modifier // Gunakan modifier dari parameter
             .fillMaxWidth()
-            .padding(top = 48.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
+            .padding(top = 48.dp, bottom = 4.dp, start = 24.dp, end = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextField(
+        // ... (Isi Search Bar & Cart SAMA PERSIS dengan kode sebelumnya) ...
+        BasicTextField(
             value = searchQuery,
             onValueChange = onSearchChange,
-            // [FIX POIN 3] String Resource Placeholder
-            placeholder = { Text(stringResource(R.string.explore_search_placeholder), fontSize = 14.sp, color = Color.Gray) },
-            leadingIcon = { Icon(Icons.Outlined.Search, null, tint = Color.Gray) },
-            shape = RoundedCornerShape(24.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = searchBg,
-                unfocusedContainerColor = searchBg,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = if(isDark) Color.White else Color.Black,
-                unfocusedTextColor = if(isDark) Color.White else Color.Black
-            ),
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 14.sp, color = textColor),
             modifier = Modifier
                 .weight(1f)
-                .height(50.dp),
-            singleLine = true
+                .height(50.dp)
+                .then(thickGlossyModifier(isDark, RoundedCornerShape(30.dp))),
+            decorationBox = { innerTextField ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Icon(Icons.Outlined.Search, null, tint = iconColor, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (searchQuery.isEmpty()) {
+                            Text(stringResource(R.string.explore_search_placeholder), fontSize = 14.sp, color = placeholderColor, maxLines = 1)
+                        }
+                        innerTextField()
+                    }
+                }
+            }
         )
-        Spacer(modifier = Modifier.width(12.dp))
+
+        Spacer(modifier = Modifier.width(16.dp))
+
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(if (isDark) Color(0xFF2C2C2C) else Color.White)
-                .border(1.dp, if (isDark) Color.Gray.copy(0.3f) else Color(0xFFEEEEEE), CircleShape)
+                .size(50.dp)
+                .then(thickGlossyModifier(isDark, CircleShape))
                 .clickable { /* Go to Cart */ },
             contentAlignment = Alignment.Center
         ) {
@@ -194,7 +224,6 @@ fun ExploreHeader(searchQuery: String, onSearchChange: (String) -> Unit, isDark:
     }
 }
 
-// --- ACTIVE FILTERS ---
 @Composable
 fun ActiveFiltersRow(
     searchQuery: String,
@@ -208,8 +237,14 @@ fun ActiveFiltersRow(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.Start
     ) {
+        if (searchQuery.isNotEmpty()) {
+            FilterChipItem(
+                text = "${stringResource(R.string.search_label)} \"$searchQuery\"",
+                onClose = onClearSearch
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
         if (selectedCategory != null) {
-            // Mapping ulang ID ke String Resource agar Chip tampil benar
             val nameResId = when (selectedCategory.id) {
                 "CAT_PAKET" -> R.string.cat_exp_packet
                 "CAT_SAYUR" -> R.string.cat_exp_vegetable
@@ -220,7 +255,7 @@ fun ActiveFiltersRow(
                 "CAT_BUMBU" -> R.string.cat_exp_spice
                 "CAT_OLAHAN" -> R.string.cat_processed
                 "CAT_INSTAN" -> R.string.cat_instant
-                else -> R.string.filter_label // Fallback
+                else -> R.string.filter_label
             }
 
             FilterChipItem(
@@ -251,21 +286,18 @@ fun FilterChipItem(text: String, onClose: () -> Unit) {
     }
 }
 
-// --- CATEGORY GRID (Updated UI like Reference) ---
 @Composable
 fun CategoryGridSection(
     categories: List<Category>,
     onCategoryClick: (Category) -> Unit,
     isDark: Boolean
 ) {
-    // Membagi list menjadi baris-baris berisi 3 item
     val chunkedCategories = categories.chunked(3)
-
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         chunkedCategories.forEach { rowCategories ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp) // Jarak antar kolom
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 rowCategories.forEach { category ->
                     Box(modifier = Modifier.weight(1f)) {
@@ -276,22 +308,17 @@ fun CategoryGridSection(
                         )
                     }
                 }
-                // Isi kekosongan jika baris terakhir kurang dari 3 item agar layout tidak melar
                 if (rowCategories.size < 3) {
-                    repeat(3 - rowCategories.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    repeat(3 - rowCategories.size) { Spacer(modifier = Modifier.weight(1f)) }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp)) // Jarak antar baris
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
 @Composable
 fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
-    val context = LocalContext.current
-
     val (nameResId, imageRes) = when (category.id) {
         "CAT_PAKET" -> R.string.cat_exp_packet to R.drawable.ic_paketmasak
         "CAT_SAYUR" -> R.string.cat_exp_vegetable to R.drawable.ic_sayuran
@@ -306,14 +333,9 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
     }
 
     val displayName = stringResource(nameResId)
-
-    // [PERBAIKAN 2] Kirim context ke helper function
-
     val cardContainerColor = if (isDark) Color(0xFF1E1E1E) else Color.White
     val textColor = if (isDark) Color.White else Color(0xFF333333)
-    val isPopular = category.name.contains("Paket", ignoreCase = true) ||
-            category.name.contains("Masak", ignoreCase = true) ||
-            category.name.contains("Kit", ignoreCase = true) // Support Inggris
+    val isPopular = category.id == "CAT_PAKET"
 
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -331,21 +353,16 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
             ) {
                 Image(
                     painter = painterResource(id = imageRes),
-                    contentDescription = category.name,
+                    contentDescription = displayName,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                    modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = category.name,
+                        text = displayName,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -357,7 +374,6 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
                     )
                 }
             }
-
             if (isPopular) {
                 Surface(
                     color = Color(0xFFE65100),
@@ -379,7 +395,6 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
     }
 }
 
-// --- PRODUCT SEARCH RESULTS ---
 @Composable
 fun ProductSearchResults(products: List<Product>) {
     LazyVerticalGrid(
@@ -389,29 +404,21 @@ fun ProductSearchResults(products: List<Product>) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(products) { product ->
-            ProductCardItem(product = product) // Komponen ini sudah adaptif di Home
+            ProductCardItem(product = product)
         }
     }
 }
 
-// --- BANNER SLIDESHOW (Auto Slide & Dot Animation) ---
 @Composable
 fun AutoSlidingBanner(isDark: Boolean) {
-    val banners = listOf(
-        R.drawable.slide_1,
-        R.drawable.slide_2,
-        R.drawable.slide_3,
-        R.drawable.slide_4
-    )
-
+    val banners = listOf(R.drawable.slide_1, R.drawable.slide_2, R.drawable.slide_3, R.drawable.slide_4)
     val pagerState = rememberPagerState(pageCount = { banners.size })
-    // Deteksi jika user sedang menahan/drag banner agar slide tidak jalan sendiri
     val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
 
     LaunchedEffect(key1 = isDragged) {
         if (!isDragged) {
             while (true) {
-                delay(3000) // Slide otomatis setiap 3 detik
+                delay(3000)
                 val nextPage = (pagerState.currentPage + 1) % banners.size
                 pagerState.animateScrollToPage(nextPage)
             }
@@ -426,42 +433,19 @@ fun AutoSlidingBanner(isDark: Boolean) {
         ) { page ->
             Card(
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
+                modifier = Modifier.fillMaxWidth().height(150.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Image(
-                    painter = painterResource(id = banners[page]),
-                    contentDescription = "Promo Banner",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Image(painter = painterResource(id = banners[page]), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Indikator Dot (Animasi panjang-pendek seperti Home Screen)
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             repeat(banners.size) { iteration ->
                 val isSelected = pagerState.currentPage == iteration
                 val color = if (isSelected) MaterialTheme.colorScheme.primary else if(isDark) Color.White.copy(alpha = 0.3f) else Color.LightGray
-
-                // Animasi lebar (width) dot
                 val width by animateDpAsState(targetValue = if (isSelected) 32.dp else 8.dp, label = "width")
-
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 2.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(color)
-                        .height(6.dp)
-                        .width(width)
-                )
+                Box(modifier = Modifier.padding(horizontal = 2.dp).clip(RoundedCornerShape(4.dp)).background(color).height(6.dp).width(width))
             }
         }
     }

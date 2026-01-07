@@ -46,6 +46,7 @@ class HomeViewModel(
                         val list = listOf(allCategory) + (result.data ?: emptyList())
                         _uiState.update { it.copy(categories = list) }
                     }
+
                     else -> {} // Error categories bisa di-silent atau handle terpisah
                 }
             }
@@ -55,34 +56,32 @@ class HomeViewModel(
         viewModelScope.launch {
             getProductsUseCase().collect { result ->
                 when (result) {
-                    is Resource.Loading -> {
-                        // Loading dihandle di atas (awal fungsi), jadi di sini skip saja
-                        // atau biarkan jika ingin update parsial
-                    }
+                    is Resource.Loading -> {}
                     is Resource.Success -> {
                         val allData = result.data ?: emptyList()
-                        val latestProducts = allData.take(10)
 
-                        // [MODIFIKASI 2] Siapkan pesan sukses jika ini dari refresh
+                        // [MODIFIKASI] Acak urutan produk (shuffled) lalu ambil 10
+                        // Ini membuat produk yang tampil di Home selalu berubah-ubah
+                        val randomProducts = allData.shuffled().take(10)
+
                         val msg = if (isPullRefresh) "Beranda diperbarui" else null
 
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                isRefreshing = false, // Matikan loading refresh
-                                products = latestProducts,
-                                displayProducts = latestProducts, // Reset display ke awal
-                                successMessage = msg // <-- Tampilkan pesan
+                                isRefreshing = false,
+                                products = randomProducts, // Simpan 10 produk acak ini
+                                displayProducts = randomProducts,
+                                successMessage = msg
                             )
                         }
-                        // Jika ada filter yang aktif sebelumnya, mungkin perlu panggil filterData() lagi di sini
-                        // Tapi untuk simple refresh, reset ke latestProducts sudah oke.
                     }
+
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                isRefreshing = false, // Matikan loading refresh walau error
+                                isRefreshing = false,
                                 error = result.message
                             )
                         }
@@ -120,7 +119,8 @@ class HomeViewModel(
         val filtered = currentState.products.filter { product ->
             val matchesSearch = product.name.lowercase().contains(query)
             // Note: Pastikan getCategoryNameById aman
-            val matchesCategory = if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId)
+            val matchesCategory =
+                if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId)
 
             matchesSearch && matchesCategory // Gabungkan kedua filter
         }
