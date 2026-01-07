@@ -1,5 +1,6 @@
 package com.example.kalanacommerce.di
 
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeManager // Pastikan di-import
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterViewModel
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
@@ -73,7 +74,14 @@ val appModule = module {
     viewModel { HomeViewModel(get(), get()) }
 
     // ViewModel tetap sama, dia minta Interface
-    viewModel { ChatViewModel(get()) }
+    // File: di/AppModule.kt
+
+    viewModel {
+        ChatViewModel(
+            sendMessageUseCase = get(), // Menggunakan Use Case hasil get() dari useCaseModule
+            welcomeMessage = androidContext().getString(R.string.chat_welcome_message)
+        )
+    }
 
     viewModel { ExploreViewModel(get()) }
 }

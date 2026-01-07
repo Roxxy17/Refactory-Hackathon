@@ -215,4 +215,35 @@
     <string name="unit_gram">Gram</string>
     <string name="unit_pcs">Pcs</string>
 
+    // Chat Screen
+    <string name="chat_assistant_name">Kalana Assistant</string>
+    <string name="chat_status_online">Online</string>
+    <string name="chat_input_placeholder">Type a message...</string>
+    <string name="chat_send_content_desc">Send Message</string>
+    <string name="chat_back_content_desc">Back</string>
+    <string name="chat_bot_avatar_desc">Kalana Bot Avatar</string>
+    <string name="chat_product_buy_action">BUY >>></string>
+    <string name="chat_product_weight_unit">250g</string>
+    <string name="chat_welcome_message">Hello! 👋\nI\'m Kalana Assistant.\n\nI can help you with:\n• Finding fresh vegetables &amp; fruits 🥦\n• Recommending cooking ingredients 🍳\n• Checking product prices &amp; stock 🏷️\n\nHow can I help you today?</string>
+    <string name="pesan">Pesan</string>
+    <string name="keranjang">Keranjang</string>
+
+    // Explore Screen
+    <string name="home_category_header">Categories</string>
+    <string name="explore_search_placeholder">Search vegetables, fruits, spices...</string>
+    <string name="explore_title">Explore</string>
+    <string name="filter_label">Filter: </string>
+    <string name="search_label">Search: </string>
+    <string name="empty_search">No products found for this category.</string>
+    <string name="cat_exp_packet">Cooking Kit</string>
+    <string name="cat_exp_vegetable">Fresh Veggies</string>
+    <string name="cat_exp_fruit">Fresh Fruits</string>
+    <string name="cat_exp_meat">Animal Protein</string>
+    <string name="cat_plant_protein">Plant Protein</string>
+    <string name="cat_staple">Staples</string>
+    <string name="cat_exp_spice">Spices</string>
+    <string name="cat_processed">Processed Food</string>
+    <string name="cat_instant">Instant Food</string>
+
+
 </resources>

@@ -71,6 +71,7 @@ fun DashboardScreen(
                 composable(BottomBarScreen.Pencarian.route) {
                     // [PERBAIKAN] Menggunakan parameter 'onBackClick' yang benar
                     ExploreScreen(
+                        themeSetting = themeSetting,
                         onBackClick = {
                             // Kembali ke Home jika diback dari Explore
                             dashboardNavController.navigate(BottomBarScreen.Eksplor.route) {

@@ -23,5 +23,6 @@ data class ChatProductRecommendation(
     val name: String? = "Produk Rekomendasi", // Fallback jika backend cuma kirim ID
     val price: Long? = 0,
     val image: String? = "",
-    val qty: Int? = 1
+    val qty: Int? = 1,
+    val variantName: String? = null
 )

@@ -4,6 +4,7 @@ import com.example.kalanacommerce.domain.usecase.auth.RegisterUseCase
 import com.example.kalanacommerce.domain.usecase.auth.SignInUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ForgotPasswordUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ResetPasswordUseCase
+import com.example.kalanacommerce.domain.usecase.chat.SendMessageUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoriesUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoryDetailUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetOutletDetailUseCase
@@ -39,5 +40,7 @@ val useCaseModule = module {
     factory { GetOutletDetailUseCase(get()) }
     factory { GetCategoryDetailUseCase(get()) }
     factory { GetUnitDetailUseCase(get()) }
+
+    factory { SendMessageUseCase(get(), get()) }
 
 }

@@ -28,12 +28,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.navigation.BottomBarScreen
 import kotlin.math.roundToInt
 
@@ -118,7 +120,7 @@ fun AppBottomNavigationBar(
         ) {
             DiagonalMenuButton(
                 icon = Icons.Default.Chat,
-                label = "Pesan",
+                label = stringResource(R.string.pesan),
                 bgColor = popupBgColor,
                 textColor = popupContentColor,
                 iconColor = primaryColor,
@@ -141,7 +143,7 @@ fun AppBottomNavigationBar(
         ) {
             DiagonalMenuButton(
                 icon = Icons.Default.ShoppingCart,
-                label = "Keranjang",
+                label = stringResource(R.string.keranjang),
                 bgColor = popupBgColor,
                 textColor = popupContentColor,
                 iconColor = primaryColor,

@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard.home
+    package com.example.kalanacommerce.presentation.screen.dashboard.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -55,6 +55,7 @@ import com.example.kalanacommerce.presentation.components.ToastType
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -438,23 +439,31 @@ fun WhatsAppStylePill(
 }
 
 // --- BANNER CAROUSEL ---
+// --- BANNER CAROUSEL (UPDATED LOGIC) ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BannerCarousel(isDark: Boolean) {
     val pagerState = rememberPagerState(pageCount = { 4 })
-    LaunchedEffect(pagerState.currentPage) {
-        delay(3000)
-        var newPage = pagerState.currentPage + 1
-        if (newPage >= pagerState.pageCount) newPage = 0
-        pagerState.animateScrollToPage(newPage)
+
+    // [LOGIKA BARU DARI EXPLORE] Deteksi interaksi drag
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+
+    LaunchedEffect(key1 = isDragged) {
+        if (!isDragged) {
+            while (true) {
+                delay(3000) // Geser setiap 3 detik
+                val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
+                pagerState.animateScrollToPage(nextPage)
+            }
+        }
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         HorizontalPager(state = pagerState, contentPadding = PaddingValues(horizontal = 24.dp), pageSpacing = 16.dp) { page ->
             val imageRes = when(page) {
                 0 -> R.drawable.slide_1
-                1 -> R.drawable.slide_4
-                2 -> R.drawable.slide_1
+                1 -> R.drawable.slide_2 // Diganti slide_2 biar variatif
+                2 -> R.drawable.slide_3 // Diganti slide_3
                 else -> R.drawable.slide_4
             }
             Card(
@@ -469,12 +478,16 @@ fun BannerCarousel(isDark: Boolean) {
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Indikator Dot (Tetap menggunakan gaya Home yg diminta)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
             Spacer(modifier = Modifier.width(24.dp))
             repeat(pagerState.pageCount) { iteration ->
                 val isSelected = pagerState.currentPage == iteration
                 val color = if (isSelected) MaterialTheme.colorScheme.primary else if(isDark) Color.White.copy(alpha = 0.3f) else Color.Black.copy(alpha = 0.2f)
+                // Animasi lebar dot
                 val width by animateDpAsState(targetValue = if (isSelected) 32.dp else 12.dp, label = "width")
+
                 Box(modifier = Modifier
                     .padding(end = 6.dp)
                     .clip(RoundedCornerShape(4.dp))
@@ -639,9 +652,9 @@ fun getCategoryIcon(name: String): CategoryIcon {
         name.contains("Sayur", true) -> CategoryIcon.Vector(Icons.Outlined.Eco)
 
         // [SISANYA] Tetap pakai PNG Drawable
-        name.contains("Buah", true) -> CategoryIcon.Drawable(R.drawable.ic_buah)
+        name.contains("Buah", true) -> CategoryIcon.Drawable(R.drawable.ic_buah2)
         name.contains("Daging", true) -> CategoryIcon.Drawable(R.drawable.ic_daging)
-        name.contains("Bumbu", true) -> CategoryIcon.Drawable(R.drawable.ic_bumbu)
+        name.contains("Bumbu", true) -> CategoryIcon.Drawable(R.drawable.ic_bumbu2)
         name.contains("Snack", true) -> CategoryIcon.Drawable(R.drawable.ic_snack)
         name.contains("Semua", true) -> CategoryIcon.Drawable(R.drawable.ic_sayur) // Atau icon lain
         else -> CategoryIcon.Drawable(R.drawable.ic_sayur)

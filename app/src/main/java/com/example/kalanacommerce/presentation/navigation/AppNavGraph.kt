@@ -26,7 +26,7 @@ import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.Forgot
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.ChatScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
@@ -37,6 +37,8 @@ import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscree
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
+import com.example.kalanacommerce.data.local.datastore.ThemeManager
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 
 // 1. MIDDLEWARE: Satpam untuk User (Protected Routes)
 @Composable
@@ -139,11 +141,22 @@ fun AppNavGraph(
                 TransactionScreen(navController = navController)
             }
         }
+
         composable(route = "chat_screen") {
             val sessionManager: SessionManager = get()
-            RequireAuth(sessionManager, navController) { ChatScreen(onBackClick = {
-                navController.popBackStack()
-            }) }
+
+            // [FIX] Ambil ThemeManager dan collect state-nya
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            RequireAuth(sessionManager, navController) {
+                ChatScreen(
+                    themeSetting = themeSetting, // Teruskan ke ChatScreen
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
 
         // Profile & Settings

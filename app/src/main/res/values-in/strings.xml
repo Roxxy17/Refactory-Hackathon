@@ -214,4 +214,38 @@
     <string name="unit_bunch">Ikat</string>
     <string name="unit_gram">Gram</string>
     <string name="unit_pcs">Pcs</string>
+
+    // Chat Screen
+    <string name="chat_assistant_name">Kalana Assistant</string>
+    <string name="chat_status_online">Online</string>
+    <string name="chat_input_placeholder">Tulis pesan...</string>
+    <string name="chat_send_content_desc">Kirim Pesan</string>
+    <string name="chat_back_content_desc">Kembali</string>
+    <string name="chat_bot_avatar_desc">Avatar Kalana Bot</string>
+    <string name="chat_product_buy_action">BELI >>></string>
+    <string name="chat_product_weight_unit">250 gr</string>
+    <string name="chat_welcome_message">Halo! 👋\nSaya Kalana Assistant.\n\nSaya bisa membantu kamu untuk:\n• Mencari sayur &amp; buah segar 🥦\n• Merekomendasikan bahan masakan 🍳\n• Mengecek harga &amp; stok produk 🏷️\n\nAda yang bisa saya bantu hari ini?</string>
+
+    // BottomNavbar
+    <string name="pesan">Chat AI</string>
+    <string name="keranjang">Keranjang</string>
+
+    // Explore Screen
+    <string name="home_category_header">Kategori</string>
+    <string name="explore_search_placeholder">Cari sayur, buah, bumbu...</string>
+    <string name="explore_title">Eksplor</string>
+    <string name="filter_label">Filter: </string>
+    <string name="search_label">Pencarian: </string>
+    <string name="empty_search">Tidak ada produk ditemukan untuk kategori ini.</string>
+    <string name="cat_exp_packet">Paket Masak</string>
+    <string name="cat_exp_vegetable">Sayur Segar</string>
+    <string name="cat_exp_fruit">Buah Segar</string>
+    <string name="cat_exp_meat">Protein Hewani</string>
+    <string name="cat_plant_protein">Protein Nabati</string>
+    <string name="cat_staple">Bahan Pokok</string>
+    <string name="cat_exp_spice">Bumbu</string>
+    <string name="cat_processed">Produk Olahan</string>
+    <string name="cat_instant">Bahan Instan</string>
+
+
 </resources>
