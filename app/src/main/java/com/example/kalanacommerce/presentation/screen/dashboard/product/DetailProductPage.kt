@@ -59,7 +59,8 @@ fun DetailProductPage(
     viewModel: DetailProductViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onProductClick: (String) -> Unit = {}
+    onProductClick: (String) -> Unit = {},
+    onStoreClick: (String) -> Unit = {}
 ) {
     LaunchedEffect(productId) {
         viewModel.loadProductDetail(productId)
@@ -289,10 +290,19 @@ fun DetailProductPage(
 
                             // Store Card
                             val storeName = product.outlet?.name ?: "Toko Kalana"
+
                             StoreCardSection(
                                 storeName = storeName,
                                 rating = "4.9/5.0",
-                                isDark = isDarkActive
+                                isDark = isDarkActive,
+                                onStoreClick = {
+                                    // [2. PANGGIL CALLBACK NAVIGASI]
+                                    // Ambil ID outlet dari produk, atau fallback jika null
+                                    val outletId = product.outlet?.id ?: ""// Pastikan id tersedia
+                                    if (outletId.isNotEmpty()) {
+                                        onStoreClick(outletId)
+                                    }
+                                }
                             )
 
                             Spacer(modifier = Modifier.height(32.dp))
@@ -500,11 +510,12 @@ fun BottomActionSection(
 // Pastikan bagian bawah file tetap berisi komponen pendukung tersebut.
 
 @Composable
-fun StoreCardSection(storeName: String, rating: String, isDark: Boolean) {
+fun StoreCardSection(storeName: String, rating: String, isDark: Boolean, onStoreClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .glossyContainer(isDark, RoundedCornerShape(16.dp))
+            .clickable { onStoreClick() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

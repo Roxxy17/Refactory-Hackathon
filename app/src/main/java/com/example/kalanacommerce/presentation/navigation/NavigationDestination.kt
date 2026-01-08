@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.StringRes
+import com.example.kalanacommerce.R
 
 // Objek untuk merepresentasikan nama grafik navigasi bersarang (nested graph)
 object Graph {
@@ -40,11 +42,30 @@ sealed class Screen(val route: String) {
 
 sealed class BottomBarScreen(
     val route: String,
-    val title: String,
+    @StringRes val title: Int,
     val icon: ImageVector
 ) {
-    object Eksplor : BottomBarScreen("eksplor", "Eksplor", Icons.Default.Home)
-    object Pencarian : BottomBarScreen("pencarian", "Pencarian", Icons.Default.Search)
-    object Riwayat : BottomBarScreen("riwayat", "Riwayat", Icons.Default.History)
-    object Profile : BottomBarScreen("profile", "Profile", Icons.Default.Person)
+    object Eksplor : BottomBarScreen(
+        route = "eksplor_screen",
+        title = R.string.nav_explore, // Panggil R.string disini
+        icon = Icons.Default.Home // Sesuaikan icon kamu
+    )
+
+    object Pencarian : BottomBarScreen(
+        route = "pencarian_screen",
+        title = R.string.nav_search,
+        icon = Icons.Default.Search
+    )
+
+    object Riwayat : BottomBarScreen(
+        route = "riwayat_screen",
+        title = R.string.nav_history,
+        icon = Icons.Default.History
+    )
+
+    object Profile : BottomBarScreen(
+        route = "profile_screen",
+        title = R.string.nav_profile,
+        icon = Icons.Default.Person
+    )
 }

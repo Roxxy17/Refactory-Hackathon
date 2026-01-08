@@ -1,9 +1,13 @@
 package com.example.kalanacommerce.presentation.screen.dashboard
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -28,7 +32,8 @@ import com.example.kalanacommerce.presentation.navigation.Screen
 import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileScreen
-// import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen // Uncomment jika sudah ada
+// [PENTING] Pastikan import HistoryScreen ada
+import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.get
@@ -67,7 +72,6 @@ fun DashboardScreen(
                     HomeScreen(
                         themeSetting = themeSetting,
                         onProductClick = { productId ->
-                            // Navigasi ke Detail
                             mainNavController.navigate("detail_product/$productId")
                         }
                     )
@@ -75,11 +79,9 @@ fun DashboardScreen(
 
                 // --- TAB 2: PENCARIAN (EXPLORE) ---
                 composable(BottomBarScreen.Pencarian.route) {
-                    // [PERBAIKAN] Menggunakan parameter 'onBackClick' yang benar
                     ExploreScreen(
                         themeSetting = themeSetting,
                         onBackClick = {
-                            // Kembali ke Home jika diback dari Explore
                             dashboardNavController.navigate(BottomBarScreen.Eksplor.route) {
                                 popUpTo(dashboardNavController.graph.findStartDestination().id) {
                                     saveState = true
@@ -88,22 +90,38 @@ fun DashboardScreen(
                                 restoreState = true
                             }
                         },
-                                onProductClick = { productId ->
-                            // Navigasi ke Detail
+                        onProductClick = { productId ->
                             mainNavController.navigate("detail_product/$productId")
                         }
                     )
                 }
 
-
-
-                // --- TAB 3: RIWAYAT ---
+                // --- TAB 3: RIWAYAT (UPDATED) ---
                 composable(BottomBarScreen.Riwayat.route) {
-                    // Placeholder jika HistoryScreen belum ada
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Halaman Riwayat")
+                    if (isLoggedIn) {
+                        // Tampilkan History Screen jika User Login
+                        HistoryScreen(
+                            themeSetting = themeSetting,
+                            onNavigateToDetail = { orderId ->
+                                // Navigasi ke Detail Order (gunakan mainNavController untuk menutup bottom bar)
+                                mainNavController.navigate("order_detail/$orderId")
+                            }
+                        )
+                    } else {
+                        // Tampilkan Halaman Login Required jika Guest
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Silakan login untuk melihat riwayat")
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = { mainNavController.navigate(Graph.Auth) }) {
+                                    Text("Masuk Sekarang")
+                                }
+                            }
+                        }
                     }
-                    // HistoryScreen(onBackClick = { dashboardNavController.popBackStack() })
                 }
 
                 // --- TAB 4: PROFILE ---

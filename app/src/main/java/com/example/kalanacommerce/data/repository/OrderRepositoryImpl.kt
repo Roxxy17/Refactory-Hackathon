@@ -1,0 +1,46 @@
+package com.example.kalanacommerce.data.repository
+
+import com.example.kalanacommerce.core.util.Resource
+import com.example.kalanacommerce.data.mapper.toDomain
+import com.example.kalanacommerce.data.remote.service.OrderApiService
+import com.example.kalanacommerce.domain.model.Order
+import com.example.kalanacommerce.domain.repository.OrderRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
+class OrderRepositoryImpl(
+    private val apiService: OrderApiService
+) : OrderRepository {
+
+    override fun getOrders(): Flow<Resource<List<Order>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = apiService.getOrders()
+            if (response.status) {
+                // response.data adalah List<OrderDto>
+                val orders = response.data.map { it.toDomain() }
+                emit(Resource.Success(orders))
+            } else {
+                emit(Resource.Error(response.message))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "Gagal memuat riwayat pesanan"))
+        }
+    }
+
+    override fun getOrderDetail(orderId: String): Flow<Resource<Order>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = apiService.getOrderDetail(orderId)
+            if (response.status) {
+                // response.data adalah Single OrderDto
+                val order = response.data.toDomain()
+                emit(Resource.Success(order))
+            } else {
+                emit(Resource.Error(response.message))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "Gagal memuat detail pesanan"))
+        }
+    }
+}

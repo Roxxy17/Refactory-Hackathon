@@ -14,11 +14,15 @@ import com.example.kalanacommerce.domain.repository.AddressRepository
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.history.OrderHistoryViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfileViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
+import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStoreViewModel
 import org.koin.android.ext.koin.androidContext // Import untuk androidContext()
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -31,7 +35,6 @@ val appModule = module {
     // (Wajib ada agar bisa di-inject ke ViewModel dan Activity)
     single { ThemeManager(androidContext()) }
     single { LanguageManager(androidContext()) }
-
 
     viewModel { AddressViewModel(get()) }
 
@@ -86,4 +89,7 @@ val appModule = module {
 
     viewModel { ExploreViewModel(get()) }
     viewModel { DetailProductViewModel(get()) }
+    viewModel { DetailStoreViewModel(get()) }
+    viewModel { OrderHistoryViewModel(get()) }
+    viewModel { DetailOrderViewModel(get()) }
 }

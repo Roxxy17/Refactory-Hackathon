@@ -227,7 +227,12 @@
     <string name="chat_welcome_message">Halo! 👋\nSaya Kalana Assistant.\n\nSaya bisa membantu kamu untuk:\n• Mencari sayur &amp; buah segar 🥦\n• Merekomendasikan bahan masakan 🍳\n• Mengecek harga &amp; stok produk 🏷️\n\nAda yang bisa saya bantu hari ini?</string>
 
     // BottomNavbar
-    <string name="pesan">Chat AI</string>
+    <string name="nav_explore">Eksplor</string>
+    <string name="nav_search">Pencarian</string>
+    <string name="nav_history">Riwayat</string>
+    <string name="nav_profile">Profil</string>
+
+    <string name="pesan">Pesan AI</string>
     <string name="keranjang">Keranjang</string>
 
     // Explore Screen
@@ -259,6 +264,32 @@
     <string name="detail_success_add_cart">Berhasil masuk keranjang!</string>
     <string name="detail_quantity">Jumlah</string>
     <string name="detail_reviews">(%1$s Ulasan)</string>
-    <string name="detail_other_products">Produk Lain Dari Toko ini</string>
+    <string name="detail_other_products">Produk Lain Dari Toko lain</string>
     <string name="detail_store_rating">4.9/5.0</string>
+
+    // Detail Store
+    <string name="store_chat">Chat</string>
+    <string name="store_address">Alamat</string>
+    <string name="store_reviews">%1$s Ulasan</string>
+    <string name="store_open_hours">05.00 - 11.00 WIB</string>
+    <string name="store_description">Toko ini menyediakan sayur, bumbu, dan buah segar yang dipilih langsung dari pasar pagi. Harga terjangkau, kualitas terjamin.</string>
+
+    // History Screen
+    <string name="history_title">Riwayat Belanja</string>
+    <string name="history_tab_process">Dalam Proses</string>
+    <string name="history_tab_completed">Selesai</string>
+    <string name="history_tab_cancelled">Dibatalkan</string>
+    <string name="history_buy_again">Beli Lagi</string>
+    <string name="history_empty">Belum ada riwayat transaksi.</string>
+
+    <string name="order_detail_title">Detail Pesanan</string>
+    <string name="order_status">Status Pesanan</string>
+    <string name="order_id">No. Pesanan</string>
+    <string name="order_date">Tanggal Pembelian</string>
+    <string name="order_store">Toko</string>
+    <string name="order_items">Daftar Produk</string>
+    <string name="order_payment_summary">Rincian Pembayaran</string>
+    <string name="order_total">Total Belanja</string>
+    <string name="order_payment_method">Metode Pembayaran</string>
+    <string name="order_action_help">Butuh Bantuan?</string>
 </resources>

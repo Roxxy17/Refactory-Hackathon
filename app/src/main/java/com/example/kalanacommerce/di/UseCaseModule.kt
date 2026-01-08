@@ -4,7 +4,15 @@ import com.example.kalanacommerce.domain.usecase.auth.RegisterUseCase
 import com.example.kalanacommerce.domain.usecase.auth.SignInUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ForgotPasswordUseCase
 import com.example.kalanacommerce.domain.usecase.auth.forgot.ResetPasswordUseCase
+import com.example.kalanacommerce.domain.usecase.cart.AddToCartUseCase
+import com.example.kalanacommerce.domain.usecase.cart.CheckoutUseCase
+import com.example.kalanacommerce.domain.usecase.cart.DeleteCartItemUseCase
+import com.example.kalanacommerce.domain.usecase.cart.DirectCheckoutUseCase
+import com.example.kalanacommerce.domain.usecase.cart.GetCartItemsUseCase
+import com.example.kalanacommerce.domain.usecase.cart.UpdateCartItemUseCase
 import com.example.kalanacommerce.domain.usecase.chat.SendMessageUseCase
+import com.example.kalanacommerce.domain.usecase.order.GetOrderDetailUseCase
+import com.example.kalanacommerce.domain.usecase.order.GetOrdersUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoriesUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoryDetailUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetOutletDetailUseCase
@@ -43,4 +51,12 @@ val useCaseModule = module {
 
     factory { SendMessageUseCase(get(), get()) }
 
+    factory { GetCartItemsUseCase(get()) }
+    factory { AddToCartUseCase(get()) }
+    factory { UpdateCartItemUseCase(get()) }
+    factory { DeleteCartItemUseCase(get()) }
+    factory { CheckoutUseCase(get()) }
+    factory { DirectCheckoutUseCase(get()) }
+    factory { GetOrdersUseCase(get()) }
+    factory { GetOrderDetailUseCase(get()) }
 }

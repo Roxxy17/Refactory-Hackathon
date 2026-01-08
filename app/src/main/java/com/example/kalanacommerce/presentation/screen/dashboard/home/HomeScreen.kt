@@ -589,7 +589,7 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
             .clickable { onClick(product.id) }
     ) {
         Column {
-            // --- GAMBAR PRODUK ---
+            // --- GAMBAR PRODUK (Tetap Sama) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -605,8 +605,6 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-
-                // Tag "Fresh/Segar"
                 Surface(
                     color = Color(0xFF4CAF50),
                     shape = RoundedCornerShape(bottomEnd = 12.dp),
@@ -619,8 +617,6 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
-
-                // Tag Diskon
                 if (product.discountPercentage > 0) {
                     Surface(
                         color = Color(0xFFFF9800),
@@ -639,6 +635,7 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
 
             // --- INFO PRODUK ---
             Column(modifier = Modifier.padding(12.dp)) {
+                // ... (Bagian Nama Produk & Harga TETAP SAMA seperti sebelumnya) ...
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -652,22 +649,14 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-
-                    // Variant Name (Langsung dari API)
                     Surface(
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                         shape = RoundedCornerShape(6.dp),
                         color = Color.Transparent
                     ) {
                         Text(
-                            text = product.variantName, // Sudah diperbaiki di tahap sebelumnya
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
+                            text = product.variantName,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -676,25 +665,15 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Harga Sekarang
                 Text(
-                    text = String.format(
-                        Locale("id", "ID"),
-                        stringResource(R.string.currency_format),
-                        product.price
-                    ),
+                    text = String.format(Locale("id", "ID"), stringResource(R.string.currency_format), product.price),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Harga Coret
                 if (product.discountPercentage > 0 && product.originalPrice != null) {
                     Text(
-                        text = String.format(
-                            Locale("id", "ID"),
-                            stringResource(R.string.currency_format),
-                            product.originalPrice
-                        ),
+                        text = String.format(Locale("id", "ID"), stringResource(R.string.currency_format), product.originalPrice),
                         style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
@@ -702,44 +681,53 @@ fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Kesegaran & Tombol Add
+                // --- [BAGIAN INI YANG DIUPDATE] ---
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(
-                                R.string.product_freshness_label,
-                                product.freshness
-                            ),
+                            text = stringResource(R.string.product_freshness_label, product.freshness),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
 
-                        val dots = 10
-                        val activeDots = (product.freshness / 10).coerceIn(0, 10)
+                        // --- KONFIGURASI JUMLAH PANAH ---
+                        val totalIndicators = 15 // <--- GANTI JADI 15 atau 20 DISINI
 
-                        Row(modifier = Modifier.padding(top = 2.dp)) {
-                            repeat(activeDots) {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(end = 2.dp)
-                                        .size(4.dp)
-                                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        // Hitung jumlah panah aktif berdasarkan persentase (0-100)
+                        val activeIndicators = ((product.freshness / 100f) * totalIndicators).toInt().coerceIn(0, totalIndicators)
+
+                        // Konfigurasi Tampilan (Agar muat 20 biji)
+                        val arrowSize = 14.dp       // Diperkecil biar muat banyak
+                        val arrowSpacing = (-8).dp  // Lebih rapat
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(arrowSpacing),
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .offset(x = (-3).dp) // Sedikit geser kiri untuk kompensasi padding icon
+                        ) {
+                            // Panah Aktif
+                            repeat(activeIndicators) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(arrowSize)
                                 )
                             }
-                            repeat(dots - activeDots) {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(end = 2.dp)
-                                        .size(4.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                            CircleShape
-                                        )
+                            // Panah Inaktif
+                            repeat(totalIndicators - activeIndicators) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(arrowSize)
                                 )
                             }
                         }
                     }
 
+                    // Tombol Add to Cart
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.primary,

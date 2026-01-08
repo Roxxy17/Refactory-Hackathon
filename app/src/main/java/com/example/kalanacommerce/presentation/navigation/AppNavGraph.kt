@@ -39,7 +39,10 @@ import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
+import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
 
 // 1. MIDDLEWARE: Satpam untuk User (Protected Routes)
 @Composable
@@ -139,8 +142,6 @@ fun AppNavGraph(
             arguments = listOf(navArgument("productId") { type = NavType.StringType })
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId") ?: ""
-
-            // Ambil Theme Setting
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
 
@@ -148,10 +149,30 @@ fun AppNavGraph(
                 productId = productId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                // [TAMBAHAN PENTING] Tambahkan navigasi ini agar kartu produk di bawah bisa diklik
                 onProductClick = { id ->
-                    // Navigasi ke detail produk baru (push ke stack)
                     navController.navigate("detail_product/$id")
+                },
+                // [3. SAMBUNGKAN NAVIGASI DI SINI]
+                onStoreClick = { outletId ->
+                    navController.navigate("detail_store/$outletId")
+                }
+            )
+        }
+
+        composable(
+            route = "detail_store/{outletId}",
+            arguments = listOf(navArgument("outletId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val outletId = backStackEntry.arguments?.getString("outletId") ?: ""
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            DetailStorePage(
+                outletId = outletId,
+                themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { productId ->
+                    navController.navigate("detail_product/$productId")
                 }
             )
         }
@@ -161,9 +182,32 @@ fun AppNavGraph(
         // Transaction & Chat
         composable(route = "transaction_screen") {
             val sessionManager: SessionManager = get()
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
             RequireAuth(sessionManager, navController) {
-                TransactionScreen(navController = navController)
+                HistoryScreen(
+                    themeSetting = themeSetting,
+                    onNavigateToDetail = { orderId ->
+                        navController.navigate("order_detail/$orderId")
+                    }
+                )
             }
+        }
+
+        composable(
+            route = "order_detail/{orderId}",
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            DetailOrderPage(
+                orderId = orderId,
+                themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable(route = "chat_screen") {

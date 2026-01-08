@@ -62,6 +62,7 @@ android {
         implementation("androidx.datastore:datastore-preferences:1.1.1")
         implementation(libs.androidx.room.ktx)
         implementation(libs.androidx.compose.material3)
+        implementation(libs.androidx.compose.foundation.layout)
 
 
         // Compose Bill of Materials (BOM) - Sumber kebenaran versi Compose
