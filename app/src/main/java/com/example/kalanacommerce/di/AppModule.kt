@@ -15,6 +15,7 @@ import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.Forgot
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfileViewModel
@@ -84,4 +85,5 @@ val appModule = module {
     }
 
     viewModel { ExploreViewModel(get()) }
+    viewModel { DetailProductViewModel(get()) }
 }

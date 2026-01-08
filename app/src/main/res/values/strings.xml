@@ -245,5 +245,19 @@
     <string name="cat_processed">Processed Food</string>
     <string name="cat_instant">Instant Food</string>
 
+    // Detail Product
+    <string name="detail_title">Product Detail</string>
+    <string name="detail_description">Description</string>
+    <string name="detail_add_to_cart">+ Cart</string>
+    <string name="detail_buy_now">Buy Now</string>
+    <string name="detail_price_label">Price</string>
+    <string name="detail_stock_label">Stock: %1$d</string>
+    <string name="detail_variant_label">Variant</string>
+    <string name="detail_freshness">Freshness Level</string>
+    <string name="detail_success_add_cart">>Successfully added to cart!</string>
+    <string name="detail_quantity">Quantity</string>
+    <string name="detail_reviews">(%1$s Reviews)</string>
+    <string name="detail_other_products">Other products from this store</string>
+    <string name="detail_store_rating">4.9/5.0</string> ```
 
 </resources>

@@ -39,6 +39,7 @@ import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
 
 // 1. MIDDLEWARE: Satpam untuk User (Protected Routes)
 @Composable
@@ -130,6 +131,29 @@ fun AppNavGraph(
 
         composable(route = Screen.HelpCenter.route) {
             HelpCenterScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        // Contoh implementasi di NavGraph
+        composable(
+            route = "detail_product/{productId}",
+            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+
+            // Ambil Theme Setting
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            DetailProductPage(
+                productId = productId,
+                themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() },
+                // [TAMBAHAN PENTING] Tambahkan navigasi ini agar kartu produk di bawah bisa diklik
+                onProductClick = { id ->
+                    // Navigasi ke detail produk baru (push ke stack)
+                    navController.navigate("detail_product/$id")
+                }
+            )
         }
 
         // --- PROTECTED ROUTES (Fitur User) ---

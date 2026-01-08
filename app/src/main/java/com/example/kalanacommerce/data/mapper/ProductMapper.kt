@@ -40,7 +40,8 @@ fun ProductDto.toDomain(): Product {
         isPublished = isPublished,
         variants = variants?.map { it.toDomain() } ?: emptyList(),
         outletName = outlet?.name ?: "Unknown Outlet",
-        categoryName = category?.name ?: "Uncategorized"
+        categoryName = category?.name ?: "Uncategorized",
+        outlet = outlet?.toDomain()
     )
 }
 

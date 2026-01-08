@@ -22,7 +22,8 @@ data class Product(
     val variants: List<ProductVariant>,
     val outletName: String,
     val categoryName: String,
-    val mainUnit: String // Satuan (misal: "gr", "kg", "pcs")
+    val mainUnit: String, // Satuan (misal: "gr", "kg", "pcs")
+    val outlet: Outlet? = null
 ) {
     // [HELPER] Hitung Persentase Diskon secara otomatis
     val discountPercentage: Int

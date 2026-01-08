@@ -49,7 +49,8 @@ import org.koin.androidx.compose.koinViewModel
 fun ExploreScreen(
     viewModel: ExploreViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onProductClick: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -113,7 +114,7 @@ fun ExploreScreen(
                         Text(stringResource(R.string.empty_search), color = contentColor)
                     }
                 } else {
-                    ProductSearchResults(products = uiState.searchResults)
+                    ProductSearchResults(products = uiState.searchResults, onProductClick = onProductClick)
                 }
             } else {
                 // Tampilan Awal (Grid Kategori)
@@ -396,7 +397,7 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
 }
 
 @Composable
-fun ProductSearchResults(products: List<Product>) {
+fun ProductSearchResults(products: List<Product>, onProductClick: (String) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
@@ -404,7 +405,7 @@ fun ProductSearchResults(products: List<Product>) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(products) { product ->
-            ProductCardItem(product = product)
+            ProductCardItem(product = product, onClick = onProductClick)
         }
     }
 }

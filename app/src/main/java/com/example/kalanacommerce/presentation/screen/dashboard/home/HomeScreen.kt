@@ -68,7 +68,8 @@ import androidx.compose.material.icons.outlined.Category // Fallback
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
-    themeSetting: ThemeSetting
+    themeSetting: ThemeSetting,
+    onProductClick: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -230,7 +231,7 @@ fun HomeScreen(
                             ) {
                                 for (product in rowItems) {
                                     Box(modifier = Modifier.weight(1f)) {
-                                        ProductCardItem(product = product)
+                                        ProductCardItem(product = product, onClick = onProductClick)
                                     }
                                 }
                                 if (rowItems.size == 1) {
@@ -578,14 +579,14 @@ fun BannerCarousel(isDark: Boolean) {
 }
 
 @Composable
-fun ProductCardItem(product: Product) {
+fun ProductCardItem(product: Product, onClick: (String) -> Unit) {
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(4.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* Navigate to Detail */ }
+            .clickable { onClick(product.id) }
     ) {
         Column {
             // --- GAMBAR PRODUK ---

@@ -64,7 +64,13 @@ fun DashboardScreen(
             ) {
                 // --- TAB 1: HOME ---
                 composable(BottomBarScreen.Eksplor.route) {
-                    HomeScreen(themeSetting = themeSetting)
+                    HomeScreen(
+                        themeSetting = themeSetting,
+                        onProductClick = { productId ->
+                            // Navigasi ke Detail
+                            mainNavController.navigate("detail_product/$productId")
+                        }
+                    )
                 }
 
                 // --- TAB 2: PENCARIAN (EXPLORE) ---
@@ -81,9 +87,15 @@ fun DashboardScreen(
                                 launchSingleTop = true
                                 restoreState = true
                             }
+                        },
+                                onProductClick = { productId ->
+                            // Navigasi ke Detail
+                            mainNavController.navigate("detail_product/$productId")
                         }
                     )
                 }
+
+
 
                 // --- TAB 3: RIWAYAT ---
                 composable(BottomBarScreen.Riwayat.route) {
