@@ -233,6 +233,14 @@
     <string name="nav_history">History</string>
     <string name="nav_profile">Profile</string>
 
+    // Cart Screen
+    <string name="cart_title">My Cart</string>
+    <string name="cart_empty">Your cart is empty</string>
+    <string name="cart_empty_desc">Lets find fresh products for you!</string>
+    <string name="cart_total">Total Price</string>
+    <string name="cart_checkout">Checkout (%1$d)</string>
+    <string name="cart_delete_confirm">Delete this item?</string>
+    <string name="cart_select_all">Select All</string>
 
     // Explore Screen
     <string name="home_category_header">Categories</string>

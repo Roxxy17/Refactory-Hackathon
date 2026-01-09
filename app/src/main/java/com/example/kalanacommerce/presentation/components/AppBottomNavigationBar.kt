@@ -149,7 +149,7 @@ fun AppBottomNavigationBar(
                 shadowColor = buttonShadowColor,
                 onClick = {
                     isMenuExpanded = false
-                    mainNavController.navigate("transaction_screen")
+                    mainNavController.navigate("cart_screen") // [UPDATED] Ke CartScreen
                 }
             )
         }

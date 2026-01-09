@@ -48,10 +48,12 @@ import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.ProductVariant
-import com.example.kalanacommerce.presentation.screen.dashboard.home.ProductCardItem
+import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import kotlin.math.abs
+import android.widget.Toast // Untuk Toast sederhana
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun DetailProductPage(
@@ -60,13 +62,15 @@ fun DetailProductPage(
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit = {},
-    onStoreClick: (String) -> Unit = {}
+    onStoreClick: (String) -> Unit = {},
+    onNavigateToCheckout: (String) -> Unit
 ) {
     LaunchedEffect(productId) {
         viewModel.loadProductDetail(productId)
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
@@ -74,6 +78,26 @@ fun DetailProductPage(
             ThemeSetting.LIGHT -> false
             ThemeSetting.DARK -> true
             ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    LaunchedEffect(uiState.addToCartSuccessMessage, uiState.error, uiState.navigateToCheckoutWithId) {
+        // 1. Handle Toast Sukses
+        uiState.addToCartSuccessMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.onMessageShown()
+        }
+
+        // 2. Handle Error
+        uiState.error?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.onMessageShown()
+        }
+
+        // 3. Handle Buy Now Navigation
+        uiState.navigateToCheckoutWithId?.let { itemId ->
+            onNavigateToCheckout(itemId) // Pindah ke Checkout Screen
+            viewModel.onMessageShown()
         }
     }
 
@@ -396,8 +420,9 @@ fun DetailProductPage(
                 BottomActionSection(
                     price = uiState.totalPrice,
                     isDark = isDarkActive,
-                    onAddToCart = { /* Implement Cart Logic */ },
-                    onBuyNow = { /* Implement Buy Logic */ }
+                    isLoading = uiState.isAddToCartLoading,
+                    onAddToCart = { viewModel.addToCart(isBuyNow = false) },
+                    onBuyNow = { viewModel.addToCart(isBuyNow = true) }
                 )
             }
         }
@@ -411,6 +436,7 @@ fun DetailProductPage(
 fun BottomActionSection(
     price: Long,
     isDark: Boolean,
+    isLoading: Boolean,
     onAddToCart: () -> Unit,
     onBuyNow: () -> Unit
 ) {
@@ -461,18 +487,19 @@ fun BottomActionSection(
                 modifier = Modifier.weight(0.65f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Tombol Keranjang (Compact Box)
+                // Tombol Keranjang
                 Surface(
-                    onClick = onAddToCart,
+                    onClick = { if (!isLoading) onAddToCart() }, // Disable klik saat loading
                     shape = RoundedCornerShape(12.dp),
                     color = Color.Transparent,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     modifier = Modifier
-                        .height(44.dp) // Sedikit lebih tinggi dari 42 agar pas jari
+                        .height(44.dp)
                         .weight(0.3f)
                         .glossyEffect(isDark, RoundedCornerShape(12.dp))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
+                        // Icon Keranjang
                         Icon(
                             imageVector = Icons.Default.AddShoppingCart,
                             contentDescription = "Add Cart",
@@ -482,9 +509,9 @@ fun BottomActionSection(
                     }
                 }
 
-                // Tombol Beli Langsung (Primary)
+                // Tombol Beli Langsung
                 Button(
-                    onClick = onBuyNow,
+                    onClick = { if (!isLoading) onBuyNow() },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -495,11 +522,15 @@ fun BottomActionSection(
                         .weight(0.7f)
                         .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = MaterialTheme.colorScheme.primary.copy(0.5f))
                 ) {
-                    Text(
-                        text = stringResource(R.string.detail_buy_now),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        fontSize = 14.sp
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text(
+                            text = stringResource(R.string.detail_buy_now),
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }

@@ -41,7 +41,7 @@ import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.Category
 import com.example.kalanacommerce.domain.model.Product
-import com.example.kalanacommerce.presentation.screen.dashboard.home.ProductCardItem
+import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 

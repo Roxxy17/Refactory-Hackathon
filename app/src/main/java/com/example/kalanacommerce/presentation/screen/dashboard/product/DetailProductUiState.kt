@@ -7,10 +7,18 @@ data class DetailProductUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val product: Product? = null,
-    // [BARU] Varian yang sedang dipilih
+
+    // Pilihan User
     val selectedVariant: ProductVariant? = null,
-    // [BARU] Produk rekomendasi (Related)
-    val relatedProducts: List<Product> = emptyList(),
     val quantity: Int = 1,
-    val totalPrice: Long = 0L
-)
+
+    // Status Add to Cart
+    val isAddToCartLoading: Boolean = false,
+    val addToCartSuccessMessage: String? = null, // Untuk Trigger Toast
+    val navigateToCheckoutWithId: String? = null, // Untuk Trigger Navigasi Buy Now
+
+    val relatedProducts: List<Product> = emptyList()
+) {
+    val totalPrice: Long
+        get() = (selectedVariant?.price ?: product?.price ?: 0L) * quantity
+}

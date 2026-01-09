@@ -20,7 +20,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.kalanacommerce.data.local.datastore.SessionManager
-import com.example.kalanacommerce.presentation.screen.TransactionScreen
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepEmailScreen
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepOtpScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
@@ -39,6 +38,8 @@ import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
@@ -137,6 +138,8 @@ fun AppNavGraph(
         }
 
         // Contoh implementasi di NavGraph
+        // Di dalam AppNavGraph
+
         composable(
             route = "detail_product/{productId}",
             arguments = listOf(navArgument("productId") { type = NavType.StringType })
@@ -152,9 +155,10 @@ fun AppNavGraph(
                 onProductClick = { id ->
                     navController.navigate("detail_product/$id")
                 },
-                // [3. SAMBUNGKAN NAVIGASI DI SINI]
-                onStoreClick = { outletId ->
-                    navController.navigate("detail_store/$outletId")
+                // [TAMBAHAN] Navigasi Beli Langsung
+                onNavigateToCheckout = { itemIdsString ->
+                    // Arahkan ke Checkout Screen dengan ID barang tersebut
+                    navController.navigate("checkout_screen/$itemIdsString")
                 }
             )
         }
@@ -175,6 +179,44 @@ fun AppNavGraph(
                     navController.navigate("detail_product/$productId")
                 }
             )
+        }
+
+        composable(
+            route = "checkout_screen/{itemIds}",
+            arguments = listOf(navArgument("itemIds") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            CheckoutScreen(
+                itemIdsString = itemIds,
+                themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() },
+                onNavigateToPayment = { snapToken ->
+                    // Navigasi ke Payment Screen (Midtrans WebView)
+                    // navController.navigate("payment_screen/$snapToken")
+
+                    // Sementara print dulu atau toast
+                    println("TOKEN: $snapToken")
+                }
+            )
+        }
+
+        composable(route = "cart_screen") {
+            val sessionManager: SessionManager = get()
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            RequireAuth(sessionManager, navController) {
+                CartScreen(
+                    themeSetting = themeSetting,
+                    onNavigateToCheckout = { selectedItemIdsString ->
+                        // [PERUBAHAN] Navigasi ke Checkout Screen dulu, bawa ID barang
+                        navController.navigate("checkout_screen/$selectedItemIdsString")
+                    }
+                )
+            }
         }
 
         // --- PROTECTED ROUTES (Fitur User) ---
@@ -234,6 +276,25 @@ fun AppNavGraph(
         }
         composable(route = Screen.Settings.route) {
             SettingsPage(onBack = { navController.popBackStack() })
+        }
+
+        composable(route = "cart_screen") {
+            val sessionManager: SessionManager = get()
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            RequireAuth(sessionManager, navController) {
+                CartScreen(
+                    themeSetting = themeSetting,
+                    onNavigateToCheckout = { snapToken ->
+                        // Nanti kita arahkan ke PaymentScreen dengan membawa snapToken
+                        // navController.navigate("payment_screen/$snapToken")
+
+                        // SEMENTARA (TODO): Print log atau tampilkan toast
+                        println("Ready to Pay with Token: $snapToken")
+                    }
+                )
+            }
         }
 
         // --- FITUR ALAMAT (CRUD) ---

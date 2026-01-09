@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
-import com.example.kalanacommerce.presentation.screen.dashboard.home.ProductCardItem
+import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.abs
 

@@ -6,25 +6,30 @@ import com.example.kalanacommerce.domain.model.CartItem
 import com.example.kalanacommerce.domain.model.CheckoutResult
 
 fun CartItemDto.toDomain(): CartItem {
-    val currentPrice = variant?.price?.toLongOrNull() ?: 0L
+    // Ambil data dari nested object 'variant'
+    val variantData = variant
+    val productData = variant?.product
+
+    // Parsing harga dari String ke Long
+    val priceLong = variantData?.price?.toLongOrNull() ?: 0L
 
     return CartItem(
         id = id,
-        productVariantId = productVariantId,
-        productId = product?.id ?: "",
+        productVariantId = variantData?.id ?: "",
+        productId = productData?.id ?: "",
 
-        productName = product?.name ?: "Unknown Product",
-        variantName = variant?.variantName ?: "-",
-        productImage = product?.image ?: "",
-        outletName = product?.outlet?.name ?: "Unknown Store",
+        // Ambil nama & gambar dari dalam variant -> product
+        productName = productData?.name ?: "Produk Tidak Dikenal",
+        variantName = variantData?.variantName ?: "-",
+        productImage = productData?.image ?: "",
+        outletName = "Toko Kalana", // Default karena tidak ada info outlet di response cart item ini
 
-        price = currentPrice,
+        price = priceLong,
         quantity = quantity,
-        // Ambil stok dari variant jika ada, default 0
-        stock = 100, // TODO: Mapping stok real dari API jika tersedia di VariantDto
-        maxQuantity = 100, // Sementara hardcode atau ambil dari stok
+        stock = 100, // Default dummy stock
+        maxQuantity = 100,
 
-        totalPrice = currentPrice * quantity
+        totalPrice = priceLong * quantity
     )
 }
 

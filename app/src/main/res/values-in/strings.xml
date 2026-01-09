@@ -231,9 +231,17 @@
     <string name="nav_search">Pencarian</string>
     <string name="nav_history">Riwayat</string>
     <string name="nav_profile">Profil</string>
-
     <string name="pesan">Pesan AI</string>
     <string name="keranjang">Keranjang</string>
+
+    // Cart Screen
+    <string name="cart_title">Keranjang Saya</string>
+    <string name="cart_empty">Keranjang Kosong</string>
+    <string name="cart_empty_desc">Yuk cari produk segar buat kamu!</string>
+    <string name="cart_total">Total Harga</string>
+    <string name="cart_checkout">Checkout (%1$d)</string>
+    <string name="cart_delete_confirm">Hapus barang ini?</string>
+    <string name="cart_select_all">Pilih Semua</string>
 
     // Explore Screen
     <string name="home_category_header">Kategori</string>
