@@ -227,8 +227,8 @@
     <string name="chat_welcome_message">Halo! 👋\nSaya Kalana Assistant.\n\nSaya bisa membantu kamu untuk:\n• Mencari sayur &amp; buah segar 🥦\n• Merekomendasikan bahan masakan 🍳\n• Mengecek harga &amp; stok produk 🏷️\n\nAda yang bisa saya bantu hari ini?</string>
 
     // BottomNavbar
-    <string name="nav_explore">Eksplor</string>
-    <string name="nav_search">Pencarian</string>
+    <string name="nav_explore">Beranda</string>
+    <string name="nav_search">Eksplor</string>
     <string name="nav_history">Riwayat</string>
     <string name="nav_profile">Profil</string>
     <string name="pesan">Pesan AI</string>

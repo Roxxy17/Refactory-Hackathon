@@ -1,7 +1,9 @@
 package com.example.kalanacommerce
 
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -18,6 +20,7 @@ import com.example.kalanacommerce.presentation.navigation.Screen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject // IMPORT YANG BENAR
+import android.graphics.Color as AndroidColor
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,6 +29,15 @@ class MainActivity : AppCompatActivity() {
     private val languageManager: LanguageManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(
+                AndroidColor.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.light(
+                AndroidColor.TRANSPARENT,
+                AndroidColor.TRANSPARENT // Ini kuncinya, scrim transparan
+            )
+        )
         super.onCreate(savedInstanceState)
 
         // Di MainActivity.kt onCreate

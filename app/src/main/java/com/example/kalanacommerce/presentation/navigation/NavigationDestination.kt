@@ -1,45 +1,81 @@
-// File: D:/My-Project/KalanaCommerce/app/src/main/java/com/example/kalanacommerce/navigation/Screen.kt
+// File: presentation/navigation/Screen.kt
 
 package com.example.kalanacommerce.presentation.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.annotation.StringRes
 import com.example.kalanacommerce.R
 
-// Objek untuk merepresentasikan nama grafik navigasi bersarang (nested graph)
 object Graph {
     const val Auth = "auth_graph"
 }
 
-// ! Navigation diluar bottom bar screen
-
 // Sealed class untuk menyimpan semua rute layar (screen routes)
 sealed class Screen(val route: String) {
-    // Rute untuk layar-layar di dalam Auth Graph
+    // --- Auth ---
     data object Welcome : Screen("welcome_screen")
     data object Login : Screen("login_screen")
     data object Register : Screen("register_screen")
     data object ForgotPassword : Screen("forgot_password_screen")
 
-    // Rute untuk layar utama
+    // Route dengan argumen (Helper function untuk memudahkan navigasi)
+    data object ForgotPasswordOtp : Screen("forgot_password_otp/{email}") {
+        fun createRoute(email: String) = "forgot_password_otp/$email"
+    }
+
+    // --- Main ---
     data object Dashboard : Screen("dashboard_screen")
 
-    // Rute untuk layar profil dan turunannya
+    // --- Features ---
+    data object Cart : Screen("cart_screen")
+    data object Chat : Screen("chat_screen")
+
+    // --- Detail Screens ---
+    data object DetailProduct : Screen("detail_product/{productId}") {
+        fun createRoute(productId: String) = "detail_product/$productId"
+    }
+
+    data object DetailStore : Screen("detail_store/{outletId}") {
+        fun createRoute(outletId: String) = "detail_store/$outletId"
+    }
+
+    // --- Transaction & History ---
+    data object Transaction : Screen("transaction_screen") // History Tab Full
+
+    data object DetailOrder : Screen("order_detail/{orderId}") {
+        fun createRoute(orderId: String) = "order_detail/$orderId"
+    }
+
+    // --- Checkout & Payment ---
+    data object Checkout : Screen("checkout_screen/{itemIds}") {
+        fun createRoute(itemIds: String) = "checkout_screen/$itemIds"
+    }
+
+    data object Payment : Screen("payment_screen/{paymentUrl}") {
+        fun createRoute(paymentUrl: String) = "payment_screen/$paymentUrl"
+    }
+
+    // --- Profile & Settings ---
     data object Settings : Screen("settings_screen")
     data object TermsAndConditions : Screen("terms_conditions")
     data object EditProfile : Screen("edit_profile_screen")
-    data object Address : Screen("address_screen")
     data object HelpCenter : Screen("help_center_screen")
 
+    // --- Address ---
+    data object Address : Screen("address_screen") // List
+    data object AddressCreate : Screen("address_create") // Form Create
+
+    data object AddressEdit : Screen("address_edit/{addressId}") {
+        fun createRoute(addressId: String) = "address_edit/$addressId"
+    }
 }
 
-// ! Navigation Bottom Bar Screen
-
+// Navigation Bottom Bar Screen
 sealed class BottomBarScreen(
     val route: String,
     @StringRes val title: Int,
@@ -47,8 +83,8 @@ sealed class BottomBarScreen(
 ) {
     object Eksplor : BottomBarScreen(
         route = "eksplor_screen",
-        title = R.string.nav_explore, // Panggil R.string disini
-        icon = Icons.Default.Home // Sesuaikan icon kamu
+        title = R.string.nav_explore,
+        icon = Icons.Default.Home
     )
 
     object Pencarian : BottomBarScreen(

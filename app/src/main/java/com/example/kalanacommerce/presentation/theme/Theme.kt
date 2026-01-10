@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.theme
+    package com.example.kalanacommerce.presentation.theme
 
 import android.app.Activity
 import android.os.Build
@@ -71,9 +71,12 @@ fun KalanaCommerceTheme(
             // 1. Set warna transparan
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT // <--- PENTING!
 
             // 2. Izin menggambar di belakang system bar
-            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
 
             // 3. (PENTING) Matikan paksaan kontras sistem di Android 10+
             // Ini yang menyebabkan bar putih muncul di Light Mode meski sudah diset transparan

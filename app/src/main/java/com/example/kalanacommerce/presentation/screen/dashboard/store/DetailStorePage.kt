@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -67,7 +68,8 @@ fun DetailStorePage(
         }
     }
 
-    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+    val backgroundImage =
+        if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val mainGreen = Color(0xFF43A047)
 
     BackHandler { onBackClick() }
@@ -84,12 +86,12 @@ fun DetailStorePage(
         // LAYER 2: Scrollable Content
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(bottom = 100.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 100.dp), // Padding horizontal biarkan 0 agar Header Full Width
+            horizontalArrangement = Arrangement.spacedBy(16.dp), // Jarak antar item di tengah
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            // ITEM 1: Header Toko
+            // ITEM 1: Header Toko (Tetap Full Width)
             item(span = { GridItemSpan(2) }) {
                 Column {
                     StoreProfileHeader(
@@ -113,27 +115,51 @@ fun DetailStorePage(
             val filteredProducts = if (uiState.selectedCategoryFilter == "Semua") {
                 uiState.outletProducts
             } else {
-                uiState.outletProducts.filter { it.categoryName.contains(uiState.selectedCategoryFilter, true) }
+                uiState.outletProducts.filter {
+                    it.categoryName.contains(
+                        uiState.selectedCategoryFilter,
+                        true
+                    )
+                }
             }
 
             if (uiState.isLoading) {
                 item(span = { GridItemSpan(2) }) {
-                    Box(modifier = Modifier.height(200.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .height(200.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator(color = mainGreen)
                     }
                 }
             } else if (filteredProducts.isEmpty()) {
                 item(span = { GridItemSpan(2) }) {
-                    Box(modifier = Modifier.height(200.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .height(200.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text("Belum ada produk di kategori ini", color = Color.Gray)
                     }
                 }
             } else {
-                items(filteredProducts) { product ->
-                    Box(modifier = Modifier.padding(horizontal = if(filteredProducts.indexOf(product) % 2 == 0) 16.dp else 0.dp)) {
+                itemsIndexed(filteredProducts) { index, product ->
+                    // Logika: Item Kiri (Genap) butuh padding Kiri. Item Kanan (Ganjil) butuh padding Kanan.
+                    val isLeftItem = index % 2 == 0
+                    val paddingModifier = if (isLeftItem) {
+                        Modifier.padding(start = 16.dp) // Jarak dari pinggir layar kiri
+                    } else {
+                        Modifier.padding(end = 16.dp)   // Jarak dari pinggir layar kanan
+                    }
+
+                    Box(modifier = paddingModifier) {
                         ProductCardItem(product = product, onClick = onProductClick)
                     }
                 }
+
             }
         }
 
@@ -189,14 +215,14 @@ fun StoreHeaderTopBar(
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = null,
-                    tint = if(isDark) Color.White.copy(0.7f) else Color.Black.copy(0.5f),
+                    tint = if (isDark) Color.White.copy(0.7f) else Color.Black.copy(0.5f),
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Cari di toko",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if(isDark) Color.White.copy(0.7f) else Color.Gray
+                    color = if (isDark) Color.White.copy(0.7f) else Color.Gray
                 )
             }
         }
@@ -289,11 +315,16 @@ fun StoreProfileHeader(
                             overflow = TextOverflow.Ellipsis
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Star, null, tint = Color(0xFFFF9800), modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Default.Star,
+                                null,
+                                tint = Color(0xFFFF9800),
+                                modifier = Modifier.size(16.dp)
+                            )
                             Text(
                                 text = " 4.9 (600 Reviews)",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if(isDark) Color.White.copy(0.7f) else Color.Gray
+                                color = if (isDark) Color.White.copy(0.7f) else Color.Gray
                             )
                         }
                         Text(
@@ -331,12 +362,18 @@ fun StoreProfileHeader(
 }
 
 @Composable
-fun SmallStoreActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, isDark: Boolean) {
+fun SmallStoreActionButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isDark: Boolean
+) {
     Surface(
-        color = if(isDark) Color.White.copy(0.1f) else Color.White.copy(0.7f),
+        color = if (isDark) Color.White.copy(0.1f) else Color.White.copy(0.7f),
         shape = RoundedCornerShape(50),
         border = BorderStroke(1.dp, Color.Gray.copy(0.3f)),
-        modifier = Modifier.height(30.dp).clickable { }
+        modifier = Modifier
+            .height(30.dp)
+            .clickable { }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -373,9 +410,12 @@ fun StoreCategoryFilter(
     ) {
         items(categories) { category ->
             val isSelected = category == selectedFilter
-            val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-            val contentColor = if (isSelected) Color.White else if(isDark) Color.White else Color.Black
-            val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(0.4f)
+            val containerColor =
+                if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+            val contentColor =
+                if (isSelected) Color.White else if (isDark) Color.White else Color.Black
+            val borderColor =
+                if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(0.4f)
 
             Surface(
                 shape = RoundedCornerShape(20.dp),
@@ -388,7 +428,7 @@ fun StoreCategoryFilter(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     if (category != "Semua") {
-                        val iconRes = when(category) {
+                        val iconRes = when (category) {
                             "Sayur" -> R.drawable.ic_sayuran
                             "Bumbu" -> R.drawable.ic_bumbu
                             "Buah" -> R.drawable.ic_buah
@@ -407,7 +447,7 @@ fun StoreCategoryFilter(
                     Text(
                         text = category,
                         style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Medium
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         ),
                         color = contentColor
                     )
@@ -458,7 +498,8 @@ fun StoreAvatar(storeName: String) {
 @Composable
 fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
     val glassColor = if (isDark) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.85f)
-    val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
+    val borderColor =
+        if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
     return this
         .shadow(elevation = 6.dp, shape = shape, spotColor = Color.Black.copy(alpha = 0.1f))
         .background(glassColor, shape)
@@ -468,7 +509,8 @@ fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.S
 
 @Composable
 fun Modifier.glossyContainer(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
-    val glassColor = if (isDark) Color(0xFF1E1E1E).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.8f)
+    val glassColor =
+        if (isDark) Color(0xFF1E1E1E).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.8f)
     val borderColor = if (isDark) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.6f)
     return this
         .shadow(elevation = 8.dp, shape = shape, spotColor = Color.Black.copy(alpha = 0.05f))

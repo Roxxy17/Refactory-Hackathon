@@ -228,8 +228,8 @@
 
     <string name="pesan">Chat AI</string>
     <string name="keranjang">Cart</string>
-    <string name="nav_explore">Explore</string>
-    <string name="nav_search">Search</string>
+    <string name="nav_explore">Home</string>
+    <string name="nav_search">Explore</string>
     <string name="nav_history">History</string>
     <string name="nav_profile">Profile</string>
 

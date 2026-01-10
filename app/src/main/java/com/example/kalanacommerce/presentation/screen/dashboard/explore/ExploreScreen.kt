@@ -50,7 +50,8 @@ fun ExploreScreen(
     viewModel: ExploreViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -87,78 +88,93 @@ fun ExploreScreen(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
+        Scaffold(
+            containerColor = Color.Transparent, // Agar background parent terlihat
+            contentWindowInsets = WindowInsets(0.dp), // Agar konten mulai dari paling atas (di balik status bar)
+            modifier = modifier.fillMaxSize()
+        ) { paddingValues ->
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)) {
 
-        // LAYER 2: Konten Utama (Scrollable)
-        // Kita tidak pakai Scaffold, tapi langsung Column/LazyGrid
-        Column(modifier = Modifier.fillMaxSize()) {
+                // Logika Konten (Grid / Search Results)
+                if (uiState.searchQuery.isNotEmpty() || uiState.selectedCategory != null) {
 
-            // Logika Konten (Grid / Search Results)
-            if (uiState.searchQuery.isNotEmpty() || uiState.selectedCategory != null) {
-                // ... (Kode Active Filters & Search Result tetap sama, tapi tambahkan spacer di atas) ...
-                // Spacer agar tidak ketabrak Header yang mengambang nanti
-                Spacer(modifier = Modifier.height(100.dp))
+                    Spacer(modifier = Modifier.height(100.dp))
 
-                ActiveFiltersRow(
-                    searchQuery = uiState.searchQuery,
-                    selectedCategory = uiState.selectedCategory,
-                    onClearSearch = viewModel::clearSearch,
-                    onClearCategory = viewModel::clearCategory
-                )
+                    ActiveFiltersRow(
+                        searchQuery = uiState.searchQuery,
+                        selectedCategory = uiState.selectedCategory,
+                        onClearSearch = viewModel::clearSearch,
+                        onClearCategory = viewModel::clearCategory
+                    )
 
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                } else if (uiState.searchResults.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.empty_search), color = contentColor)
+                    if (uiState.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else if (uiState.searchResults.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(stringResource(R.string.empty_search), color = contentColor)
+                        }
+                    } else {
+                        ProductSearchResults(
+                            products = uiState.searchResults,
+                            onProductClick = onProductClick
+                        )
                     }
                 } else {
-                    ProductSearchResults(products = uiState.searchResults, onProductClick = onProductClick)
-                }
-            } else {
-                // Tampilan Awal (Grid Kategori)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
-                    // [PENTING] Tambahkan top padding yang cukup besar agar konten awal
-                    // muncul DI BAWAH Search Bar, bukan di belakangnya.
-                    // bottom padding agar tidak tertutup nav bar.
-                    contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp)
-                ) {
-                    item { AutoSlidingBanner(isDark = isDarkActive) }
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
-                    item {
-                        Text(
-                            text = stringResource(R.string.home_category_header),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            color = contentColor
-                        )
-                    }
-                    item {
-                        CategoryGridSection(
-                            categories = uiState.categories,
-                            onCategoryClick = viewModel::onCategorySelected,
-                            isDark = isDarkActive
-                        )
+                    // Tampilan Awal (Grid Kategori)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
+                        // [PENTING] Tambahkan top padding yang cukup besar agar konten awal
+                        // muncul DI BAWAH Search Bar, bukan di belakangnya.
+                        // bottom padding agar tidak tertutup nav bar.
+                        contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp)
+                    ) {
+                        item { AutoSlidingBanner(isDark = isDarkActive) }
+                        item { Spacer(modifier = Modifier.height(24.dp)) }
+                        item {
+                            Text(
+                                text = stringResource(R.string.home_category_header),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                color = contentColor
+                            )
+                        }
+                        item {
+                            CategoryGridSection(
+                                categories = uiState.categories,
+                                onCategoryClick = viewModel::onCategorySelected,
+                                isDark = isDarkActive
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        ExploreHeader(
-            searchQuery = uiState.searchQuery,
-            onSearchChange = viewModel::onSearchQueryChange,
-            isDark = isDarkActive,
-            modifier = Modifier.align(Alignment.TopCenter) // Pastikan nempel di atas
-        )
+            ExploreHeader(
+                searchQuery = uiState.searchQuery,
+                onSearchChange = viewModel::onSearchQueryChange,
+                isDark = isDarkActive,
+                modifier = Modifier.align(Alignment.TopCenter) // Pastikan nempel di atas
+            )
+        }
     }
 }
 
 @Composable
 fun thickGlossyModifier(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
-    val glassColor = if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.90f)
-    val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
+    val glassColor =
+        if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.90f)
+    val borderColor =
+        if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
     return Modifier
         .shadow(elevation = 6.dp, shape = shape, spotColor = Color.Black.copy(alpha = 0.1f))
         .background(glassColor, shape)
@@ -174,9 +190,9 @@ fun ExploreHeader(
     isDark: Boolean,
     modifier: Modifier = Modifier // Terima modifier agar bisa diatur posisinya
 ) {
-    val iconColor = if(isDark) Color.Gray else Color.Black
+    val iconColor = if (isDark) Color.Gray else Color.Black
     val placeholderColor = Color.Gray
-    val textColor = if(isDark) Color.White else Color.Black
+    val textColor = if (isDark) Color.White else Color.Black
 
     Row(
         modifier = modifier // Gunakan modifier dari parameter
@@ -199,11 +215,21 @@ fun ExploreHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 ) {
-                    Icon(Icons.Outlined.Search, null, tint = iconColor, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Outlined.Search,
+                        null,
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                         if (searchQuery.isEmpty()) {
-                            Text(stringResource(R.string.explore_search_placeholder), fontSize = 14.sp, color = placeholderColor, maxLines = 1)
+                            Text(
+                                stringResource(R.string.explore_search_placeholder),
+                                fontSize = 14.sp,
+                                color = placeholderColor,
+                                maxLines = 1
+                            )
                         }
                         innerTextField()
                     }
@@ -280,9 +306,19 @@ fun FilterChipItem(text: String, onClose: () -> Unit) {
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = text, fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Medium)
+            Text(
+                text = text,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Medium
+            )
             Spacer(modifier = Modifier.width(4.dp))
-            Icon(imageVector = Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(16.dp))
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
@@ -356,10 +392,14 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
                     painter = painterResource(id = imageRes),
                     contentDescription = displayName,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().weight(1f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 )
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -412,7 +452,8 @@ fun ProductSearchResults(products: List<Product>, onProductClick: (String) -> Un
 
 @Composable
 fun AutoSlidingBanner(isDark: Boolean) {
-    val banners = listOf(R.drawable.slide_1, R.drawable.slide_2, R.drawable.slide_3, R.drawable.slide_4)
+    val banners =
+        listOf(R.drawable.slide_1, R.drawable.slide_2, R.drawable.slide_3, R.drawable.slide_4)
     val pagerState = rememberPagerState(pageCount = { banners.size })
     val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
 
@@ -434,19 +475,39 @@ fun AutoSlidingBanner(isDark: Boolean) {
         ) { page ->
             Card(
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().height(150.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Image(painter = painterResource(id = banners[page]), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                Image(
+                    painter = painterResource(id = banners[page]),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             repeat(banners.size) { iteration ->
                 val isSelected = pagerState.currentPage == iteration
-                val color = if (isSelected) MaterialTheme.colorScheme.primary else if(isDark) Color.White.copy(alpha = 0.3f) else Color.LightGray
-                val width by animateDpAsState(targetValue = if (isSelected) 32.dp else 8.dp, label = "width")
-                Box(modifier = Modifier.padding(horizontal = 2.dp).clip(RoundedCornerShape(4.dp)).background(color).height(6.dp).width(width))
+                val color =
+                    if (isSelected) MaterialTheme.colorScheme.primary else if (isDark) Color.White.copy(
+                        alpha = 0.3f
+                    ) else Color.LightGray
+                val width by animateDpAsState(
+                    targetValue = if (isSelected) 32.dp else 8.dp,
+                    label = "width"
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(color)
+                        .height(6.dp)
+                        .width(width)
+                )
             }
         }
     }

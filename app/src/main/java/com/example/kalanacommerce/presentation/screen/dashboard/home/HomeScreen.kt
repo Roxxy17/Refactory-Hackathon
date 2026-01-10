@@ -109,6 +109,7 @@ fun HomeScreen(
 
         Scaffold(
             containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp)
         ) { paddingValues ->
             PullToRefreshWrapper(
                 isRefreshing = uiState.isRefreshing,

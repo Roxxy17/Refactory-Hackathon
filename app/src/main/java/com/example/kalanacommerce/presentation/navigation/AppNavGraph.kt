@@ -1,3 +1,5 @@
+// File: presentation/navigation/AppNavGraph.kt
+
 package com.example.kalanacommerce.presentation.navigation
 
 import androidx.compose.foundation.background
@@ -20,82 +22,50 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.kalanacommerce.data.local.datastore.SessionManager
+import com.example.kalanacommerce.data.local.datastore.ThemeManager
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
+// ... (Pastikan semua import screen Anda ada di sini)
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepEmailScreen
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepOtpScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
+import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressListScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.notification.SettingsPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfilePage
+import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
-import com.example.kalanacommerce.data.local.datastore.ThemeManager
-import com.example.kalanacommerce.data.local.datastore.ThemeSetting
-import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
-import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
-import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-// 1. MIDDLEWARE: Satpam untuk User (Protected Routes)
+// --- MIDDLEWARES --- (Tetap sama)
 @Composable
-fun RequireAuth(
-    sessionManager: SessionManager,
-    navController: NavHostController,
-    content: @Composable () -> Unit
-) {
+fun RequireAuth(sessionManager: SessionManager, navController: NavHostController, content: @Composable () -> Unit) {
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = null)
-
     when (isLoggedIn) {
         true -> content()
-        false -> {
-            LaunchedEffect(Unit) {
-                navController.navigate(Graph.Auth) {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-        }
-        null -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+        false -> LaunchedEffect(Unit) { navController.navigate(Graph.Auth) { popUpTo(0) { inclusive = true } } }
+        null -> Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
     }
 }
 
-// 2. MIDDLEWARE: Satpam untuk Guest (Redirect if Logged In)
 @Composable
-fun RedirectIfLoggedIn(
-    sessionManager: SessionManager,
-    navController: NavHostController,
-    content: @Composable () -> Unit
-) {
+fun RedirectIfLoggedIn(sessionManager: SessionManager, navController: NavHostController, content: @Composable () -> Unit) {
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
-
-    LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
-            navController.navigate(Screen.Dashboard.route) {
-                popUpTo(0) { inclusive = true }
-            }
-        }
-    }
-
-    if (!isLoggedIn) {
-        content()
-    }
+    LaunchedEffect(isLoggedIn) { if (isLoggedIn) navController.navigate(Screen.Dashboard.route) { popUpTo(0) { inclusive = true } } }
+    if (!isLoggedIn) content()
 }
 
 @Composable
@@ -104,22 +74,14 @@ fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String = "root_splash"
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = modifier
-    ) {
+    NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
+
         // --- SPLASH / ROOT ---
         composable("root_splash") {
             val sessionManager: SessionManager = get()
             val isLoggedInState by sessionManager.isLoggedInFlow.collectAsState(initial = null)
-
             LaunchedEffect(isLoggedInState) {
-                if (isLoggedInState != null) {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                if (isLoggedInState != null) navController.navigate(Screen.Dashboard.route) { popUpTo(0) { inclusive = true } }
             }
         }
 
@@ -128,20 +90,17 @@ fun AppNavGraph(
             DashboardScreen(mainNavController = navController)
         }
 
-        // --- FITUR UMUM ---
-        composable(route = Screen.TermsAndConditions.route) {
+        // --- PUBLIC FEATURES ---
+        composable(Screen.TermsAndConditions.route) {
             TermsAndConditionsScreen(onBack = { navController.popBackStack() })
         }
-
-        composable(route = Screen.HelpCenter.route) {
+        composable(Screen.HelpCenter.route) {
             HelpCenterScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // Contoh implementasi di NavGraph
-        // Di dalam AppNavGraph
-
+        // --- DETAIL SCREENS ---
         composable(
-            route = "detail_product/{productId}",
+            route = Screen.DetailProduct.route,
             arguments = listOf(navArgument("productId") { type = NavType.StringType })
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId") ?: ""
@@ -152,19 +111,14 @@ fun AppNavGraph(
                 productId = productId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                onProductClick = { id ->
-                    navController.navigate("detail_product/$id")
-                },
-                // [TAMBAHAN] Navigasi Beli Langsung
-                onNavigateToCheckout = { itemIdsString ->
-                    // Arahkan ke Checkout Screen dengan ID barang tersebut
-                    navController.navigate("checkout_screen/$itemIdsString")
-                }
+                onProductClick = { id -> navController.navigate(Screen.DetailProduct.createRoute(id)) },
+                onStoreClick = { outletId -> navController.navigate(Screen.DetailStore.createRoute(outletId)) },
+                onNavigateToCheckout = { itemIds -> navController.navigate(Screen.Checkout.createRoute(itemIds)) }
             )
         }
 
         composable(
-            route = "detail_store/{outletId}",
+            route = Screen.DetailStore.route,
             arguments = listOf(navArgument("outletId") { type = NavType.StringType })
         ) { backStackEntry ->
             val outletId = backStackEntry.arguments?.getString("outletId") ?: ""
@@ -175,14 +129,26 @@ fun AppNavGraph(
                 outletId = outletId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                onProductClick = { productId ->
-                    navController.navigate("detail_product/$productId")
-                }
+                onProductClick = { productId -> navController.navigate(Screen.DetailProduct.createRoute(productId)) }
             )
         }
 
+        // --- TRANSACTION FLOW ---
+        composable(Screen.Cart.route) {
+            val sessionManager: SessionManager = get()
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            RequireAuth(sessionManager, navController) {
+                CartScreen(
+                    themeSetting = themeSetting,
+                    onNavigateToCheckout = { ids -> navController.navigate(Screen.Checkout.createRoute(ids)) }
+                )
+            }
+        }
+
         composable(
-            route = "checkout_screen/{itemIds}",
+            route = Screen.Checkout.route,
             arguments = listOf(navArgument("itemIds") { type = NavType.StringType })
         ) { backStackEntry ->
             val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
@@ -193,36 +159,28 @@ fun AppNavGraph(
                 itemIdsString = itemIds,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                onNavigateToPayment = { snapToken ->
-                    // Navigasi ke Payment Screen (Midtrans WebView)
-                    // navController.navigate("payment_screen/$snapToken")
-
-                    // Sementara print dulu atau toast
-                    println("TOKEN: $snapToken")
+                onNavigateToPayment = { snapUrl ->
+                    val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate(Screen.Payment.createRoute(encodedUrl))
                 }
             )
         }
 
-        composable(route = "cart_screen") {
-            val sessionManager: SessionManager = get()
-            val themeManager: ThemeManager = get()
-            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+//        composable(
+//            route = Screen.Payment.route,
+//            arguments = listOf(navArgument("paymentUrl") { type = NavType.StringType })
+//        ) { backStackEntry ->
+//            val url = backStackEntry.arguments?.getString("paymentUrl") ?: ""
+//            PaymentScreen(
+//                paymentUrl = url,
+//                onPaymentFinished = {
+//                    navController.navigate(Screen.Dashboard.route) { popUpTo(Screen.Dashboard.route) { inclusive = true } }
+//                }
+//            )
+//        }
 
-            RequireAuth(sessionManager, navController) {
-                CartScreen(
-                    themeSetting = themeSetting,
-                    onNavigateToCheckout = { selectedItemIdsString ->
-                        // [PERUBAHAN] Navigasi ke Checkout Screen dulu, bawa ID barang
-                        navController.navigate("checkout_screen/$selectedItemIdsString")
-                    }
-                )
-            }
-        }
-
-        // --- PROTECTED ROUTES (Fitur User) ---
-
-        // Transaction & Chat
-        composable(route = "transaction_screen") {
+        // --- HISTORY & CHAT ---
+        composable(Screen.Transaction.route) {
             val sessionManager: SessionManager = get()
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
@@ -230,15 +188,13 @@ fun AppNavGraph(
             RequireAuth(sessionManager, navController) {
                 HistoryScreen(
                     themeSetting = themeSetting,
-                    onNavigateToDetail = { orderId ->
-                        navController.navigate("order_detail/$orderId")
-                    }
+                    onNavigateToDetail = { orderId -> navController.navigate(Screen.DetailOrder.createRoute(orderId)) }
                 )
             }
         }
 
         composable(
-            route = "order_detail/{orderId}",
+            route = Screen.DetailOrder.route,
             arguments = listOf(navArgument("orderId") { type = NavType.StringType })
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
@@ -252,93 +208,52 @@ fun AppNavGraph(
             )
         }
 
-        composable(route = "chat_screen") {
+        composable(Screen.Chat.route) {
             val sessionManager: SessionManager = get()
-
-            // [FIX] Ambil ThemeManager dan collect state-nya
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
 
             RequireAuth(sessionManager, navController) {
-                ChatScreen(
-                    themeSetting = themeSetting, // Teruskan ke ChatScreen
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
-                )
+                ChatScreen(themeSetting = themeSetting, onBackClick = { navController.popBackStack() })
             }
         }
 
-        // Profile & Settings
-        composable(route = Screen.EditProfile.route) {
+        // --- PROFILE SUB-SCREENS ---
+        composable(Screen.EditProfile.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) { EditProfilePage(onBack = { navController.popBackStack() }) }
         }
-        composable(route = Screen.Settings.route) {
+        composable(Screen.Settings.route) {
             SettingsPage(onBack = { navController.popBackStack() })
         }
 
-        composable(route = "cart_screen") {
-            val sessionManager: SessionManager = get()
-            val themeManager: ThemeManager = get()
-            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
-
-            RequireAuth(sessionManager, navController) {
-                CartScreen(
-                    themeSetting = themeSetting,
-                    onNavigateToCheckout = { snapToken ->
-                        // Nanti kita arahkan ke PaymentScreen dengan membawa snapToken
-                        // navController.navigate("payment_screen/$snapToken")
-
-                        // SEMENTARA (TODO): Print log atau tampilkan toast
-                        println("Ready to Pay with Token: $snapToken")
-                    }
-                )
-            }
-        }
-
-        // --- FITUR ALAMAT (CRUD) ---
-
-        // 1. LIST ALAMAT
-        composable(route = Screen.Address.route) {
+        // --- ADDRESS CRUD ---
+        composable(Screen.Address.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
                 AddressListScreen(
                     onBackClick = { navController.popBackStack() },
-                    onNavigateToAdd = {
-                        navController.navigate("address_create")
-                    },
-                    onNavigateToEdit = { addressId ->
-                        navController.navigate("address_edit/$addressId")
-                    }
+                    onNavigateToAdd = { navController.navigate(Screen.AddressCreate.route) },
+                    onNavigateToEdit = { id -> navController.navigate(Screen.AddressEdit.createRoute(id)) }
                 )
             }
         }
 
-        // 2. TAMBAH ALAMAT BARU
-        composable(route = "address_create") {
+        composable(Screen.AddressCreate.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
-                AddressFormScreen(
-                    addressId = null, // ID Null = Mode Tambah
-                    onBack = { navController.popBackStack() }
-                )
+                AddressFormScreen(addressId = null, onBack = { navController.popBackStack() })
             }
         }
 
-        // 3. EDIT ALAMAT
         composable(
-            route = "address_edit/{addressId}",
+            route = Screen.AddressEdit.route,
             arguments = listOf(navArgument("addressId") { type = NavType.StringType })
         ) { backStackEntry ->
             val addressId = backStackEntry.arguments?.getString("addressId")
             val sessionManager: SessionManager = get()
-
             RequireAuth(sessionManager, navController) {
-                AddressFormScreen(
-                    addressId = addressId, // ID Ada = Mode Edit
-                    onBack = { navController.popBackStack() }
-                )
+                AddressFormScreen(addressId = addressId, onBack = { navController.popBackStack() })
             }
         }
 
@@ -347,11 +262,9 @@ fun AppNavGraph(
     }
 }
 
+// --- AUTH GRAPH BUILDER ---
 fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerms: () -> Unit) {
-    navigation(
-        startDestination = Screen.Welcome.route,
-        route = Graph.Auth
-    ) {
+    navigation(startDestination = Screen.Welcome.route, route = Graph.Auth) {
         composable(Screen.Welcome.route) {
             val sessionManager: SessionManager = get()
             RedirectIfLoggedIn(sessionManager, navController) {
@@ -361,62 +274,43 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
                 )
             }
         }
-
         composable(Screen.Login.route) {
             val viewModel: SignInViewModel = koinViewModel()
             LoginScreen(
                 viewModel = viewModel,
-                onSignInSuccess = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
+                onSignInSuccess = { navController.navigate(Screen.Dashboard.route) { popUpTo(0) { inclusive = true } } },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
                 onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
             )
         }
-
-        composable(route = Screen.Register.route) {
+        composable(Screen.Register.route) {
             val sessionManager: SessionManager = get()
             RedirectIfLoggedIn(sessionManager, navController) {
                 RegisterScreen(
-                    onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
-                    },
-                    onContinue = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
-                    },
+                    onNavigateToLogin = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Register.route) { inclusive = true } } },
+                    onContinue = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Register.route) { inclusive = true } } },
                     onNavigateToTerms = onNavigateToTerms,
                 )
             }
         }
-
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordStepEmailScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToOtp = { email -> navController.navigate("forgot_password_otp/$email") }
+                onNavigateToOtp = { email -> navController.navigate(Screen.ForgotPasswordOtp.createRoute(email)) }
             )
         }
-
         composable(
-            route = "forgot_password_otp/{email}",
+            route = Screen.ForgotPasswordOtp.route,
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val sessionManager: SessionManager = get()
-
             ForgotPasswordStepOtpScreen(
                 email = email,
                 onNavigateBack = { navController.popBackStack() },
                 onResetSuccess = {
                     kotlinx.coroutines.runBlocking { sessionManager.clearAuthData() }
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
                 }
             )
         }

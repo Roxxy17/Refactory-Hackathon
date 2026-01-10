@@ -51,7 +51,8 @@ fun HistoryScreen(
             ThemeSetting.SYSTEM -> systemInDark
         }
     }
-    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+    val backgroundImage =
+        if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val contentColor = if (isDarkActive) Color.White else Color.Black
     val mainGreen = Color(0xFF43A047)
 
@@ -64,80 +65,86 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Header Title
-            Text(
-                text = stringResource(R.string.history_title),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = mainGreen,
-                modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
-            )
-
-            // Tabs
-            val tabs = listOf(
-                stringResource(R.string.history_tab_process),
-                stringResource(R.string.history_tab_completed),
-                stringResource(R.string.history_tab_cancelled)
-            )
-
-            TabRow(
-                selectedTabIndex = uiState.selectedTab,
-                containerColor = Color.Transparent,
-                contentColor = mainGreen,
-                indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
-                        Modifier
-                            .tabIndicatorOffset(tabPositions[uiState.selectedTab])
-                            .height(3.dp),
-                        color = mainGreen
-                    )
-                },
-                divider = {}
+        Scaffold(
+            containerColor = Color.Transparent, // Agar background parent terlihat
+            contentWindowInsets = WindowInsets(0.dp), // Agar konten mulai dari paling atas (di balik status bar)
+            modifier = modifier.fillMaxSize()
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = uiState.selectedTab == index,
-                        onClick = { viewModel.onTabSelected(index) },
-                        text = {
-                            Text(
-                                text = title,
-                                color = if (uiState.selectedTab == index) mainGreen else if(isDarkActive) Color.Gray else Color.DarkGray,
-                                fontWeight = if (uiState.selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                // Header Title
+                Text(
+                    text = stringResource(R.string.history_title),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = mainGreen,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+                )
+
+                // Tabs
+                val tabs = listOf(
+                    stringResource(R.string.history_tab_process),
+                    stringResource(R.string.history_tab_completed),
+                    stringResource(R.string.history_tab_cancelled)
+                )
+
+                TabRow(
+                    selectedTabIndex = uiState.selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = mainGreen,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[uiState.selectedTab])
+                                .height(3.dp),
+                            color = mainGreen
+                        )
+                    },
+                    divider = {}
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = uiState.selectedTab == index,
+                            onClick = { viewModel.onTabSelected(index) },
+                            text = {
+                                Text(
+                                    text = title,
+                                    color = if (uiState.selectedTab == index) mainGreen else if (isDarkActive) Color.Gray else Color.DarkGray,
+                                    fontWeight = if (uiState.selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // List Orders
+                if (uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = mainGreen)
+                    }
+                } else if (uiState.filteredOrders.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = stringResource(R.string.history_empty),
+                            color = Color.Gray
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp)
+                    ) {
+                        items(uiState.filteredOrders) { order ->
+                            OrderCardItem(
+                                order = order,
+                                isDark = isDarkActive,
+                                onClick = { onNavigateToDetail(order.id) }
                             )
                         }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // List Orders
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = mainGreen)
-                }
-            } else if (uiState.filteredOrders.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = stringResource(R.string.history_empty),
-                        color = Color.Gray
-                    )
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 100.dp)
-                ) {
-                    items(uiState.filteredOrders) { order ->
-                        OrderCardItem(
-                            order = order,
-                            isDark = isDarkActive,
-                            onClick = { onNavigateToDetail(order.id) }
-                        )
                     }
                 }
             }
@@ -159,7 +166,7 @@ fun OrderCardItem(
         else -> Color.Gray
     }
 
-    val statusText = when(order.status) {
+    val statusText = when (order.status) {
         OrderStatus.PENDING -> "Menunggu Bayar"
         OrderStatus.PAID -> "Dibayar"
         OrderStatus.PROCESSED -> "Diproses"
@@ -238,7 +245,7 @@ fun OrderCardItem(
                 Column {
                     Text(
                         "${order.itemCount} item",
-                        color = if(isDark) Color.White.copy(0.7f) else Color.Gray,
+                        color = if (isDark) Color.White.copy(0.7f) else Color.Gray,
                         fontSize = 12.sp
                     )
                     Text(
