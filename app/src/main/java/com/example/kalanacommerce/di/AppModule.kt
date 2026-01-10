@@ -7,10 +7,6 @@ import com.example.kalanacommerce.presentation.screen.auth.login.SignInViewModel
 import com.example.kalanacommerce.core.util.DefaultDispatcherProvider
 import com.example.kalanacommerce.core.util.DispatcherProvider
 import com.example.kalanacommerce.data.local.datastore.LanguageManager
-import com.example.kalanacommerce.data.remote.service.AddressService
-import com.example.kalanacommerce.data.remote.service.AddressServiceImpl
-import com.example.kalanacommerce.data.repository.AddressRepositoryImpl
-import com.example.kalanacommerce.domain.repository.AddressRepository
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatViewModel
@@ -19,12 +15,11 @@ import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreV
 import com.example.kalanacommerce.presentation.screen.dashboard.history.OrderHistoryViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeViewModel
-import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfileViewModel
-import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
-import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStoreViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStoreViewModel
 import org.koin.android.ext.koin.androidContext // Import untuk androidContext()
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -32,9 +27,6 @@ import org.koin.dsl.module
 val appModule = module {
 
     single<DispatcherProvider> { DefaultDispatcherProvider() }
-
-    // --- 1. DAFTARKAN ThemeManager DI SINI ---
-    // (Wajib ada agar bisa di-inject ke ViewModel dan Activity)
     single { ThemeManager(androidContext()) }
     single { LanguageManager(androidContext()) }
 
@@ -52,49 +44,68 @@ val appModule = module {
         )
     }
 
-    // --- PERBAIKAN DI SINI ---
     viewModel {
         ProfileViewModel(
             sessionManager = get(),
             themeManager = get(),
             languageManager = get(),
-            profileRepository = get(), // <-- JANGAN LUPA INI
-            context = androidContext() // Gunakan androidContext() dari Koin
+            profileRepository = get(),
+            context = androidContext()
         )
     }
     // ForgotPasswordViewModel
     viewModel {
         ForgotPasswordViewModel(
-            forgotPasswordUseCase = get(),
-            resetPasswordUseCase = get()
+            forgotPasswordUseCase = get(), resetPasswordUseCase = get()
         )
     }
 
     viewModel {
         EditProfileViewModel(
-            profileRepository = get(), // Inject ProfileRepository
-            sessionManager = get()     // Inject SessionManager (PENTING untuk update data lokal)
+            profileRepository = get(),
+            sessionManager = get()
         )
     }
 
-    viewModel { HomeViewModel(get(), get()) }
-
-    // ViewModel tetap sama, dia minta Interface
-    // File: di/AppModule.kt
+    viewModel {
+        HomeViewModel(
+            getProductsUseCase = get(),
+            getCategoriesUseCase = get(),
+            addToCartUseCase = get(),
+            getCartItemsUseCase = get()
+        )
+    }
 
     viewModel {
         ChatViewModel(
-            sendMessageUseCase = get(), // Menggunakan Use Case hasil get() dari useCaseModule
+            sendMessageUseCase = get(),
             welcomeMessage = androidContext().getString(R.string.chat_welcome_message)
         )
     }
 
-    viewModel { ExploreViewModel(get()) }
-    viewModel { DetailProductViewModel(get(), get()) }
+    viewModel {
+        ExploreViewModel(
+            repository = get(), addToCartUseCase = get() // [TAMBAHKAN INI]
+        )
+    }
+
+    viewModel {
+        DetailProductViewModel(
+            repository = get(),
+            addToCartUseCase = get()
+        )
+    }
     viewModel { DetailStoreViewModel(get()) }
     viewModel { OrderHistoryViewModel(get()) }
     viewModel { DetailOrderViewModel(get()) }
     viewModel { CartViewModel(get(), get(), get(), get()) }
-    viewModel { CheckoutViewModel(get(), get()) }
+    viewModel {
+        CheckoutViewModel(
+            get(),
+            get(),
+            get(),
+            get()
+        )
+    }
 
 }

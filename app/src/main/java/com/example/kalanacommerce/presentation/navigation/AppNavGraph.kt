@@ -36,14 +36,14 @@ import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
-import com.example.kalanacommerce.presentation.screen.dashboard.product.DetailProductPage
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressListScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.notification.SettingsPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfilePage
-import com.example.kalanacommerce.presentation.screen.dashboard.store.DetailStorePage
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStorePage
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel

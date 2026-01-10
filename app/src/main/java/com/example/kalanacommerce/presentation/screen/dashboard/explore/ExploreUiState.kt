@@ -8,7 +8,9 @@ data class ExploreUiState(
     val searchQuery: String = "",
     val selectedCategory: Category? = null, // [BARU] Menyimpan kategori yang sedang dipilih
     val categories: List<Category> = emptyList(),
-    val searchResults: List<Product> = emptyList()
+    val searchResults: List<Product> = emptyList(),
+    val navigateToCheckoutWithId: String? = null,
+    val successMessage: String? = null
 )
 
 // Buat Data Class Wrapper untuk UI

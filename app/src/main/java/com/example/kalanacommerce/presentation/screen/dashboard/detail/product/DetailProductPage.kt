@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard.product
+package com.example.kalanacommerce.presentation.screen.dashboard.detail.product
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -48,12 +48,12 @@ import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.ProductVariant
-import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
+import com.example.kalanacommerce.presentation.components.ProductCardItem
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import kotlin.math.abs
 import android.widget.Toast // Untuk Toast sederhana
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Shape
 
 @Composable
 fun DetailProductPage(
@@ -421,8 +421,12 @@ fun DetailProductPage(
                     price = uiState.totalPrice,
                     isDark = isDarkActive,
                     isLoading = uiState.isAddToCartLoading,
-                    onAddToCart = { viewModel.addToCart(isBuyNow = false) },
-                    onBuyNow = { viewModel.addToCart(isBuyNow = true) }
+                    onAddToCart = {
+                        viewModel.addToCart()
+                    },
+                    onBuyNow = {
+                        viewModel.buyNow()
+                    }
                 )
             }
         }
@@ -710,7 +714,7 @@ fun QuantityStepper(
 // --- HELPER MODIFIERS (Glassmorphism) ---
 
 @Composable
-fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
+fun Modifier.glossyEffect(isDark: Boolean, shape: Shape): Modifier {
     val glassColor = if (isDark) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.85f)
     val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
     return this
@@ -721,7 +725,7 @@ fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.S
 }
 
 @Composable
-fun Modifier.glossyContainer(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
+fun Modifier.glossyContainer(isDark: Boolean, shape: Shape): Modifier {
     val glassColor = if (isDark) Color(0xFF1E1E1E).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.8f)
     val borderColor = if (isDark) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.6f)
     return this

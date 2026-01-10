@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.domain.model.Category
+import com.example.kalanacommerce.domain.model.Product
+import com.example.kalanacommerce.domain.usecase.cart.AddToCartUseCase // [NEW] Inject ini
 import com.example.kalanacommerce.domain.usecase.product.GetCategoriesUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetProductsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +15,12 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val getProductsUseCase: GetProductsUseCase,
-    private val getCategoriesUseCase: GetCategoriesUseCase
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val addToCartUseCase: AddToCartUseCase,
+    private val getCartItemsUseCase: com.example.kalanacommerce.domain.usecase.cart.GetCartItemsUseCase// [NEW] UseCase Cart
 ) : ViewModel() {
 
-    // Pastikan HomeUiState sudah punya val successMessage: String? = null
+    // Pastikan HomeUiState punya field: navigateToCheckoutWithId: String? = null
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -24,83 +28,142 @@ class HomeViewModel(
         loadHomeData()
     }
 
-    // [MODIFIKASI 1] Tambahkan parameter isPullRefresh
     fun loadHomeData(isPullRefresh: Boolean = false) {
-        // Set loading state awal
         if (isPullRefresh) {
             _uiState.update { it.copy(isRefreshing = true) }
         } else {
-            // Jika bukan refresh (awal buka), set isLoading true
-            // (Hanya jika data kosong agar tidak flickering saat refresh diam-diam)
             if (_uiState.value.products.isEmpty()) {
                 _uiState.update { it.copy(isLoading = true) }
             }
         }
 
-        // 1. Load Categories (Dijalankan parallel di coroutine sendiri)
+        // 1. Categories
         viewModelScope.launch {
             getCategoriesUseCase().collect { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        val allCategory = Category(id = "ALL", name = "Semua")
-                        val list = listOf(allCategory) + (result.data ?: emptyList())
-                        _uiState.update { it.copy(categories = list) }
-                    }
-
-                    else -> {} // Error categories bisa di-silent atau handle terpisah
+                if (result is Resource.Success) {
+                    val allCategory = Category(id = "ALL", name = "Semua")
+                    val list = listOf(allCategory) + (result.data ?: emptyList())
+                    _uiState.update { it.copy(categories = list) }
                 }
             }
         }
 
-        // 2. Load Products (Ini data utama, kita taruh logic finish refresh di sini)
+        // 2. Products
         viewModelScope.launch {
             getProductsUseCase().collect { result ->
                 when (result) {
-                    is Resource.Loading -> {}
                     is Resource.Success -> {
                         val allData = result.data ?: emptyList()
-
-                        // [MODIFIKASI] Acak urutan produk (shuffled) lalu ambil 10
-                        // Ini membuat produk yang tampil di Home selalu berubah-ubah
+                        // Randomize for Home Display
                         val randomProducts = allData.shuffled().take(10)
-
                         val msg = if (isPullRefresh) "Beranda diperbarui" else null
 
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                products = randomProducts, // Simpan 10 produk acak ini
+                                products = randomProducts,
                                 displayProducts = randomProducts,
                                 successMessage = msg
                             )
                         }
                     }
-
                     is Resource.Error -> {
                         _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = result.message
-                            )
+                            it.copy(isLoading = false, isRefreshing = false, error = result.message)
                         }
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    // --- [NEW LOGIC] ADD TO CART & BUY NOW FROM CARD ---
+
+    fun onAddToCart(product: Product, quantity: Int) {
+        // Logika Add Cart tetap sama (panggil API add cart)
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetVariantId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        viewModelScope.launch {
+            addToCartUseCase(targetVariantId, quantity).collect { result ->
+                // ... handle success/error cart ...
+                if(result is Resource.Success) {
+                    _uiState.update { it.copy(successMessage = "Berhasil masuk keranjang") }
+                }
+            }
+        }
+    }
+
+    // [UPDATE] Terima parameter quantity
+    fun onBuyNow(product: Product, quantity: Int) {
+        // Cari varian termurah/default
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetVariantId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        val navigationPayload = "DIRECT__${targetVariantId}__${quantity}"
+
+        _uiState.update {
+            it.copy(navigateToCheckoutWithId = navigationPayload)
+        }
+    }
+
+    private fun processCartAction(product: Product, quantity: Int, isBuyNow: Boolean) {
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetVariantId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        viewModelScope.launch {
+            // Gunakan quantity dari parameter, bukan hardcode 1
+            addToCartUseCase(targetVariantId, quantity).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        if (isBuyNow) {
+                            findCartItemIdAndNavigate(targetVariantId)
+                        } else {
+                            _uiState.update { it.copy(successMessage = "Berhasil menambahkan $quantity item ke keranjang!") }
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(error = result.message) }
+                    }
+                    is Resource.Loading -> {}
+                }
+            }
+        }
+    }
+
+    private fun findCartItemIdAndNavigate(variantId: String) {
+        viewModelScope.launch {
+            getCartItemsUseCase().collect { result ->
+                if (result is Resource.Success) {
+                    val cartItems = result.data ?: emptyList()
+                    // Cari item di keranjang yang product/variant ID-nya sama dengan yang baru kita add
+                    // Asumsi: cartItem punya field productVariantId atau sejenisnya.
+                    // Jika cartItem.id adalah unik row ID, kita filter berdasarkan relasi produknya.
+
+                    // Logic aman: Ambil item paling baru atau yang cocok ID variannya
+                    val foundItem = cartItems.find {
+                        it.productVariantId == variantId || it.productId == variantId
+                    }
+
+                    if (foundItem != null) {
+                        _uiState.update { it.copy(navigateToCheckoutWithId = foundItem.id) }
+                    } else {
+                        // Fallback jika tidak ketemu (jarang terjadi), navigate pakai variantId (semoga checkout handle)
+                        _uiState.update { it.copy(navigateToCheckoutWithId = variantId) }
                     }
                 }
             }
         }
     }
 
-    // [MODIFIKASI 3] Update fungsi refreshData memanggil loadHomeData dengan parameter true
-    fun refreshData() {
-        loadHomeData(isPullRefresh = true)
-    }
-
-    // [MODIFIKASI 4] Helper untuk membersihkan pesan (dipanggil UI setelah Toast muncul)
+    // Reset One-time events
     fun clearMessages() {
-        _uiState.update { it.copy(error = null, successMessage = null) }
+        _uiState.update { it.copy(error = null, successMessage = null, navigateToCheckoutWithId = null) }
     }
 
+    // ... (Fungsi Filter & Search tetap sama) ...
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
         filterData()
@@ -118,13 +181,9 @@ class HomeViewModel(
 
         val filtered = currentState.products.filter { product ->
             val matchesSearch = product.name.lowercase().contains(query)
-            // Note: Pastikan getCategoryNameById aman
-            val matchesCategory =
-                if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId)
-
-            matchesSearch && matchesCategory // Gabungkan kedua filter
+            val matchesCategory = if (catId == "ALL") true else product.categoryName == getCategoryNameById(catId)
+            matchesSearch && matchesCategory
         }
-
         _uiState.update { it.copy(displayProducts = filtered) }
     }
 

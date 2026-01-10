@@ -12,5 +12,6 @@ data class HomeUiState(
     val displayProducts: List<Product> = emptyList(), // Produk yg ditampilkan (terfilter)
     val categories: List<Category> = emptyList(),
     val selectedCategoryId: String = "ALL", // "ALL" atau ID kategori
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val navigateToCheckoutWithId: String? = null
 )

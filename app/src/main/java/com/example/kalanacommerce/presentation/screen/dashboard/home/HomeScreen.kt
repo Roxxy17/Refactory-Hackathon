@@ -54,14 +54,15 @@ import androidx.compose.material.icons.outlined.ShoppingBag // Untuk Bahan Pokok
 import androidx.compose.material.icons.outlined.DinnerDining // Untuk Olahan
 import androidx.compose.material.icons.outlined.RamenDining // Untuk Instan
 import androidx.compose.material.icons.outlined.Category // Fallback
-import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
+import com.example.kalanacommerce.presentation.components.ProductCardItem
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    onNavigateToCheckout: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -77,6 +78,13 @@ fun HomeScreen(
             ThemeSetting.LIGHT -> false
             ThemeSetting.DARK -> true
             ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    LaunchedEffect(uiState.navigateToCheckoutWithId) {
+        uiState.navigateToCheckoutWithId?.let { destination ->
+            onNavigateToCheckout(destination) // Panggil navigasi
+            viewModel.clearMessages() // Reset state agar tidak terpanggil 2x
         }
     }
 
@@ -113,7 +121,10 @@ fun HomeScreen(
         ) { paddingValues ->
             PullToRefreshWrapper(
                 isRefreshing = uiState.isRefreshing,
-                onRefresh = { viewModel.refreshData() },
+                onRefresh = {
+                    // [UBAH DARI refreshData() KE loadHomeData(true)]
+                    viewModel.loadHomeData(isPullRefresh = true)
+                },
                 modifier = Modifier.padding(paddingValues)
             ) {
                 LazyColumn(
@@ -224,7 +235,16 @@ fun HomeScreen(
                             ) {
                                 for (product in rowItems) {
                                     Box(modifier = Modifier.weight(1f)) {
-                                        ProductCardItem(product = product, onClick = onProductClick)
+                                        ProductCardItem(
+                                            product = product,
+                                            onClick = onProductClick,
+                                            onQuickAddToCart = { selectedProduct, qty ->
+                                                viewModel.onAddToCart(selectedProduct, qty)
+                                            },
+                                            onQuickBuyNow = { selectedProduct, qty ->
+                                                viewModel.onBuyNow(selectedProduct, qty)
+                                            }
+                                        )
                                     }
                                 }
                                 if (rowItems.size == 1) {

@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard.store
+package com.example.kalanacommerce.presentation.screen.dashboard.detail.store
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -32,6 +31,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
-import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
+import com.example.kalanacommerce.presentation.components.ProductCardItem
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.abs
 
@@ -364,7 +365,7 @@ fun StoreProfileHeader(
 @Composable
 fun SmallStoreActionButton(
     text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     isDark: Boolean
 ) {
     Surface(
@@ -496,7 +497,7 @@ fun StoreAvatar(storeName: String) {
 }
 
 @Composable
-fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
+fun Modifier.glossyEffect(isDark: Boolean, shape: Shape): Modifier {
     val glassColor = if (isDark) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.85f)
     val borderColor =
         if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.5f)
@@ -508,7 +509,7 @@ fun Modifier.glossyEffect(isDark: Boolean, shape: androidx.compose.ui.graphics.S
 }
 
 @Composable
-fun Modifier.glossyContainer(isDark: Boolean, shape: androidx.compose.ui.graphics.Shape): Modifier {
+fun Modifier.glossyContainer(isDark: Boolean, shape: Shape): Modifier {
     val glassColor =
         if (isDark) Color(0xFF1E1E1E).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.8f)
     val borderColor = if (isDark) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.6f)

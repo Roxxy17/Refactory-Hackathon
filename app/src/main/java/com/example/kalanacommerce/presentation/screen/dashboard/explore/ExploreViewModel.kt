@@ -6,25 +6,29 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.domain.model.Category
+import com.example.kalanacommerce.domain.model.Product
 import com.example.kalanacommerce.domain.repository.ProductRepository
+import com.example.kalanacommerce.domain.usecase.cart.AddToCartUseCase // [NEW]
+import com.example.kalanacommerce.R
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.kalanacommerce.R // Pastikan import ini ada
 
 class ExploreViewModel(
-    private val repository: ProductRepository
+    private val repository: ProductRepository,
+    private val addToCartUseCase: AddToCartUseCase // [NEW] Inject Cart UseCase
 ) : ViewModel() {
 
+    // Pastikan ExploreUiState punya field: navigateToCheckoutWithId: String? = null & successMessage
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
 
-    // Daftar Kategori Statis (Sesuai UI dan strings.xml)
+    // ... (Daftar Static Categories tetap sama) ...
     private val staticUiCategories = listOf(
         UiCategory("CAT_PAKET", R.string.cat_exp_packet, "Paket Masak", listOf("paket", "kit")),
         UiCategory("CAT_SAYUR", R.string.cat_exp_vegetable, "Sayuran", listOf("sayur", "vegetable", "hijau", "daun")),
@@ -38,23 +42,75 @@ class ExploreViewModel(
     )
 
     init {
-        // Mapping UiCategory ke Domain Category
-        // name diisi ID ("CAT_...") agar nanti UI bisa membedakannya dan mengambil string resource yang tepat
-        val mappedCategories = staticUiCategories.map {
-            Category(id = it.id, name = it.id)
-        }
+        val mappedCategories = staticUiCategories.map { Category(id = it.id, name = it.id) }
         _uiState.update { it.copy(categories = mappedCategories) }
     }
 
-    // --- Search Logic ---
+    // --- [NEW LOGIC] ADD TO CART / BUY NOW ---
+
+    fun onAddToCart(product: Product, quantity: Int) {
+        // Logika Add Cart tetap sama (panggil API add cart)
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetVariantId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        viewModelScope.launch {
+            addToCartUseCase(targetVariantId, quantity).collect { result ->
+                // ... handle success/error cart ...
+                if(result is Resource.Success) {
+                    _uiState.update { it.copy(successMessage = "Berhasil masuk keranjang") }
+                }
+            }
+        }
+    }
+
+    // [UPDATE] Terima parameter quantity
+    fun onBuyNow(product: Product, quantity: Int) {
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetVariantId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        // Langsung Navigasi (bypass Cart)
+        // Pastikan ExploreUiState punya field navigateToCheckoutWithId
+        val navigationPayload = "DIRECT__${targetVariantId}__${quantity}"
+        _uiState.update { it.copy(navigateToCheckoutWithId = navigationPayload) } // Asumsi field ini ada
+    }
+
+    private fun processCartAction(product: Product, quantity: Int, isBuyNow: Boolean) {
+        val lowestVariant = product.variants.minByOrNull { it.price }
+        val targetId = lowestVariant?.id ?: product.variants.firstOrNull()?.id ?: product.id
+
+        viewModelScope.launch {
+            // Gunakan quantity dari parameter
+            addToCartUseCase(targetId, quantity).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        if (isBuyNow) {
+                            // Jika nanti ada navigasi checkout, tambahkan di sini
+                            // _uiState.update { it.copy(navigateToCheckoutWithId = targetId) }
+                        } else {
+                            // Pastikan ExploreUiState punya field successMessage jika ingin toast
+                            // _uiState.update { it.copy(successMessage = "Berhasil masuk keranjang") }
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(error = result.message) }
+                    }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    fun onMessageShown() {
+        _uiState.update { it.copy(error = null) } // Reset navigateToCheckoutWithId juga disini
+    }
+
+    // ... (Fungsi Search & Category Selection tetap sama) ...
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query, selectedCategory = null) }
-
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (query.isNotEmpty()) {
                 delay(500)
-                // Pencarian manual: validationKeywords = null
                 searchProducts(query, validationKeywords = null)
             } else {
                 _uiState.update { it.copy(searchResults = emptyList()) }
@@ -62,73 +118,42 @@ class ExploreViewModel(
         }
     }
 
-    // --- Category Logic ---
     fun onCategorySelected(category: Category) {
-        _uiState.update {
-            it.copy(
-                selectedCategory = category,
-                searchQuery = ""
-            )
-        }
-
-        // Cari config berdasarkan ID
+        _uiState.update { it.copy(selectedCategory = category, searchQuery = "") }
         val config = staticUiCategories.find { it.id == category.id }
-
         if (config != null) {
             searchProducts(config.apiQuery, config.validationKeywords)
         }
     }
 
-    fun clearSearch() {
-        _uiState.update { it.copy(searchQuery = "", searchResults = emptyList()) }
-    }
+    fun clearSearch() { _uiState.update { it.copy(searchQuery = "", searchResults = emptyList()) } }
+    fun clearCategory() { _uiState.update { it.copy(selectedCategory = null, searchResults = emptyList()) } }
 
-    fun clearCategory() {
-        _uiState.update { it.copy(selectedCategory = null, searchResults = emptyList()) }
-    }
-
-    // --- Core Search Function ---
     private fun searchProducts(query: String, validationKeywords: List<String>? = null) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-
             repository.getProducts(query).collect { result ->
                 when (result) {
                     is Resource.Success -> {
                         val rawData = result.data ?: emptyList()
-
                         val filteredData = if (validationKeywords != null) {
-                            // 1. Logic Filter Kategori (Strict)
                             rawData.filter { product ->
                                 val prodName = product.name.lowercase()
                                 val prodCat = product.categoryName.lowercase()
-
-                                validationKeywords.any { keyword ->
-                                    prodName.contains(keyword) || prodCat.contains(keyword)
-                                }
+                                validationKeywords.any { keyword -> prodName.contains(keyword) || prodCat.contains(keyword) }
                             }
                         } else {
-                            // 2. Logic Filter Pencarian Manual (Query)
-                            // [PERBAIKAN] Filter manual berdasarkan query user
                             if (query.isNotBlank()) {
                                 val lowerQuery = query.lowercase()
                                 rawData.filter { product ->
-                                    product.name.lowercase().contains(lowerQuery) ||
-                                            product.categoryName.lowercase().contains(lowerQuery)
+                                    product.name.lowercase().contains(lowerQuery) || product.categoryName.lowercase().contains(lowerQuery)
                                 }
-                            } else {
-                                rawData
-                            }
+                            } else rawData
                         }
-
-                        _uiState.update {
-                            it.copy(isLoading = false, searchResults = filteredData)
-                        }
+                        _uiState.update { it.copy(isLoading = false, searchResults = filteredData) }
                     }
                     is Resource.Error -> {
-                        _uiState.update {
-                            it.copy(isLoading = false, error = result.message)
-                        }
+                        _uiState.update { it.copy(isLoading = false, error = result.message) }
                     }
                     else -> Unit
                 }

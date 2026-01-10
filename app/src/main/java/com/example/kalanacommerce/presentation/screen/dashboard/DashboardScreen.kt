@@ -74,6 +74,9 @@ fun DashboardScreen(
                         themeSetting = themeSetting,
                         onProductClick = { productId ->
                             mainNavController.navigate("detail_product/$productId")
+                        },
+                        onNavigateToCheckout = { payload ->
+                            mainNavController.navigate(Screen.Checkout.createRoute(payload))
                         }
                     )
                 }
@@ -93,6 +96,9 @@ fun DashboardScreen(
                         },
                         onProductClick = { productId ->
                             mainNavController.navigate("detail_product/$productId")
+                        },
+                        onNavigateToCheckout = { payload ->
+                            mainNavController.navigate(Screen.Checkout.createRoute(payload))
                         }
                     )
                 }

@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard.store
+package com.example.kalanacommerce.presentation.screen.dashboard.detail.store
 
 import com.example.kalanacommerce.domain.model.Outlet
 import com.example.kalanacommerce.domain.model.Product

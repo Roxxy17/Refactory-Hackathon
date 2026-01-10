@@ -41,7 +41,7 @@ import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.Category
 import com.example.kalanacommerce.domain.model.Product
-import com.example.kalanacommerce.presentation.screen.dashboard.ProductCardItem
+import com.example.kalanacommerce.presentation.components.ProductCardItem
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
@@ -51,6 +51,7 @@ fun ExploreScreen(
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
+    onNavigateToCheckout: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,6 +72,13 @@ fun ExploreScreen(
     }
 
     val contentColor = if (isDarkActive) Color.White else Color.Black
+
+    LaunchedEffect(uiState.navigateToCheckoutWithId) {
+        uiState.navigateToCheckoutWithId?.let { destination ->
+            onNavigateToCheckout(destination)
+            viewModel.onMessageShown()
+        }
+    }
 
     BackHandler(enabled = true) {
         when {
@@ -93,9 +101,11 @@ fun ExploreScreen(
             contentWindowInsets = WindowInsets(0.dp), // Agar konten mulai dari paling atas (di balik status bar)
             modifier = modifier.fillMaxSize()
         ) { paddingValues ->
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
 
                 // Logika Konten (Grid / Search Results)
                 if (uiState.searchQuery.isNotEmpty() || uiState.selectedCategory != null) {
@@ -437,7 +447,11 @@ fun CategoryCard(category: Category, onClick: () -> Unit, isDark: Boolean) {
 }
 
 @Composable
-fun ProductSearchResults(products: List<Product>, onProductClick: (String) -> Unit) {
+fun ProductSearchResults(
+    products: List<Product>,
+    onProductClick: (String) -> Unit,
+    viewModel: ExploreViewModel = koinViewModel()
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 100.dp),
@@ -445,7 +459,16 @@ fun ProductSearchResults(products: List<Product>, onProductClick: (String) -> Un
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(products) { product ->
-            ProductCardItem(product = product, onClick = onProductClick)
+            ProductCardItem(
+                product = product,
+                onClick = onProductClick,
+                onQuickAddToCart = { selectedProduct, qty ->
+                    viewModel.onAddToCart(selectedProduct, qty)
+                },
+                onQuickBuyNow = { selectedProduct, qty ->
+                    viewModel.onBuyNow(selectedProduct, qty)
+                }
+            )
         }
     }
 }

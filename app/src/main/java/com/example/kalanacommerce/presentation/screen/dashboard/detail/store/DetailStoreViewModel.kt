@@ -1,4 +1,4 @@
-package com.example.kalanacommerce.presentation.screen.dashboard.store
+package com.example.kalanacommerce.presentation.screen.dashboard.detail.store
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
