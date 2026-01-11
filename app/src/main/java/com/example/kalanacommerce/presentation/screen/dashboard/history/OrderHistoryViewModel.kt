@@ -33,6 +33,7 @@ class OrderHistoryViewModel(
                                 orders = result.data ?: emptyList()
                             )
                         }
+                        // Filter awal berdasarkan tab yang sedang aktif
                         filterOrders(_uiState.value.selectedTab)
                     }
                     is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
@@ -49,16 +50,28 @@ class OrderHistoryViewModel(
     private fun filterOrders(tabIndex: Int) {
         val allOrders = _uiState.value.orders
         val filtered = when (tabIndex) {
-            0 -> allOrders.filter { // Dalam Proses (Pending, Paid, Shipped, Processed)
-                it.status == OrderStatus.PENDING ||
-                        it.status == OrderStatus.PAID ||
-                        it.status == OrderStatus.PROCESSED ||
-                        it.status == OrderStatus.SHIPPED
+            // Tab 0: Dalam Proses (Hanya yang belum bayar)
+            0 -> allOrders.filter {
+                it.status == OrderStatus.PENDING
             }
-            1 -> allOrders.filter { it.status == OrderStatus.COMPLETED } // Selesai
-            2 -> allOrders.filter { it.status == OrderStatus.CANCELLED } // Batal
+
+            // Tab 1: Selesai (Sudah Bayar sampai Selesai)
+            1 -> allOrders.filter {
+                it.status == OrderStatus.PAID ||
+                        it.status == OrderStatus.PROCESSED ||
+                        it.status == OrderStatus.SHIPPED ||
+                        it.status == OrderStatus.COMPLETED
+            }
+
+            // Tab 2: Dibatalkan / Gagal
+            2 -> allOrders.filter {
+                it.status == OrderStatus.CANCELLED ||
+                        it.status == OrderStatus.FAILED ||
+                        it.status == OrderStatus.EXPIRED
+            }
+
             else -> allOrders
         }
-        _uiState.update { it.copy(filteredOrders = filtered) }
+        _uiState.update { it.copy(filteredOrders = filtered.sortedByDescending { order -> order.date }) }
     }
 }

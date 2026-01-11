@@ -19,8 +19,9 @@ class CartRepositoryImpl(
         try {
             val response = apiService.getCartItems()
             if (response.status) {
-                // API mengembalikan data di dalam objek "data: { items: [] }"
-                val items = response.data.items.map { it.toDomain() }
+                // [PERBAIKAN] Menggunakan safe call (?.) dan elvis operator (?:)
+                // Jika response.data null ATAU items null, kembalikan list kosong
+                val items = response.data?.items?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(items))
             } else {
                 emit(Resource.Error(response.message))
@@ -46,8 +47,6 @@ class CartRepositoryImpl(
     }
 
     override fun updateCartItemQuantity(cartItemId: String, quantity: Int): Flow<Resource<String>> = flow {
-        // Tidak perlu emit loading jika ingin update silent di UI, tapi best practice tetap emit
-        // emit(Resource.Loading())
         try {
             val request = UpdateCartRequestDto(quantity)
             val response = apiService.updateCartItem(cartItemId, request)
@@ -81,7 +80,8 @@ class CartRepositoryImpl(
             val request = CheckoutRequestDto(cartItemIds)
             val response = apiService.checkout(request)
             if (response.status) {
-                val results = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call untuk list checkout result
+                val results = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(results))
             } else {
                 emit(Resource.Error(response.message))
@@ -98,7 +98,8 @@ class CartRepositoryImpl(
             val request = DirectCheckoutRequestDto(listOf(item))
             val response = apiService.directCheckout(request)
             if (response.status) {
-                val results = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call untuk list direct checkout result
+                val results = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(results))
             } else {
                 emit(Resource.Error(response.message))

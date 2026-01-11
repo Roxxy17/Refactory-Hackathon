@@ -24,7 +24,6 @@ import androidx.navigation.navigation
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
-// ... (Pastikan semua import screen Anda ada di sini)
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepEmailScreen
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordStepOtpScreen
 import com.example.kalanacommerce.presentation.screen.auth.login.LoginScreen
@@ -33,7 +32,8 @@ import com.example.kalanacommerce.presentation.screen.auth.register.RegisterScre
 import com.example.kalanacommerce.presentation.screen.dashboard.DashboardScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.checkout.CheckoutScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.payment.PaymentScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductPage
@@ -50,7 +50,6 @@ import org.koin.androidx.compose.koinViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-// --- MIDDLEWARES --- (Tetap sama)
 @Composable
 fun RequireAuth(sessionManager: SessionManager, navController: NavHostController, content: @Composable () -> Unit) {
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = null)
@@ -142,7 +141,18 @@ fun AppNavGraph(
             RequireAuth(sessionManager, navController) {
                 CartScreen(
                     themeSetting = themeSetting,
-                    onNavigateToCheckout = { ids -> navController.navigate(Screen.Checkout.createRoute(ids)) }
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToCheckout = { ids -> navController.navigate(Screen.Checkout.createRoute(ids)) },
+
+                    // [PERBAIKAN] Navigasi ke Detail Product dan Store
+                    onNavigateToDetailProduct = { productId ->
+                        navController.navigate(Screen.DetailProduct.createRoute(productId))
+                    },
+                    onNavigateToStore = { outletId ->
+                        navController.navigate(Screen.DetailStore.createRoute(outletId))
+                    }
                 )
             }
         }
@@ -151,6 +161,7 @@ fun AppNavGraph(
             route = Screen.Checkout.route,
             arguments = listOf(navArgument("itemIds") { type = NavType.StringType })
         ) { backStackEntry ->
+            // ... (val itemIds, themeManager, dll tetap sama)
             val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
@@ -159,25 +170,17 @@ fun AppNavGraph(
                 itemIdsString = itemIds,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                onNavigateToPayment = { snapUrl ->
-                    val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
-                    navController.navigate(Screen.Payment.createRoute(encodedUrl))
+
+                // [PERBAIKAN] Menerima (url, id) dan memanggil createRoute dengan 2 argumen
+                onNavigateToPayment = { paymentUrl, orderId ->
+                    val encodedUrl = URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate(Screen.Payment.createRoute(encodedUrl, orderId))
+                },
+                onNavigateToAddress = {
+                    navController.navigate(Screen.AddressList.route) // Gunakan rute AddressList yang benar
                 }
             )
         }
-
-//        composable(
-//            route = Screen.Payment.route,
-//            arguments = listOf(navArgument("paymentUrl") { type = NavType.StringType })
-//        ) { backStackEntry ->
-//            val url = backStackEntry.arguments?.getString("paymentUrl") ?: ""
-//            PaymentScreen(
-//                paymentUrl = url,
-//                onPaymentFinished = {
-//                    navController.navigate(Screen.Dashboard.route) { popUpTo(Screen.Dashboard.route) { inclusive = true } }
-//                }
-//            )
-//        }
 
         // --- HISTORY & CHAT ---
         composable(Screen.Transaction.route) {
@@ -204,6 +207,35 @@ fun AppNavGraph(
             DetailOrderPage(
                 orderId = orderId,
                 themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() },
+
+                // [PERBAIKAN] Menerima (url, id) dan memanggil createRoute dengan 2 argumen
+                onNavigateToPayment = { snapUrl, id ->
+                    val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate(Screen.Payment.createRoute(encodedUrl, id))
+                }
+            )
+        }
+
+        composable(
+            // Sesuaikan route string dengan yang ada di NavigationDestination.kt (payment_screen/{paymentUrl}/{orderId})
+            route = Screen.Payment.route,
+            arguments = listOf(
+                navArgument("paymentUrl") { type = NavType.StringType }, // Pastikan nama argumen sama dengan di Screen.kt
+                navArgument("orderId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val url = backStackEntry.arguments?.getString("paymentUrl") ?: "" // Ambil 'paymentUrl'
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+
+            PaymentScreen(
+                paymentUrl = url,
+                orderId = orderId,
+                onPaymentFinished = { id ->
+                    navController.navigate(Screen.DetailOrder.createRoute(id)) {
+                        popUpTo(Screen.Dashboard.route)
+                    }
+                },
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -228,6 +260,19 @@ fun AppNavGraph(
         }
 
         // --- ADDRESS CRUD ---
+
+        // [PERBAIKAN] Tambahkan Rute alias "address_list" agar Checkout tidak crash
+        composable(Screen.AddressList.route) {
+            val sessionManager: SessionManager = get()
+            RequireAuth(sessionManager, navController) {
+                AddressListScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToAdd = { navController.navigate(Screen.AddressCreate.route) },
+                    onNavigateToEdit = { id -> navController.navigate(Screen.AddressEdit.createRoute(id)) }
+                )
+            }
+        }
+
         composable(Screen.Address.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {

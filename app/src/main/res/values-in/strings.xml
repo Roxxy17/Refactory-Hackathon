@@ -237,11 +237,21 @@
     // Cart Screen
     <string name="cart_title">Keranjang Saya</string>
     <string name="cart_empty">Keranjang Kosong</string>
-    <string name="cart_empty_desc">Yuk cari produk segar buat kamu!</string>
     <string name="cart_total">Total Harga</string>
     <string name="cart_checkout">Checkout (%1$d)</string>
     <string name="cart_delete_confirm">Hapus barang ini?</string>
     <string name="cart_select_all">Pilih Semua</string>
+
+    <string name="cart_page_title">Keranjang</string>
+    <string name="cart_label_fresh">Fresh</string>
+    <string name="cart_label_freshness">Kesegaran %1$d%%</string> <string name="cart_label_save_amount">Hemat %1$s</string> <string name="cart_item_count_format">%1$d item</string> <string name="cart_empty_title">Keranjang Kosong</string>
+    <string name="cart_empty_desc">Wah, keranjangmu masih kosong nih. Yuk mulai belanja!</string>
+
+    <string name="cd_store_icon">Ikon Toko</string>
+    <string name="cd_arrow_right">Lihat Detail Toko</string>
+    <string name="cd_add_qty">Tambah Jumlah</string>
+    <string name="cd_remove_qty">Kurangi Jumlah</string>
+    <string name="cd_product_img">Gambar Produk</string>
 
     // Explore Screen
     <string name="home_category_header">Kategori</string>
@@ -300,4 +310,14 @@
     <string name="order_total">Total Belanja</string>
     <string name="order_payment_method">Metode Pembayaran</string>
     <string name="order_action_help">Butuh Bantuan?</string>
+
+    <string name="dialog_title_order_settings">Atur Pesanan</string>
+    <string name="variant_default">Default</string>
+    <string name="label_quantity">Jumlah</string>
+    <string name="label_total_price">Total Harga</string>
+    <string name="action_buy_now">Beli Sekarang</string>
+    <string name="cd_close">Tutup Dialog</string>
+    <string name="cd_product_image">Gambar Produk</string>
+
+
 </resources>

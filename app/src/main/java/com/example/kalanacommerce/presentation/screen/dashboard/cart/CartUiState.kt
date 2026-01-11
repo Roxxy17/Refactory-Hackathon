@@ -6,6 +6,7 @@ import com.example.kalanacommerce.domain.model.CheckoutResult
 data class CartUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    val successMessage: String? = null,
     val cartItems: List<CartItem> = emptyList(),
 
     // Set ID item yang dicentang user

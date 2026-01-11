@@ -236,11 +236,24 @@
     // Cart Screen
     <string name="cart_title">My Cart</string>
     <string name="cart_empty">Your cart is empty</string>
-    <string name="cart_empty_desc">Lets find fresh products for you!</string>
     <string name="cart_total">Total Price</string>
     <string name="cart_checkout">Checkout (%1$d)</string>
     <string name="cart_delete_confirm">Delete this item?</string>
     <string name="cart_select_all">Select All</string>
+
+    <string name="cart_page_title">My Cart</string>
+    <string name="cart_label_fresh">Fresh</string>
+    <string name="cart_label_freshness">Freshness %1$d%%</string>
+    <string name="cart_label_save_amount">Save %1$s</string>
+    <string name="cart_item_count_format">%1$d items</string>
+    <string name="cart_empty_title">Cart is Empty</string>
+    <string name="cart_empty_desc">Your cart is still empty. Let\'s start shopping!</string>
+
+    <string name="cd_store_icon">Store Icon</string>
+    <string name="cd_arrow_right">View Store Details</string>
+    <string name="cd_add_qty">Increase Quantity</string>
+    <string name="cd_remove_qty">Decrease Quantity</string>
+    <string name="cd_product_img">Product Image</string>
 
     // Explore Screen
     <string name="home_category_header">Categories</string>
@@ -300,5 +313,15 @@
     <string name="order_total">Total Price</string>
     <string name="order_payment_method">Payment Method</string>
     <string name="order_action_help">Need Help?</string>
+
+    <string name="dialog_title_order_settings">Customize Order</string>
+    <string name="variant_default">Standard</string>
+    <string name="label_quantity">Quantity</string>
+    <string name="label_total_price">Total Price</string>
+    <string name="action_buy_now">Buy Now</string>
+    <string name="cd_close">Close Dialog</string>
+    <string name="cd_product_image">Product Image</string>
+
+
 
 </resources>

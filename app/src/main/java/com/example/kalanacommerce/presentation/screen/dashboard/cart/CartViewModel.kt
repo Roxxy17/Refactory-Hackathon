@@ -12,8 +12,7 @@ import kotlinx.coroutines.launch
 class CartViewModel(
     private val getCartItemsUseCase: GetCartItemsUseCase,
     private val updateCartItemUseCase: UpdateCartItemUseCase,
-    private val deleteCartItemUseCase: DeleteCartItemUseCase,
-    private val checkoutUseCase: CheckoutUseCase
+    private val deleteCartItemUseCase: DeleteCartItemUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CartUiState())
@@ -23,7 +22,11 @@ class CartViewModel(
         loadCartItems()
     }
 
-    fun loadCartItems() {
+    fun refresh() {
+        loadCartItems(isPullToRefresh = true)
+    }
+
+    fun loadCartItems(isPullToRefresh: Boolean = false) {
         viewModelScope.launch {
             getCartItemsUseCase().collect { result ->
                 when (result) {
@@ -32,7 +35,9 @@ class CartViewModel(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                cartItems = result.data ?: emptyList()
+                                cartItems = result.data ?: emptyList(),
+                                // [OPSIONAL] Tampilkan toast saat refresh selesai
+                                successMessage = if (isPullToRefresh) "Data keranjang diperbarui" else null
                             )
                         }
                     }
@@ -86,11 +91,14 @@ class CartViewModel(
 
     private fun updateQuantity(itemId: String, newQty: Int) {
         viewModelScope.launch {
+            // Optimistic update (opsional, agar UI cepat) atau tunggu loading
             updateCartItemUseCase(itemId, newQty).collect { result ->
                 if (result is Resource.Success) {
-                    loadCartItems() // Reload data terbaru
+                    loadCartItems()
+                    // [BARU] Set pesan sukses
+                    _uiState.update { it.copy(successMessage = "Jumlah barang berhasil diubah") }
                 } else if (result is Resource.Error) {
-                    // Handle error (misal: show toast)
+                    _uiState.update { it.copy(error = result.message) }
                 }
             }
         }
@@ -100,45 +108,39 @@ class CartViewModel(
         viewModelScope.launch {
             deleteCartItemUseCase(itemId).collect { result ->
                 if (result is Resource.Success) {
-                    // Hapus juga dari selection jika ada
-                    _uiState.update { it.copy(selectedItemIds = it.selectedItemIds - itemId) }
+                    _uiState.update {
+                        it.copy(
+                            selectedItemIds = it.selectedItemIds - itemId,
+                            successMessage = "Barang berhasil dihapus" // [BARU]
+                        )
+                    }
                     loadCartItems()
+                } else if (result is Resource.Error) {
+                    _uiState.update { it.copy(error = result.message) }
                 }
             }
         }
     }
 
     // --- CHECKOUT ---
+    fun clearMessages() {
+        // [UPDATE] Reset juga successMessage
+        _uiState.update { it.copy(error = null, successMessage = null, checkoutResult = null) }
+    }
 
-    fun processCheckout() {
-        val selectedIds = _uiState.value.selectedItemIds.toList()
-        if (selectedIds.isEmpty()) return
-
-        viewModelScope.launch {
-            checkoutUseCase(selectedIds).collect { result ->
-                when(result) {
-                    is Resource.Loading -> _uiState.update { it.copy(isCheckoutLoading = true) }
-                    is Resource.Success -> {
-                        // Ambil hasil pertama (karena backend return List<CheckoutResult>)
-                        val data = result.data?.firstOrNull()
-                        _uiState.update {
-                            it.copy(
-                                isCheckoutLoading = false,
-                                checkoutResult = data
-                            )
-                        }
-                    }
-                    is Resource.Error -> {
-                        _uiState.update {
-                            it.copy(
-                                isCheckoutLoading = false,
-                                error = result.message
-                            )
-                        }
-                    }
-                }
-            }
+    // --- NAVIGASI KE CHECKOUT ---
+    fun onCheckoutClicked() {
+        val selectedIds = _uiState.value.selectedItemIds
+        if (selectedIds.isEmpty()) {
+            _uiState.update { it.copy(error = "Pilih minimal 1 barang") }
+            return
         }
+
+        // Gabungkan ID jadi string "id1,id2,id3" untuk dikirim ke CheckoutScreen
+        val idString = selectedIds.joinToString(",")
+        // Simpan di state khusus navigasi (tambahkan field ini di CartUiState jika belum ada, atau pakai event wrapper)
+        // Disini kita pakai checkoutResult sementara untuk trigger (atau buat field baru navigateToCheckout)
+        // Agar simple, kita asumsikan UI akan observe ini.
     }
 
     fun onCheckoutHandled() {

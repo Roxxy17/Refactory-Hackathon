@@ -11,9 +11,11 @@ data class Order(
     val snapToken: String?,
     val snapRedirectUrl: String?,
     val itemCount: Int,
+    val redirectUrl: String = "",
 
     // Untuk Detail
     val items: List<OrderItem> = emptyList()
+
 )
 
 data class OrderItem(
@@ -26,6 +28,7 @@ data class OrderItem(
     val totalPrice: Long
 )
 
+
 enum class OrderStatus(val label: String) {
     PENDING("Menunggu Pembayaran"),
     PAID("Dibayar"),
@@ -33,5 +36,9 @@ enum class OrderStatus(val label: String) {
     SHIPPED("Dikirim"),
     COMPLETED("Selesai"),
     CANCELLED("Dibatalkan"),
-    UNKNOWN("Status Tidak Diketahui")
+    UNKNOWN("Status Tidak Diketahui"),
+
+    // [TAMBAHAN BARU] Wajib ada untuk handle respon Midtrans
+    FAILED("Pembayaran Gagal"),
+    EXPIRED("Waktu Pembayaran Habis")
 }

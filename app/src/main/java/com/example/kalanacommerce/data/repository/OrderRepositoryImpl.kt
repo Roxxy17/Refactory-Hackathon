@@ -17,8 +17,8 @@ class OrderRepositoryImpl(
         try {
             val response = apiService.getOrders()
             if (response.status) {
-                // response.data adalah List<OrderDto>
-                val orders = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call ?.map dan elvis operator ?:
+                val orders = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(orders))
             } else {
                 emit(Resource.Error(response.message))
@@ -33,9 +33,13 @@ class OrderRepositoryImpl(
         try {
             val response = apiService.getOrderDetail(orderId)
             if (response.status) {
-                // response.data adalah Single OrderDto
-                val order = response.data.toDomain()
-                emit(Resource.Success(order))
+                // [PERBAIKAN] Cek null secara manual karena ini Single Object
+                val orderDto = response.data
+                if (orderDto != null) {
+                    emit(Resource.Success(orderDto.toDomain()))
+                } else {
+                    emit(Resource.Error("Data pesanan tidak ditemukan"))
+                }
             } else {
                 emit(Resource.Error(response.message))
             }

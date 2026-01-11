@@ -229,75 +229,128 @@ fun EnhancedQuickActionDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
             ) {
-                // Header: Title & Close
+                // --- HEADER: Title & Close ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Atur Jumlah",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        text = stringResource(R.string.dialog_title_order_settings),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.cd_close),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Info Produk Ringkas
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Placeholder Image / Icon (Opsional, disini pakai Text saja biar rapi)
+                // --- PRODUCT INFO: Image + Details ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Thumbnail Image
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.size(70.dp)
+                    ) {
+                        if (product.image.isNotEmpty()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(product.image)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = stringResource(R.string.cd_product_image),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.ShoppingBag, null, tint = Color.Gray)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Detail Text
                     Column {
                         Text(
                             text = product.name,
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 20.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Varian: ${variantName.ifEmpty { "Standar" }}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = if (variantName.isEmpty()) stringResource(R.string.variant_default) else variantName,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = formatCurrency(price),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                Divider(
+                    modifier = Modifier.padding(vertical = 20.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
 
-                // Selector Jumlah (Quantity)
+                // --- QUANTITY & SUBTOTAL SECTION ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Jumlah Pembelian",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = stringResource(R.string.label_quantity),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // Counter Widget
+                    // Modern Quantity Selector (Capsule Style)
                     Surface(
-                        shape = CircleShape,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        color = Color.Transparent
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -308,66 +361,107 @@ fun EnhancedQuickActionDialog(
                                 modifier = Modifier.size(32.dp),
                                 enabled = quantity > 1
                             ) {
-                                Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Remove,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (quantity > 1) MaterialTheme.colorScheme.onSurface else Color.Gray
+                                )
                             }
 
                             Text(
                                 text = quantity.toString(),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.padding(horizontal = 12.dp)
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             IconButton(
                                 onClick = { quantity++ },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Subtotal
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Subtotal Banner
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Subtotal", style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        text = formatCurrency(totalPrice),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.label_total_price),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            text = formatCurrency(totalPrice),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Action Buttons
+                // --- ACTION BUTTONS ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Tombol Keranjang
+                    // Keranjang (Outlined)
                     OutlinedButton(
                         onClick = { onAddToCart(quantity) },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(20.dp))
                     }
 
-                    // Tombol Beli
+                    // Beli Sekarang (Filled)
                     Button(
                         onClick = { onBuyNow(quantity) },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        modifier = Modifier
+                            .weight(2f)
+                            .height(52.dp), // Height tetap 52dp agar tombol besar
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        // [FIX] Mengatur padding konten agar teks pasti di tengah
+                        contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
-                        Text("Beli Sekarang", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        // [FIX] Menggunakan style 'labelLarge' yang lebih cocok untuk tombol
+                        // 'includeFontPadding = false' di platform modern sudah default, tapi style label lebih aman
+                        Text(
+                            text = stringResource(R.string.action_buy_now),
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp // Ukuran sedikit diperbesar agar proporsional dengan tinggi tombol 52dp
+                            )
+                        )
                     }
                 }
             }

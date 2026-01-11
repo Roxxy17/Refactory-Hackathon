@@ -56,8 +56,8 @@ sealed class Screen(val route: String) {
         fun createRoute(itemIds: String) = "checkout_screen/$itemIds"
     }
 
-    data object Payment : Screen("payment_screen/{paymentUrl}") {
-        fun createRoute(paymentUrl: String) = "payment_screen/$paymentUrl"
+    data object Payment : Screen("payment_screen/{paymentUrl}/{orderId}") {
+        fun createRoute(paymentUrl: String, orderId: String) = "payment_screen/$paymentUrl/$orderId"
     }
 
     // --- Profile & Settings ---
@@ -69,6 +69,7 @@ sealed class Screen(val route: String) {
     // --- Address ---
     data object Address : Screen("address_screen") // List
     data object AddressCreate : Screen("address_create") // Form Create
+    data object AddressList : Screen("address_list")
 
     data object AddressEdit : Screen("address_edit/{addressId}") {
         fun createRoute(addressId: String) = "address_edit/$addressId"

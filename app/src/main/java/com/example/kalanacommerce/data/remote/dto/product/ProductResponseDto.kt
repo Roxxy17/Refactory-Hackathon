@@ -6,11 +6,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BaseResponse<T>(
     val status: Boolean,
-    val statusCode: Int,
     val message: String,
-    val data: T
-)
 
+    // [PENTING] Tambahkan '? = null' agar field ini TIDAK WAJIB ada di JSON
+    val statusCode: Int? = null,
+
+    val data: T? = null
+)
 // --- PRODUCT DTO ---
 @Serializable
 data class ProductDto(

@@ -10,7 +10,8 @@ import com.example.kalanacommerce.data.local.datastore.LanguageManager
 import com.example.kalanacommerce.presentation.screen.auth.forgotpassword.ForgotPasswordViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatViewModel
-import com.example.kalanacommerce.presentation.screen.dashboard.checkout.CheckoutViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.checkout.CheckoutViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.payment.PaymentViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.history.OrderHistoryViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderViewModel
@@ -98,9 +99,11 @@ val appModule = module {
     viewModel { DetailStoreViewModel(get()) }
     viewModel { OrderHistoryViewModel(get()) }
     viewModel { DetailOrderViewModel(get()) }
-    viewModel { CartViewModel(get(), get(), get(), get()) }
+    viewModel { CartViewModel(get(), get(), get(),) }
     viewModel {
         CheckoutViewModel(
+            get(),
+            get(),
             get(),
             get(),
             get(),
@@ -108,4 +111,5 @@ val appModule = module {
         )
     }
 
+    viewModel { PaymentViewModel() }
 }

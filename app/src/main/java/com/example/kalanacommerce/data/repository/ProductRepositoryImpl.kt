@@ -15,17 +15,15 @@ class ProductRepositoryImpl(
     private val apiService: ProductApiService
 ) : ProductRepository {
 
-    // [PERBAIKAN] Tangkap query dan kirim ke apiService
     override fun getProducts(query: String): Flow<Resource<List<Product>>> = flow {
         emit(Resource.Loading())
         try {
-            // Jika query kosong, kirim null (agar API mengembalikan semua data)
             val searchParam = if (query.isBlank()) null else query
-
             val response = apiService.getProducts(search = searchParam)
 
             if (response.status) {
-                val products = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call
+                val products = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(products))
             } else {
                 emit(Resource.Error(response.message))
@@ -40,7 +38,13 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getProductById(id)
             if (response.status) {
-                emit(Resource.Success(response.data.toDomain()))
+                // [PERBAIKAN] Cek null
+                val productDto = response.data
+                if (productDto != null) {
+                    emit(Resource.Success(productDto.toDomain()))
+                } else {
+                    emit(Resource.Error("Produk tidak ditemukan"))
+                }
             } else {
                 emit(Resource.Error(response.message))
             }
@@ -54,7 +58,8 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getOutlets()
             if (response.status) {
-                val outlets = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call
+                val outlets = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(outlets))
             } else {
                 emit(Resource.Error(response.message))
@@ -69,7 +74,13 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getOutletById(id)
             if (response.status) {
-                emit(Resource.Success(response.data.toDomain()))
+                // [PERBAIKAN] Cek null
+                val outletDto = response.data
+                if (outletDto != null) {
+                    emit(Resource.Success(outletDto.toDomain()))
+                } else {
+                    emit(Resource.Error("Toko tidak ditemukan"))
+                }
             } else {
                 emit(Resource.Error(response.message))
             }
@@ -83,7 +94,8 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getCategories()
             if (response.status) {
-                val categories = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call
+                val categories = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(categories))
             } else {
                 emit(Resource.Error(response.message))
@@ -98,7 +110,8 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getUnits()
             if (response.status) {
-                val units = response.data.map { it.toDomain() }
+                // [PERBAIKAN] Safe call
+                val units = response.data?.map { it.toDomain() } ?: emptyList()
                 emit(Resource.Success(units))
             } else {
                 emit(Resource.Error(response.message))
@@ -113,7 +126,13 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getCategoryById(id)
             if (response.status) {
-                emit(Resource.Success(response.data.toDomain()))
+                // [PERBAIKAN] Cek null
+                val categoryDto = response.data
+                if (categoryDto != null) {
+                    emit(Resource.Success(categoryDto.toDomain()))
+                } else {
+                    emit(Resource.Error("Kategori tidak ditemukan"))
+                }
             } else {
                 emit(Resource.Error(response.message))
             }
@@ -127,7 +146,13 @@ class ProductRepositoryImpl(
         try {
             val response = apiService.getUnitById(id)
             if (response.status) {
-                emit(Resource.Success(response.data.toDomain()))
+                // [PERBAIKAN] Cek null
+                val unitDto = response.data
+                if (unitDto != null) {
+                    emit(Resource.Success(unitDto.toDomain()))
+                } else {
+                    emit(Resource.Error("Satuan tidak ditemukan"))
+                }
             } else {
                 emit(Resource.Error(response.message))
             }
@@ -136,7 +161,6 @@ class ProductRepositoryImpl(
         }
     }
 
-    // Helper untuk error handling
     private fun <T> handleError(e: Exception): Resource<T> {
         return when (e) {
             is ClientRequestException -> Resource.Error("Kesalahan klien: ${e.response.status.description}")
