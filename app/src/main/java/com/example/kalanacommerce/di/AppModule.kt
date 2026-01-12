@@ -21,6 +21,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileV
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfileViewModel
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStoreViewModel
+import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupViewModel
 import org.koin.android.ext.koin.androidContext // Import untuk androidContext()
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -112,4 +113,6 @@ val appModule = module {
     }
 
     viewModel { PaymentViewModel() }
+
+    viewModel { TransactionGroupViewModel(get()) }
 }

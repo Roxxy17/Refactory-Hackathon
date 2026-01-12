@@ -12,6 +12,7 @@ data class Order(
     val snapRedirectUrl: String?,
     val itemCount: Int,
     val redirectUrl: String = "",
+    val paymentGroupId: String? = null,
 
     // Untuk Detail
     val items: List<OrderItem> = emptyList()

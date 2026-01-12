@@ -6,6 +6,13 @@ data class OrderHistoryUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val orders: List<Order> = emptyList(),
-    val filteredOrders: List<Order> = emptyList(),
-    val selectedTab: Int = 0 // 0: Proses, 1: Selesai, 2: Batal
+    // Ubah tipe list ini menjadi List<HistoryUiItem>
+    val historyItems: List<HistoryUiItem> = emptyList(),
+    val selectedTab: Int = 0
 )
+
+// Wrapper untuk membedakan tampilan di UI
+sealed class HistoryUiItem {
+    data class Single(val order: Order) : HistoryUiItem()
+    data class Group(val paymentGroupId: String, val orders: List<Order>) : HistoryUiItem()
+}

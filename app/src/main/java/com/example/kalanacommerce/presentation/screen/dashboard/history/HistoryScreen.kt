@@ -2,24 +2,36 @@ package com.example.kalanacommerce.presentation.screen.dashboard.history
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.Order
@@ -33,9 +45,16 @@ fun HistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: OrderHistoryViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
-    onNavigateToDetail: (String) -> Unit
+    onNavigateToDetail: (String) -> Unit,
+    // [BARU] Callback untuk navigasi ke detail grup (Multi-toko)
+    onNavigateToGroupDetail: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Refresh data saat masuk layar ini
+    LaunchedEffect(Unit) {
+        viewModel.fetchOrders()
+    }
 
     // --- Setup Tema ---
     val systemInDark = isSystemInDarkTheme()
@@ -46,13 +65,12 @@ fun HistoryScreen(
             ThemeSetting.SYSTEM -> systemInDark
         }
     }
-    val backgroundImage =
-        if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
-    val contentColor = if (isDarkActive) Color.White else Color.Black
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val mainGreen = Color(0xFF43A047)
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Background
+        // 1. Background Image
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -60,25 +78,53 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+        // 2. Gradient Overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            if (isDarkActive) Color.Black.copy(0.3f) else Color.White.copy(0.3f),
+                            Color.Transparent,
+                            if (isDarkActive) Color.Black.copy(0.1f) else Color.White.copy(0.1f)
+                        )
+                    )
+                )
+        )
+
         Scaffold(
-            containerColor = Color.Transparent, // Agar background parent terlihat
-            contentWindowInsets = WindowInsets(0.dp), // Agar konten mulai dari paling atas (di balik status bar)
-            modifier = modifier.fillMaxSize()
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp),
+            modifier = Modifier.fillMaxSize()
         ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // Header Title
-                Text(
-                    text = stringResource(R.string.history_title),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = mainGreen,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
-                )
+                // --- Header Section ---
+                Column(
+                    modifier = Modifier
+                        .statusBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.history_title),
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = mainGreen
+                    )
+                    Text(
+                        text = "Riwayat pesanan kamu",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isDarkActive) Color.White.copy(0.7f) else Color.Gray
+                    )
+                }
 
-                // Tabs
+                // --- Tabs ---
                 val tabs = listOf(
                     stringResource(R.string.history_tab_process),
                     stringResource(R.string.history_tab_completed),
@@ -90,14 +136,17 @@ fun HistoryScreen(
                     containerColor = Color.Transparent,
                     contentColor = mainGreen,
                     indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            Modifier
+                        Box(
+                            modifier = Modifier
                                 .tabIndicatorOffset(tabPositions[uiState.selectedTab])
-                                .height(3.dp),
-                            color = mainGreen
+                                .height(4.dp)
+                                .padding(horizontal = 20.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(mainGreen)
                         )
                     },
-                    divider = {}
+                    divider = { },
+                    modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -107,38 +156,45 @@ fun HistoryScreen(
                                 Text(
                                     text = title,
                                     color = if (uiState.selectedTab == index) mainGreen else if (isDarkActive) Color.Gray else Color.DarkGray,
-                                    fontWeight = if (uiState.selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (uiState.selectedTab == index) FontWeight.Bold else FontWeight.Medium,
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
-                            }
+                            },
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // List Orders
+                // --- List Content ---
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = mainGreen)
                     }
-                } else if (uiState.filteredOrders.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.history_empty),
-                            color = Color.Gray
-                        )
-                    }
+                } else if (uiState.historyItems.isEmpty()) {
+                    EmptyState(isDarkActive)
                 } else {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 100.dp)
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(uiState.filteredOrders) { order ->
-                            OrderCardItem(
-                                order = order,
-                                isDark = isDarkActive,
-                                onClick = { onNavigateToDetail(order.id) }
-                            )
+                        items(uiState.historyItems) { item ->
+                            when (item) {
+                                is HistoryUiItem.Single -> {
+                                    OrderCardItemRefined(
+                                        order = item.order,
+                                        isDark = isDarkActive,
+                                        onClick = { onNavigateToDetail(item.order.id) }
+                                    )
+                                }
+                                is HistoryUiItem.Group -> {
+                                    GroupOrderCard(
+                                        groupItem = item,
+                                        isDark = isDarkActive,
+                                        onDetailClick = onNavigateToDetail, // Klik item kecil -> Detail Order
+                                        onGroupClick = { groupId -> onNavigateToGroupDetail(groupId) } // Klik card besar -> Screen Gabungan
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -147,128 +203,358 @@ fun HistoryScreen(
     }
 }
 
+// --- SINGLE ORDER CARD ---
 @Composable
-fun OrderCardItem(
+fun OrderCardItemRefined(
     order: Order,
     isDark: Boolean,
     onClick: () -> Unit
 ) {
-    val statusColor = when (order.status) {
-        OrderStatus.PENDING -> Color(0xFFFF9800) // Orange
-        OrderStatus.PAID, OrderStatus.PROCESSED, OrderStatus.SHIPPED -> Color(0xFF2196F3) // Blue
-        OrderStatus.COMPLETED -> Color(0xFF4CAF50) // Green
-        OrderStatus.CANCELLED -> Color(0xFFF44336) // Red
+    val statusColor = getStatusColor(order.status)
+    val statusText = getStatusText(order.status)
+    val textColor = if (isDark) Color.White else Color.Black
+    val subTextColor = if (isDark) Color.White.copy(0.6f) else Color.Gray
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .clickable { onClick() }
+            .padding(16.dp)
+    ) {
+        Column {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Store,
+                        contentDescription = "Store",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = order.outletName,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = textColor
+                        )
+                        Text(
+                            text = order.date,
+                            fontSize = 10.sp,
+                            color = subTextColor
+                        )
+                    }
+                }
+
+                StatusBadge(text = statusText, color = statusColor)
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                thickness = 0.5.dp,
+                color = if (isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
+            )
+
+            // Content Preview
+            val firstItem = order.items.firstOrNull()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Image
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f),
+                    modifier = Modifier.size(60.dp)
+                ) {
+                    if (firstItem != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(firstItem.image)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ShoppingBag, null, tint = subTextColor)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Info
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = firstItem?.productName ?: "Item Order",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (order.itemCount > 1) "+ ${order.itemCount - 1} produk lainnya" else "${firstItem?.quantity ?: 1} Barang",
+                        fontSize = 12.sp,
+                        color = subTextColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Footer
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Text("Total Belanja", fontSize = 10.sp, color = subTextColor)
+                    Text(
+                        text = String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Tombol Aksi
+                if (order.status == OrderStatus.PENDING) {
+                    OutlinedButton(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Text("Bayar", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                } else if (order.status == OrderStatus.COMPLETED) {
+                    Button(
+                        onClick = { /* Logic Beli Lagi */ },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Text("Beli Lagi", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// --- GROUP ORDER CARD (MULTI STORE) ---
+@Composable
+fun GroupOrderCard(
+    groupItem: HistoryUiItem.Group,
+    isDark: Boolean,
+    onDetailClick: (String) -> Unit,
+    onGroupClick: (String) -> Unit
+) {
+    val firstOrder = groupItem.orders.first()
+    val totalGroupAmount = groupItem.orders.sumOf { it.totalAmount }
+    val itemCountTotal = groupItem.orders.sumOf { it.itemCount }
+
+    val statusColor = getStatusColor(firstOrder.status)
+    val statusText = if (firstOrder.status == OrderStatus.PENDING) "Menunggu Bayar" else "Transaksi Gabungan"
+    val textColor = if (isDark) Color.White else Color.Black
+    val subTextColor = if (isDark) Color.White.copy(0.6f) else Color.Gray
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .clickable { onGroupClick(groupItem.paymentGroupId) } // [BARU] Klik card -> Navigasi ke Group Detail Screen
+            .padding(16.dp)
+    ) {
+        Column {
+            // Header Group
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingBag,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Paket ${groupItem.orders.size} Toko",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = textColor
+                    )
+                }
+                StatusBadge(text = statusText, color = statusColor)
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = subTextColor.copy(0.2f))
+
+            // List Order Kecil
+            groupItem.orders.forEachIndexed { index, order ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDetailClick(order.id) } // Klik item kecil -> Detail Order (Per toko)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Preview Image Kecil
+                    val itemPreview = order.items.firstOrNull()
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(40.dp),
+                        color = if (isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f)
+                    ) {
+                        if (itemPreview != null) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(itemPreview.image)
+                                    .crossfade(true).build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(order.outletName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = textColor)
+                        Text("Order #${order.orderCode.takeLast(6)}", fontSize = 11.sp, color = subTextColor)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = subTextColor)
+                }
+                if (index < groupItem.orders.size - 1) {
+                    HorizontalDivider(thickness = 0.5.dp, color = subTextColor.copy(0.1f), modifier = Modifier.padding(start = 52.dp))
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = subTextColor.copy(0.2f))
+
+            // Footer Group
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("$itemCountTotal Item Total", fontSize = 12.sp, color = subTextColor)
+
+                // Jika Pending, tampilkan Total dan Tombol Bayar
+                if (firstOrder.status == OrderStatus.PENDING) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = String.format(Locale("id", "ID"), "Total: Rp %,d", totalGroupAmount),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                        Button(
+                            onClick = { onGroupClick(groupItem.paymentGroupId) }, // Klik tombol Bayar -> Screen Gabungan
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Bayar Semua", fontSize = 11.sp)
+                        }
+                    }
+                } else {
+                    Text(
+                        text = String.format(Locale("id", "ID"), "Total: Rp %,d", totalGroupAmount),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = textColor
+                    )
+                }
+            }
+        }
+    }
+}
+
+// --- UTILS ---
+
+@Composable
+fun StatusBadge(text: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.1f),
+        border = BorderStroke(1.dp, color.copy(0.2f))
+    ) {
+        Text(
+            text = text,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun EmptyState(isDark: Boolean) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.ShoppingBag,
+            contentDescription = null,
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    color = if (isDark) Color.White.copy(0.05f) else Color.Black.copy(0.05f),
+                    shape = CircleShape
+                )
+                .padding(20.dp),
+            tint = if (isDark) Color.White.copy(0.5f) else Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.history_empty),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isDark) Color.White.copy(0.7f) else Color.Gray
+        )
+    }
+}
+
+fun getStatusColor(status: OrderStatus): Color {
+    return when (status) {
+        OrderStatus.PENDING -> Color(0xFFFF9800)
+        OrderStatus.PAID, OrderStatus.PROCESSED, OrderStatus.SHIPPED -> Color(0xFF2196F3)
+        OrderStatus.COMPLETED -> Color(0xFF4CAF50)
+        OrderStatus.CANCELLED, OrderStatus.FAILED, OrderStatus.EXPIRED -> Color(0xFFF44336)
         else -> Color.Gray
     }
+}
 
-    val statusText = when (order.status) {
+fun getStatusText(status: OrderStatus): String {
+    return when (status) {
         OrderStatus.PENDING -> "Menunggu Bayar"
         OrderStatus.PAID -> "Dibayar"
         OrderStatus.PROCESSED -> "Diproses"
         OrderStatus.SHIPPED -> "Dikirim"
         OrderStatus.COMPLETED -> "Selesai"
         OrderStatus.CANCELLED -> "Dibatalkan"
+        OrderStatus.FAILED -> "Gagal"
+        OrderStatus.EXPIRED -> "Kadaluarsa"
         else -> "Unknown"
-    }
-
-    // Menggunakan Glossy Style Box
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .glossyEffect(isDark, RoundedCornerShape(20.dp))
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Toko Info
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_logo), // Placeholder icon toko
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = order.outletName,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = if (isDark) Color.White else Color.Black
-                    )
-                }
-
-                // Badge Status
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = statusColor.copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, statusColor.copy(0.3f))
-                ) {
-                    Text(
-                        text = statusText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = statusColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tanggal & Order Code
-            Text(
-                text = "${order.date} • ${order.orderCode}",
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = Color.Gray.copy(0.2f))
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Total Info & Button
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "${order.itemCount} item",
-                        color = if (isDark) Color.White.copy(0.7f) else Color.Gray,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount),
-                        color = if (isDark) Color.White else Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-
-                if (order.status == OrderStatus.COMPLETED) {
-                    Button(
-                        onClick = { /* Logic Beli Lagi */ },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                        modifier = Modifier.height(36.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.history_buy_again),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-        }
     }
 }

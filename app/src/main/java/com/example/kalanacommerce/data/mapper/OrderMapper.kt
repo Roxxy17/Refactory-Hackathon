@@ -17,6 +17,7 @@ fun OrderDto.toDomain(): Order {
         date = createdAt,
         snapToken = snapToken,
         snapRedirectUrl = snapRedirectUrl,
+        paymentGroupId = paymentGroupId,
         itemCount = _count?.items ?: items?.size ?: 0,
         items = items?.map { it.toDomain() } ?: emptyList()
     )

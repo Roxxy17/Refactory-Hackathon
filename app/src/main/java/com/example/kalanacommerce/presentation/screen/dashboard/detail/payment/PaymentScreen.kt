@@ -36,6 +36,17 @@ fun PaymentScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // [FIX BLANK SCREEN] Flag untuk mencegah double-navigation
+    var hasNavigated by remember { mutableStateOf(false) }
+
+    // Wrapper function agar aman
+    val safeOnPaymentFinished = { id: String ->
+        if (!hasNavigated) {
+            hasNavigated = true
+            onPaymentFinished(id)
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -108,6 +119,7 @@ fun PaymentScreen(
                                 if (isFinishUrl(url)) {
                                     // Jangan load URL ini di WebView.
                                     // Panggil callback selesai untuk navigasi di App.
+                                    safeOnPaymentFinished(orderId)
                                     onPaymentFinished(orderId)
                                     return true // Kita handle sendiri
                                 }

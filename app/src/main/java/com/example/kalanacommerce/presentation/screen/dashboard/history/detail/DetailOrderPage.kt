@@ -1,7 +1,12 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.history.detail
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -11,18 +16,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -39,6 +52,8 @@ import java.util.Locale
 // Warna Brand
 val BrandOrange = Color(0xFFF96D20)
 val BrandGreen = Color(0xFF43A047)
+val BrandRed = Color(0xFFE53935)
+val BrandBlue = Color(0xFF2196F3)
 
 @Composable
 fun DetailOrderPage(
@@ -46,14 +61,16 @@ fun DetailOrderPage(
     viewModel: DetailOrderViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onNavigateToPayment: (String, String) -> Unit // [BARU] Callback ke Midtrans
+    onNavigateToPayment: (String, String, String?) -> Unit
 ) {
     LaunchedEffect(orderId) {
         viewModel.loadOrderDetail(orderId)
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
+    // Setup Tema
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
         when (themeSetting) {
@@ -63,11 +80,13 @@ fun DetailOrderPage(
         }
     }
     val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
-    val contentColor = if (isDarkActive) Color.White else Color.Black
+    val textColor = if (isDarkActive) Color.White else Color.Black
+    val subTextColor = if (isDarkActive) Color.White.copy(0.6f) else Color.Gray
 
     BackHandler { onBackClick() }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // 1. Background Image
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -75,20 +94,32 @@ fun DetailOrderPage(
             modifier = Modifier.fillMaxSize()
         )
 
+        // 2. Gradient Overlay Halus
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            if (isDarkActive) Color.Black.copy(0.4f) else Color.White.copy(0.4f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
         Scaffold(
             containerColor = Color.Transparent,
-            // [BARU] Bottom Bar Khusus untuk "Bayar Sekarang"
+            contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
                 val order = uiState.order
-                // Hanya muncul jika status PENDING (Menunggu Pembayaran)
                 if (order != null && order.status == OrderStatus.PENDING) {
-                    PaymentBottomBar(
+                    PaymentBottomBarEnhanced(
                         totalAmount = order.totalAmount,
                         onPayClick = {
                             val snapToken = order.snapToken
-                            // [PERBAIKAN 2] Kirim snapToken DAN orderId
                             if (!snapToken.isNullOrEmpty()) {
-                                onNavigateToPayment(snapToken, orderId)
+                                onNavigateToPayment(snapToken, orderId, order.paymentGroupId)
                             }
                         }
                     )
@@ -107,16 +138,17 @@ fun DetailOrderPage(
                         .fillMaxSize()
                         .padding(paddingValues)
                         .verticalScroll(rememberScrollState())
-                        .padding(16.dp)
+                        .padding(horizontal = 20.dp) // Margin kiri kanan
                 ) {
-                    // Header (Back + Title)
+                    // --- Header ---
+                    Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+                        modifier = Modifier.statusBarsPadding().padding(bottom = 20.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(40.dp)
                                 .glossyEffect(isDarkActive, CircleShape)
                                 .clickable { onBackClick() },
                             contentAlignment = Alignment.Center
@@ -124,224 +156,273 @@ fun DetailOrderPage(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
-                                tint = contentColor
+                                tint = textColor
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            text = "Detail Pesanan",
+                            text = "Rincian Pesanan",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = contentColor
+                            color = textColor
                         )
                     }
 
-                    // Status Card
-                    OrderStatusCard(order, isDarkActive)
+                    // --- Status Section (Tracker) ---
+                    OrderTrackerSection(order, isDarkActive, textColor, subTextColor)
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    // Items List
-                    OrderItemsSection(order.items, order.outletName, isDarkActive)
+                    // --- Order ID & Info ---
+                    OrderIdSection(context, order, isDarkActive, textColor, subTextColor)
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    // Payment Info
-                    OrderPaymentSection(order, isDarkActive)
+                    // --- List Produk ---
+                    OrderItemsListEnhanced(order.items, order.outletName, isDarkActive, textColor, subTextColor)
 
-                    Spacer(modifier = Modifier.height(100.dp)) // Spacer bawah agar tidak tertutup bottom bar
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // --- Rincian Pembayaran ---
+                    OrderPaymentDetailEnhanced(order, isDarkActive, textColor, subTextColor)
+
+                    Spacer(modifier = Modifier.height(120.dp)) // Spacer bawah
                 }
             }
         }
     }
 }
 
-// [BARU] Bottom Bar Pembayaran
+// --- COMPONENTS ---
+
 @Composable
-fun PaymentBottomBar(
-    totalAmount: Long,
-    onPayClick: () -> Unit
+fun OrderTrackerSection(
+    order: Order,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 16.dp,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("Total Tagihan", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                Text(
-                    text = String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = BrandOrange
-                )
-            }
-
-            Button(
-                onClick = onPayClick,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
-                modifier = Modifier.height(48.dp)
-            ) {
-                Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.Default.Payment, null, modifier = Modifier.size(16.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun OrderStatusCard(order: Order, isDark: Boolean) {
+    // Tentukan warna utama status
     val statusColor = when (order.status) {
-        OrderStatus.PENDING -> Color(0xFFFF9800)
-        OrderStatus.PAID, OrderStatus.PROCESSED, OrderStatus.SHIPPED -> Color(0xFF2196F3)
-        OrderStatus.COMPLETED -> Color(0xFF4CAF50)
-        OrderStatus.CANCELLED, OrderStatus.FAILED, OrderStatus.EXPIRED -> Color(0xFFF44336)
+        OrderStatus.PENDING -> BrandOrange
+        OrderStatus.PAID, OrderStatus.PROCESSED -> BrandBlue
+        OrderStatus.SHIPPED -> BrandBlue
+        OrderStatus.COMPLETED -> BrandGreen
+        OrderStatus.CANCELLED, OrderStatus.FAILED, OrderStatus.EXPIRED -> BrandRed
         else -> Color.Gray
     }
 
-    val statusLabel = when(order.status) {
+    val statusIcon = when (order.status) {
+        OrderStatus.PENDING -> Icons.Default.Payment
+        OrderStatus.SHIPPED -> Icons.Default.LocalShipping
+        OrderStatus.COMPLETED -> Icons.Default.Check
+        else -> Icons.Default.ShoppingBag
+    }
+
+    val statusText = when(order.status) {
         OrderStatus.PENDING -> "Menunggu Pembayaran"
-        OrderStatus.PAID -> "Pembayaran Berhasil"
-        OrderStatus.PROCESSED -> "Pesanan Diproses"
-        OrderStatus.SHIPPED -> "Pesanan Dikirim"
+        OrderStatus.PAID -> "Sudah Dibayar"
+        OrderStatus.PROCESSED -> "Sedang Diproses"
+        OrderStatus.SHIPPED -> "Sedang Dikirim"
         OrderStatus.COMPLETED -> "Pesanan Selesai"
         OrderStatus.CANCELLED -> "Dibatalkan"
-        OrderStatus.FAILED -> "Pembayaran Gagal"
-        OrderStatus.EXPIRED -> "Waktu Habis"
-        else -> "Status Tidak Diketahui"
+        else -> "Status Order"
     }
 
-    val statusDescription = when(order.status) {
-        OrderStatus.PENDING -> "Selesaikan pembayaran agar pesanan diproses."
-        OrderStatus.PAID -> "Terima kasih! Toko akan segera menyiapkan pesananmu."
-        OrderStatus.PROCESSED -> "Pesananmu sedang disiapkan oleh penjual."
-        OrderStatus.SHIPPED -> "Pesanan dalam pengiriman/siap diambil."
-        OrderStatus.COMPLETED -> "Transaksi selesai. Terima kasih telah berbelanja."
-        OrderStatus.CANCELLED -> "Pesanan ini telah dibatalkan."
-        else -> "Hubungi bantuan jika ada kendala."
-    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .padding(20.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Icon Besar
+            Surface(
+                shape = CircleShape,
+                color = statusColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(64.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = statusIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = statusColor
+                    )
+                }
+            }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = statusColor
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Deskripsi Singkat
+            val desc = when(order.status) {
+                OrderStatus.PENDING -> "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
+                OrderStatus.PROCESSED -> "Penjual sedang menyiapkan barang pesananmu."
+                OrderStatus.SHIPPED -> "Kurir sedang menuju ke lokasimu."
+                OrderStatus.COMPLETED -> "Barang telah diterima. Terima kasih!"
+                else -> "Cek status secara berkala untuk update terbaru."
+            }
+            Text(
+                text = desc,
+                style = MaterialTheme.typography.bodySmall,
+                color = subTextColor,
+                modifier = Modifier.padding(horizontal = 8.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun OrderIdSection(
+    context: Context,
+    order: Order,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .glossyEffect(isDark, RoundedCornerShape(16.dp))
             .padding(16.dp)
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_logo), // Placeholder
-                    contentDescription = null,
-                    tint = statusColor,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
                 Text(
-                    text = statusLabel,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = statusColor
+                    text = "ID Pesanan",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = subTextColor
+                )
+                Text(
+                    text = order.orderCode,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = textColor
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = statusDescription,
-                style = MaterialTheme.typography.bodySmall,
-                color = if(isDark) Color.LightGray else Color.DarkGray
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = Color.Gray.copy(0.2f))
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    Text(stringResource(R.string.order_id), fontSize = 11.sp, color = Color.Gray)
-                    Text(order.orderCode, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if(isDark) Color.White else Color.Black)
+            // Tombol Copy
+            IconButton(
+                onClick = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Order ID", order.orderCode)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(context, "ID Pesanan disalin", Toast.LENGTH_SHORT).show()
                 }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.order_date), fontSize = 11.sp, color = Color.Gray)
-                    Text(order.date.take(10), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if(isDark) Color.White else Color.Black)
-                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy ID",
+                    tint = BrandGreen,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
 }
 
-// ... OrderItemsSection dan OrderPaymentSection TETAP SAMA (tidak perlu diubah) ...
-// Sertakan kode OrderItemsSection dan OrderPaymentSection dari file sebelumnya di bawah sini.
 @Composable
-fun OrderItemsSection(items: List<OrderItem>, storeName: String, isDark: Boolean) {
+fun OrderItemsListEnhanced(
+    items: List<OrderItem>,
+    storeName: String,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glossyEffect(isDark, RoundedCornerShape(16.dp))
-            .padding(16.dp)
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .padding(20.dp)
     ) {
         Column {
+            // Store Info
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Store, null, tint = BrandGreen)
+                Icon(Icons.Default.Store, null, tint = BrandGreen, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = storeName,
                     fontWeight = FontWeight.Bold,
-                    color = if (isDark) Color.White else Color.Black
+                    fontSize = 16.sp,
+                    color = textColor
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
 
-            items.forEach { item ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Card(
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(60.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = if(isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
+            )
+
+            // Items Loop
+            items.forEachIndexed { index, item ->
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    // Gambar Produk
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if(isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f),
+                        modifier = Modifier.size(64.dp)
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current).data(item.image).crossfade(true).build(),
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(item.image)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
+                    // Info Produk
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = item.productName,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = if (isDark) Color.White else Color.Black,
-                            maxLines = 1
+                            color = textColor,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (item.variantName != "-" && item.variantName.isNotEmpty()) {
-                            Text(text = "Varian: ${item.variantName}", fontSize = 12.sp, color = Color.Gray)
+                            Text(
+                                text = "Varian: ${item.variantName}",
+                                fontSize = 12.sp,
+                                color = subTextColor
+                            )
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "${item.quantity} x ${String.format(Locale("id", "ID"), "Rp%,d", item.price)}",
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = subTextColor
                         )
                     }
 
+                    // Total per item
                     Text(
                         text = String.format(Locale("id", "ID"), "Rp%,d", item.totalPrice),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = if (isDark) Color.White else Color.Black
+                        color = textColor
                     )
+                }
+
+                // Jarak antar item (kecuali item terakhir)
+                if (index < items.size - 1) {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -349,41 +430,112 @@ fun OrderItemsSection(items: List<OrderItem>, storeName: String, isDark: Boolean
 }
 
 @Composable
-fun OrderPaymentSection(order: Order, isDark: Boolean) {
+fun OrderPaymentDetailEnhanced(
+    order: Order,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glossyEffect(isDark, RoundedCornerShape(16.dp))
-            .padding(16.dp)
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .padding(20.dp)
     ) {
         Column {
             Text(
-                text = stringResource(R.string.order_payment_summary),
+                text = "Rincian Pembayaran",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (isDark) Color.White else Color.Black
+                color = textColor
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // Metode Pembayaran
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.order_payment_method), color = Color.Gray, fontSize = 13.sp)
-                Text(order.paymentMethod, fontWeight = FontWeight.Medium, color = if(isDark) Color.White else Color.Black, fontSize = 13.sp)
+                Text("Metode", color = subTextColor, fontSize = 14.sp)
+                Text(order.paymentMethod, fontWeight = FontWeight.Medium, color = textColor, fontSize = 14.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Subtotal (Contoh perhitungan sederhana)
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text("Total Harga (${order.itemCount} barang)", color = subTextColor, fontSize = 14.sp)
+                Text(String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount), color = textColor, fontSize = 14.sp)
             }
 
+            // Biaya Layanan / Ongkir (Jika ada di data model, tambahkan disini. Dummy 0 dulu)
             Spacer(modifier = Modifier.height(8.dp))
-            Divider(color = Color.Gray.copy(0.2f))
-            Spacer(modifier = Modifier.height(8.dp))
-
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    stringResource(R.string.order_total),
-                    fontWeight = FontWeight.Bold,
-                    color = if (isDark) Color.White else Color.Black
-                )
+                Text("Biaya Pengiriman", color = subTextColor, fontSize = 14.sp)
+                Text("Rp 0", color = BrandGreen, fontSize = 14.sp) // Gratis Ongkir style
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Garis putus-putus (Simulasi)
+            HorizontalDivider(
+                color = if(isDark) Color.White.copy(0.2f) else Color.Black.copy(0.1f),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Grand Total
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text("Total Belanja", fontWeight = FontWeight.Bold, color = textColor, fontSize = 16.sp)
                 Text(
                     text = String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = BrandGreen
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentBottomBarEnhanced(
+    totalAmount: Long,
+    onPayClick: () -> Unit
+) {
+    // Menggunakan Surface dengan shadow yang lebih smooth
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 24.dp, // Shadow lebih tinggi agar terlihat floating
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    "Total Tagihan",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray
+                )
+                Text(
+                    text = String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = BrandOrange
+                )
+            }
+
+            Button(
+                onClick = onPayClick,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BrandOrange,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) {
+                Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
             }
         }
     }

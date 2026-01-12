@@ -18,20 +18,23 @@ data class BaseResponse<T>(
 data class ProductDto(
     val id: String,
     val outletId: String,
-    val categoryId: String?,
-    val unitId: String?,
-    val productCode: String?,
+    // Berikan default value = null untuk semua field nullable
+    val categoryId: String? = null,
+    val unitId: String? = null,
+    val productCode: String? = null,
     val name: String,
-    val description: String?,
-    val image: String?,
+    val description: String? = null,
+
+    val image: String? = null, // <--- PENTING: Tambahkan = null
+
     val qty: Int,
-    val cogs: String?, // String dari API ("5000")
-    val freshnessLevel: Int?,
+    val cogs: String? = null,
+    val freshnessLevel: Int? = null,
     val isPublished: Boolean,
-    val tags: String?,
-    val variants: List<ProductVariantDto>?,
-    val outlet: OutletDto?,
-    val category: CategoryDto?,
+    val tags: String? = null,
+    val variants: List<ProductVariantDto>? = null,
+    val outlet: OutletDto? = null,
+    val category: CategoryDto? = null,
     val unit: UnitDto? = null
 )
 

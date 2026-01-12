@@ -33,7 +33,6 @@ import com.example.kalanacommerce.presentation.navigation.Screen
 import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileScreen
-// [PENTING] Pastikan import HistoryScreen ada
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 
 import kotlinx.coroutines.launch
@@ -73,7 +72,7 @@ fun DashboardScreen(
                     HomeScreen(
                         themeSetting = themeSetting,
                         onProductClick = { productId ->
-                            mainNavController.navigate("detail_product/$productId")
+                            mainNavController.navigate(Screen.DetailProduct.createRoute(productId))
                         },
                         onNavigateToCheckout = { payload ->
                             mainNavController.navigate(Screen.Checkout.createRoute(payload))
@@ -95,7 +94,7 @@ fun DashboardScreen(
                             }
                         },
                         onProductClick = { productId ->
-                            mainNavController.navigate("detail_product/$productId")
+                            mainNavController.navigate(Screen.DetailProduct.createRoute(productId))
                         },
                         onNavigateToCheckout = { payload ->
                             mainNavController.navigate(Screen.Checkout.createRoute(payload))
@@ -110,8 +109,12 @@ fun DashboardScreen(
                         HistoryScreen(
                             themeSetting = themeSetting,
                             onNavigateToDetail = { orderId ->
-                                // Navigasi ke Detail Order (gunakan mainNavController untuk menutup bottom bar)
-                                mainNavController.navigate("order_detail/$orderId")
+                                // Navigasi ke Detail Order (Single)
+                                mainNavController.navigate(Screen.DetailOrder.createRoute(orderId))
+                            },
+                            // [PERBAIKAN] Menambahkan callback untuk Group Detail
+                            onNavigateToGroupDetail = { groupId ->
+                                mainNavController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
                             }
                         )
                     } else {

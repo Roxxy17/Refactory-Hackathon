@@ -62,5 +62,5 @@ data class OrderVariantDetailDto(
 @Serializable
 data class OrderProductDetailDto(
     val name: String,
-    val image: String
+    val image: String? = null
 )

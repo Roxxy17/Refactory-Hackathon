@@ -1,5 +1,3 @@
-// File: presentation/navigation/AppNavGraph.kt
-
 package com.example.kalanacommerce.presentation.navigation
 
 import androidx.compose.foundation.background
@@ -34,16 +32,17 @@ import com.example.kalanacommerce.presentation.screen.dashboard.cart.CartScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.chat.ChatScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.checkout.CheckoutScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.payment.PaymentScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductPage
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStorePage
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
-import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductPage
+import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen // Import screen baru ini
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressListScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.notification.SettingsPage
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.profilepage.EditProfilePage
-import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStorePage
 import com.example.kalanacommerce.presentation.screen.start.GetStarted
 import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
@@ -141,18 +140,10 @@ fun AppNavGraph(
             RequireAuth(sessionManager, navController) {
                 CartScreen(
                     themeSetting = themeSetting,
-                    onBackClick = {
-                        navController.popBackStack()
-                    },
+                    onBackClick = { navController.popBackStack() },
                     onNavigateToCheckout = { ids -> navController.navigate(Screen.Checkout.createRoute(ids)) },
-
-                    // [PERBAIKAN] Navigasi ke Detail Product dan Store
-                    onNavigateToDetailProduct = { productId ->
-                        navController.navigate(Screen.DetailProduct.createRoute(productId))
-                    },
-                    onNavigateToStore = { outletId ->
-                        navController.navigate(Screen.DetailStore.createRoute(outletId))
-                    }
+                    onNavigateToDetailProduct = { productId -> navController.navigate(Screen.DetailProduct.createRoute(productId)) },
+                    onNavigateToStore = { outletId -> navController.navigate(Screen.DetailStore.createRoute(outletId)) }
                 )
             }
         }
@@ -161,7 +152,6 @@ fun AppNavGraph(
             route = Screen.Checkout.route,
             arguments = listOf(navArgument("itemIds") { type = NavType.StringType })
         ) { backStackEntry ->
-            // ... (val itemIds, themeManager, dll tetap sama)
             val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
@@ -171,18 +161,20 @@ fun AppNavGraph(
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
 
-                // [PERBAIKAN] Menerima (url, id) dan memanggil createRoute dengan 2 argumen
+                // [NOTE] Idealnya di sini kirim paymentGroupId juga jika Checkout Result sudah diupdate
+                // Untuk sementara kita pakai route payment default, nanti payment screen handle fallback
                 onNavigateToPayment = { paymentUrl, orderId ->
                     val encodedUrl = URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
+                    // Kirim paymentGroupId = orderId (sebagai default/hack sementara) atau null string
                     navController.navigate(Screen.Payment.createRoute(encodedUrl, orderId))
                 },
                 onNavigateToAddress = {
-                    navController.navigate(Screen.AddressList.route) // Gunakan rute AddressList yang benar
+                    navController.navigate(Screen.AddressList.route)
                 }
             )
         }
 
-        // --- HISTORY & CHAT ---
+        // --- HISTORY & ORDER DETAIL ---
         composable(Screen.Transaction.route) {
             val sessionManager: SessionManager = get()
             val themeManager: ThemeManager = get()
@@ -191,9 +183,34 @@ fun AppNavGraph(
             RequireAuth(sessionManager, navController) {
                 HistoryScreen(
                     themeSetting = themeSetting,
-                    onNavigateToDetail = { orderId -> navController.navigate(Screen.DetailOrder.createRoute(orderId)) }
+                    onNavigateToDetail = { orderId ->
+                        // Cek apakah ini Single Order atau Group (Logic bisa dihandle di HistoryScreen)
+                        navController.navigate(Screen.DetailOrder.createRoute(orderId))
+                    },
+                    onNavigateToGroupDetail = { groupId ->
+                        navController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
+                    }
                 )
             }
+        }
+
+        // [BARU] Screen Gabungan (Multi-Toko)
+        composable(
+            route = Screen.TransactionGroupDetail.route, // Pastikan route ini ada di Screen.kt
+            arguments = listOf(navArgument("paymentGroupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("paymentGroupId") ?: ""
+            val themeManager: ThemeManager = get()
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            TransactionGroupScreen(
+                paymentGroupId = groupId,
+                themeSetting = themeSetting,
+                onBackClick = { navController.popBackStack() },
+                onNavigateToOrderDetail = { orderId ->
+                    navController.navigate(Screen.DetailOrder.createRoute(orderId))
+                }
+            )
         }
 
         composable(
@@ -208,32 +225,51 @@ fun AppNavGraph(
                 orderId = orderId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-
-                // [PERBAIKAN] Menerima (url, id) dan memanggil createRoute dengan 2 argumen
-                onNavigateToPayment = { snapUrl, id ->
+                // [PERBAIKAN] Menerima 3 parameter: url, id, groupId
+                onNavigateToPayment = { snapUrl, id, groupId ->
                     val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
-                    navController.navigate(Screen.Payment.createRoute(encodedUrl, id))
+
+                    // Bangun rute dengan parameter opsional
+                    var route = Screen.Payment.createRoute(encodedUrl, id)
+                    if (groupId != null) {
+                        route += "?paymentGroupId=$groupId"
+                    }
+                    navController.navigate(route)
                 }
             )
         }
 
+        // [UPDATE] Payment Screen dengan Support Group ID (Optional)
+        // Route di Screen.kt sebaiknya: "payment_screen/{paymentUrl}/{orderId}?paymentGroupId={paymentGroupId}"
         composable(
-            // Sesuaikan route string dengan yang ada di NavigationDestination.kt (payment_screen/{paymentUrl}/{orderId})
             route = Screen.Payment.route,
             arguments = listOf(
-                navArgument("paymentUrl") { type = NavType.StringType }, // Pastikan nama argumen sama dengan di Screen.kt
-                navArgument("orderId") { type = NavType.StringType }
+                navArgument("paymentUrl") { type = NavType.StringType },
+                navArgument("orderId") { type = NavType.StringType },
+                // Tambahkan argumen optional untuk Group ID
+                navArgument("paymentGroupId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
-            val url = backStackEntry.arguments?.getString("paymentUrl") ?: "" // Ambil 'paymentUrl'
+            val url = backStackEntry.arguments?.getString("paymentUrl") ?: ""
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            val paymentGroupId = backStackEntry.arguments?.getString("paymentGroupId")
 
             PaymentScreen(
                 paymentUrl = url,
                 orderId = orderId,
-                onPaymentFinished = { id ->
-                    navController.navigate(Screen.DetailOrder.createRoute(id)) {
-                        popUpTo(Screen.Dashboard.route)
+                onPaymentFinished = { _ ->
+                    // [LOGIC PENTING]
+                    // Jika ada Group ID, arahkan ke layar Gabungan. Jika tidak, ke History biasa.
+                    if (!paymentGroupId.isNullOrEmpty()) {
+                        navController.navigate(Screen.TransactionGroupDetail.createRoute(paymentGroupId)) {
+                            popUpTo(Screen.Dashboard.route) // Bersihkan stack
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.navigate(Screen.Transaction.route) {
+                            popUpTo(Screen.Dashboard.route)
+                            launchSingleTop = true
+                        }
                     }
                 },
                 onBackClick = { navController.popBackStack() }
@@ -260,8 +296,6 @@ fun AppNavGraph(
         }
 
         // --- ADDRESS CRUD ---
-
-        // [PERBAIKAN] Tambahkan Rute alias "address_list" agar Checkout tidak crash
         composable(Screen.AddressList.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
@@ -306,7 +340,6 @@ fun AppNavGraph(
         authGraph(navController, onNavigateToTerms = { navController.navigate(Screen.TermsAndConditions.route) })
     }
 }
-
 // --- AUTH GRAPH BUILDER ---
 fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerms: () -> Unit) {
     navigation(startDestination = Screen.Welcome.route, route = Graph.Auth) {

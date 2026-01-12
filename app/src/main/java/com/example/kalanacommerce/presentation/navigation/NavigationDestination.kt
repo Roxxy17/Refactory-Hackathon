@@ -59,6 +59,9 @@ sealed class Screen(val route: String) {
     data object Payment : Screen("payment_screen/{paymentUrl}/{orderId}") {
         fun createRoute(paymentUrl: String, orderId: String) = "payment_screen/$paymentUrl/$orderId"
     }
+    data object TransactionGroupDetail : Screen("transaction_group_detail/{paymentGroupId}") {
+        fun createRoute(paymentGroupId: String) = "transaction_group_detail/$paymentGroupId"
+    }
 
     // --- Profile & Settings ---
     data object Settings : Screen("settings_screen")
