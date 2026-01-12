@@ -45,8 +45,6 @@ import com.example.kalanacommerce.presentation.screen.dashboard.cart.BrandGreen
 import com.example.kalanacommerce.presentation.screen.dashboard.cart.BrandOrange
 import com.example.kalanacommerce.presentation.screen.dashboard.cart.formatRupiah
 import org.koin.androidx.compose.koinViewModel
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +68,7 @@ fun CheckoutScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val timelineState by viewModel.timelineState.collectAsState()
-    val storeLocationState by viewModel.storeLocationState.collectAsState() // [BARU] Collect Lokasi Toko
+    val storeLocationState by viewModel.storeLocationState.collectAsState()
 
     var showAddressSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -88,41 +86,27 @@ fun CheckoutScreen(
     val contentColor = if (isDarkActive) Color.White else Color.Black
     val cardColor = if (isDarkActive) MaterialTheme.colorScheme.surface else Color.White
 
+    // Handle Navigasi Payment
     LaunchedEffect(uiState.checkoutResult) {
         uiState.checkoutResult?.let { result ->
             val paymentUrl = result.snapRedirectUrl
             val orderId = result.id
 
             if (paymentUrl.isNotEmpty() && orderId.isNotEmpty()) {
-                // 1. Lakukan navigasi
                 onNavigateToPayment(paymentUrl, orderId)
-
-                // 2. Reset state agar tidak trigger ulang atau nyangkut
                 viewModel.onPaymentNavigationHandled()
             }
         }
     }
 
+    // [FIX] Perhitungan Total Hemat dengan Null Safety
     val totalSaved = remember(uiState.checkoutItems) {
         uiState.checkoutItems.sumOf { item ->
-            if (item.originalPrice > item.price) {
-                (item.originalPrice - item.price) * item.quantity
+            val originalPrice = item.originalPrice ?: 0L
+            if (originalPrice > item.price) {
+                (originalPrice - item.price) * item.quantity
             } else {
                 0L
-            }
-        }
-    }
-
-    LaunchedEffect(uiState.checkoutResult) {
-        uiState.checkoutResult?.let { result ->
-            // Pastikan model CheckoutResult kamu punya field 'snapRedirectUrl' dan 'id'
-            // Jika error 'snapRedirectUrl' tidak ada, ganti dengan 'snapToken' (tapi PaymentScreen butuh URL)
-
-            val paymentUrl = result.snapRedirectUrl // Gunakan URL redirect dari Midtrans
-            val orderId = result.id // Gunakan ID order
-
-            if (paymentUrl.isNotEmpty() && orderId.isNotEmpty()) {
-                onNavigateToPayment(paymentUrl, orderId)
             }
         }
     }
@@ -190,7 +174,7 @@ fun CheckoutScreen(
                     )
                 }
 
-                // [BARU] 3. LOKASI TOKO (Di Bawah Timeline)
+                // 3. LOKASI TOKO
                 item {
                     SectionHeader("Titik Pengambilan")
                     StoreLocationCard(
@@ -200,7 +184,7 @@ fun CheckoutScreen(
                     )
                 }
 
-                // 4. ITEMS
+                // 4. ITEMS PER TOKO
                 val groupedItems = uiState.checkoutItems.groupBy { it.outletName }
                 groupedItems.forEach { (outletName, items) ->
                     item {
@@ -209,6 +193,7 @@ fun CheckoutScreen(
                             items = items,
                             cardColor = cardColor,
                             textColor = contentColor,
+                            // [FIX] Panggil viewModel.updateQuantity
                             onUpdateQty = { id, qty -> viewModel.updateQuantity(id, qty) }
                         )
                     }
@@ -227,7 +212,7 @@ fun CheckoutScreen(
                         subtitle = "Lihat promo tersedia",
                         cardColor = cardColor,
                         iconColor = BrandOrange,
-                        onClick = { /* TODO */ }
+                        onClick = { /* TODO: Navigate to Voucher */ }
                     )
                 }
 
@@ -240,7 +225,7 @@ fun CheckoutScreen(
         }
     }
 
-    // --- BOTTOM SHEET ---
+    // --- BOTTOM SHEET ALAMAT ---
     if (showAddressSheet) {
         ModalBottomSheet(
             onDismissRequest = { showAddressSheet = false },
@@ -256,7 +241,8 @@ fun CheckoutScreen(
                             isSelected = address.id == uiState.selectedAddress?.id,
                             textColor = contentColor,
                             onClick = {
-                                viewModel.selectAddress(address) // Trigger ganti alamat & refresh mock data
+                                // [FIX] Panggil viewModel.selectAddress
+                                viewModel.selectAddress(address)
                                 showAddressSheet = false
                             }
                         )
@@ -280,7 +266,8 @@ fun CheckoutScreen(
     }
 }
 
-// --- NEW COMPONENT: STORE LOCATION CARD ---
+// --- COMPONENTS ---
+
 @Composable
 fun StoreLocationCard(
     state: StoreLocationModel,
@@ -297,7 +284,6 @@ fun StoreLocationCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Map
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -309,7 +295,6 @@ fun StoreLocationCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Detail Toko
             Column(modifier = Modifier.weight(1f)) {
                 Text(state.name, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(2.dp))
@@ -324,8 +309,6 @@ fun StoreLocationCard(
         }
     }
 }
-
-// --- COMPONENTS ---
 
 @Composable
 fun AddressSelectionItem(
@@ -409,7 +392,6 @@ fun PickupTimelineCard(
                         fontWeight = FontWeight.Bold,
                         color = textColor
                     )
-                    // Tampilkan info jika lebih dari 1 toko
                     if (state.storeCount > 1) {
                         Text(
                             "Mengunjungi ${state.storeCount} Toko",

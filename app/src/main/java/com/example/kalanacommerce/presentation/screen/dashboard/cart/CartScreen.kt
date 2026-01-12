@@ -39,7 +39,6 @@ import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.CartItem
-// Pastikan import ini ada
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper
 import com.example.kalanacommerce.presentation.components.ToastType
@@ -71,31 +70,32 @@ fun CartScreen(
     var toastMsg by remember { mutableStateOf("") }
     var toastType by remember { mutableStateOf(ToastType.Success) }
 
-    // [LOGIC HITUNG HEMAT DINAMIS]
+    // [LOGIC HITUNG HEMAT DINAMIS - DIPERBAIKI]
     // Menghitung selisih harga asli dan harga jual untuk item yang DIPILIH (Selected)
     val totalSavedAmount = remember(uiState.cartItems, uiState.selectedItemIds) {
         uiState.cartItems
             .filter { it.id in uiState.selectedItemIds }
             .sumOf { item ->
-                if (item.originalPrice > item.price) {
-                    (item.originalPrice - item.price) * item.quantity
+                // [FIX] Handle nullable originalPrice
+                val originalPrice = item.originalPrice ?: 0L
+                if (originalPrice > item.price) {
+                    (originalPrice - item.price) * item.quantity
                 } else {
                     0L
                 }
             }
     }
 
-    // 1. Handle Error dari ViewModel (misal Gagal Hapus/Update)
+    // 1. Handle Error dari ViewModel
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage != null) {
             toastMsg = uiState.successMessage!!
-            toastType = ToastType.Success // Icon Centang Hijau
+            toastType = ToastType.Success
             showToast = true
-            viewModel.clearMessages() // Reset pesan agar tidak muncul terus
+            viewModel.clearMessages()
         }
     }
 
-    // Listener Error (Sudah ada sebelumnya, biarkan saja)
     LaunchedEffect(uiState.error) {
         if (uiState.error != null) {
             toastMsg = uiState.error!!
@@ -155,7 +155,6 @@ fun CartScreen(
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    // Padding agar konten tidak tertutup Header (atas) dan Checkout Bar (bawah)
                     contentPadding = PaddingValues(top = 100.dp, bottom = 120.dp, start = 16.dp, end = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
@@ -233,7 +232,6 @@ fun CartScreen(
                         if (ids.isNotEmpty()) {
                             onNavigateToCheckout(ids)
                         } else {
-                            // 2. Trigger Custom Toast Manual (Validasi)
                             toastMsg = "Pilih minimal 1 barang"
                             toastType = ToastType.Error
                             showToast = true
@@ -243,8 +241,7 @@ fun CartScreen(
             }
         }
 
-        // LAYER 5: CUSTOM TOAST (Paling Atas)
-        // Diletakkan paling akhir dalam Box agar menimpa layer lain (z-index tinggi)
+        // LAYER 5: CUSTOM TOAST
         CustomToast(
             message = toastMsg,
             isVisible = showToast,
@@ -520,9 +517,12 @@ fun BeautifulCartItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    if (item.discountPercentage > 0 && item.originalPrice > item.price) {
+                    // [FIX] Handle nullable originalPrice
+                    val originalPrice = item.originalPrice ?: 0L
+
+                    if (item.discountPercentage > 0 && originalPrice > item.price) {
                         Text(
-                            text = formatRupiah(item.originalPrice),
+                            text = formatRupiah(originalPrice),
                             style = MaterialTheme.typography.labelSmall.copy(textDecoration = TextDecoration.LineThrough),
                             color = secondaryTextColor
                         )

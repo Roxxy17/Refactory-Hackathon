@@ -36,29 +36,14 @@ class CheckoutViewModel(
     val timelineState = _timelineState.asStateFlow()
 
     private val _storeLocationState = MutableStateFlow(
-        StoreLocationModel("Memuat Lokasi...", "...", "-")
+        StoreLocationModel("Memuat Toko...", "-", "-")
     )
     val storeLocationState = _storeLocationState.asStateFlow()
-
-    // [DATA MOCK TOKO] Disamakan dengan CartMapper agar sinkron
-    // Map: Nama Toko -> Alamat Dummy
-    private val storeDatabase = mapOf(
-        "Toko Sayur Kalana" to "Jl. Kaliurang Km 5.5, Depok, Sleman",
-        "Mitra Tani Sejahtera" to "Jl. Godean Km 7, Godean, Sleman",
-        "Segar Abadi Mart" to "Jl. Seturan Raya No. 10, Depok, Sleman",
-        "Warung Bu Dewi" to "Jl. Palagan Tentara Pelajar Km 9, Ngaglik, Sleman",
-        "Kebun Organik Pak Budi" to "Jl. Anggajaya 2, Condongcatur, Sleman"
-    )
-
-    // Load data awal
-    init {
-        // Timeline & Lokasi akan di-update otomatis saat items ter-load
-    }
 
     fun loadCheckoutItems(payload: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            loadAddresses() // Load alamat user dulu
+            loadAddresses()
 
             if (payload.startsWith("DIRECT__")) {
                 isDirectCheckout = true
@@ -77,38 +62,57 @@ class CheckoutViewModel(
         }
     }
 
-    // --- LOGIC CART ---
-
-    private fun reloadCartData() {
-        val currentIds = _uiState.value.checkoutItems.map { it.id }
-        loadCartItems(currentIds)
-    }
-
-    fun updateQuantity(itemId: String, newQty: Int) {
-        viewModelScope.launch {
-            updateCartItemUseCase(itemId, newQty).collect { result ->
-                if (result is Resource.Success) {
-                    reloadCartData()
-                }
-            }
-        }
-    }
+    // --- LOGIC CART CHECKOUT ---
 
     private fun loadCartItems(itemIds: List<String>) {
         viewModelScope.launch {
             getCartItemsUseCase().collect { result ->
                 if (result is Resource.Success) {
                     val allItems = result.data ?: emptyList()
+                    // Filter item yang dipilih user
                     val selectedItems = allItems.filter { it.id in itemIds }
+                    val sortedItems = selectedItems.sortedBy { it.outletId }
 
-                    _uiState.update { it.copy(isLoading = false, checkoutItems = selectedItems) }
-
-                    // [PENTING] Setelah item dimuat, hitung ulang Timeline & Lokasi berdasarkan toko item tersebut
-                    recalculateLogistics(selectedItems)
+                    _uiState.update { it.copy(isLoading = false, checkoutItems = sortedItems) }
+                    recalculateLogistics(sortedItems)
                 }
             }
         }
     }
+
+    // [PERBAIKAN ERROR 7] Menambahkan fungsi updateQuantity
+    fun updateQuantity(itemId: String, newQty: Int) {
+        if (isDirectCheckout) {
+            // Direct checkout biasanya statis, tapi jika ingin diubah:
+            val currentItems = _uiState.value.checkoutItems.toMutableList()
+            val index = currentItems.indexOfFirst { it.id == itemId }
+            if (index != -1) {
+                val newItem = currentItems[index].copy(quantity = newQty, totalPrice = currentItems[index].price * newQty)
+                currentItems[index] = newItem
+                _uiState.update { it.copy(checkoutItems = currentItems) }
+                // Update juga payload untuk direct checkout
+                directPayload = directPayload?.copy(second = newQty)
+            }
+        } else {
+            // Cart checkout: Update ke server lalu reload
+            viewModelScope.launch {
+                updateCartItemUseCase(itemId, newQty).collect { result ->
+                    if (result is Resource.Success) {
+                        // Reload items agar harga & total sinkron
+                        val currentIds = _uiState.value.checkoutItems.map { it.id }
+                        loadCartItems(currentIds)
+                    }
+                }
+            }
+        }
+    }
+
+    // [PERBAIKAN ERROR 8] Menambahkan fungsi selectAddress
+    fun selectAddress(address: AddressUiModel) {
+        _uiState.update { it.copy(selectedAddress = address) }
+    }
+
+    // --- LOGIC DIRECT CHECKOUT ---
 
     private fun loadDirectProductInfo(variantId: String, qty: Int) {
         viewModelScope.launch {
@@ -120,15 +124,6 @@ class CheckoutViewModel(
                     if (product != null) {
                         val variant = product.variants.find { it.id == variantId }
 
-                        // [LOGIC SAMA DENGAN CART MAPPER]
-                        // Kita generate nama toko yang sama persis logic-nya dengan CartMapper
-                        // menggunakan hashCode ID produk agar konsisten.
-                        val uniqueSeed = product.id.hashCode()
-                        val storeKeys = storeDatabase.keys.toList()
-                        // Pakai Math.abs agar index tidak negatif
-                        val storeIndex = kotlin.math.abs(uniqueSeed) % storeKeys.size
-                        val consistentStoreName = storeKeys[storeIndex]
-
                         val dummyCartItem = CartItem(
                             id = "TEMP_DIRECT",
                             productId = product.id,
@@ -138,17 +133,14 @@ class CheckoutViewModel(
                             variantName = variant?.name ?: product.variantName,
                             price = variant?.price ?: product.price,
                             quantity = qty,
-                            // Pakai nama toko yang konsisten
-                            outletName = consistentStoreName,
-                            outletId = "mock_id_$storeIndex",
+                            outletName = "Toko Kalana (Langsung)",
+                            outletId = "direct_store_id",
                             stock = 999,
                             maxQuantity = 999
                         )
 
                         val items = listOf(dummyCartItem)
                         _uiState.update { it.copy(isLoading = false, checkoutItems = items) }
-
-                        // [PENTING] Hitung ulang logistik
                         recalculateLogistics(items)
                     }
                 }
@@ -156,55 +148,40 @@ class CheckoutViewModel(
         }
     }
 
-    // --- LOGIC LOGISTIK (TIMELINE & LOKASI) ---
+    // --- LOGIC LOGISTIK ---
 
-    // Fungsi ini dipanggil setiap kali item berubah atau alamat berubah
     private fun recalculateLogistics(items: List<CartItem>) {
         if (items.isEmpty()) return
 
-        // 1. Ambil daftar Nama Toko Unik dari item yang dibeli
         val uniqueStoreNames = items.map { it.outletName }.distinct()
         val storeCount = uniqueStoreNames.size
 
-        // 2. Update Informasi Lokasi Toko
-        val locationModel = if (storeCount == 1) {
-            // Single Store
-            val storeName = uniqueStoreNames.first()
-            val address = storeDatabase[storeName] ?: "Alamat tidak tersedia"
-            val distance = "${Random.nextInt(1, 5)}.${Random.nextInt(1, 9)} km"
-
+        val locationModel = if (storeCount <= 1) {
+            val storeName = uniqueStoreNames.firstOrNull() ?: "Toko Kalana"
             StoreLocationModel(
                 name = storeName,
-                address = address,
-                distance = distance,
+                address = "Lokasi Penjual Terverifikasi",
+                distance = "${Random.nextInt(1, 5)} km",
                 isMultiStore = false
             )
         } else {
-            // Multi Store
-            val distanceTotal = "${Random.nextInt(3, 8) * storeCount} km" // Jarak kasar akumulasi
-            // Gabungkan nama toko: "Toko A, Toko B"
-            val combinedNames = uniqueStoreNames.joinToString(", ")
-
+            val combinedNames = uniqueStoreNames.take(2).joinToString(", ") + if(storeCount > 2) "..." else ""
             StoreLocationModel(
-                name = "Ambil dari $storeCount Titik ($combinedNames)",
-                address = "Rute gabungan area Sleman",
-                distance = distanceTotal,
+                name = "$storeCount Toko ($combinedNames)",
+                address = "Dikirim dari berbagai titik",
+                distance = "${storeCount * 2} km (Estimasi)",
                 isMultiStore = true
             )
         }
         _storeLocationState.value = locationModel
 
-        // 3. Update Timeline (Waktu bertambah seiring jumlah toko)
-        // Base time (untuk 1 toko)
-        val basePrep = Random.nextInt(5, 10)
-        val baseTravel = Random.nextInt(10, 20)
+        val basePrep = 10
+        val baseTravel = 15
+        val extraTimePerStore = (storeCount - 1) * 5
 
-        // Penalti waktu untuk setiap toko tambahan (misal +50% waktu per toko)
-        val multiplier = 1 + ((storeCount - 1) * 0.5).toInt()
-
-        val totalPrep = basePrep * multiplier
-        val totalTravel = baseTravel * multiplier
-        val totalPickup = 2 * storeCount // 2 menit per toko untuk parkir/ambil
+        val totalPrep = basePrep + extraTimePerStore
+        val totalTravel = baseTravel + extraTimePerStore
+        val totalPickup = 2 * storeCount
 
         _timelineState.update {
             PickupTimelineState(
@@ -216,16 +193,6 @@ class CheckoutViewModel(
             )
         }
     }
-
-    // Trigger saat ganti alamat (Mungkin jarak berubah, jadi refresh timeline)
-    fun selectAddress(address: AddressUiModel) {
-        _uiState.update { it.copy(selectedAddress = address) }
-        // Refresh logistik dengan items yang ada
-        recalculateLogistics(_uiState.value.checkoutItems)
-    }
-
-    // ... (Fungsi placeOrder, handleCheckoutResult, loadAddresses SAMA SEPERTI SEBELUMNYA) ...
-    // Pastikan tetap menyertakan fungsi-fungsi tersebut agar tidak error.
 
     fun placeOrder() {
         if (_uiState.value.checkoutItems.isEmpty()) return

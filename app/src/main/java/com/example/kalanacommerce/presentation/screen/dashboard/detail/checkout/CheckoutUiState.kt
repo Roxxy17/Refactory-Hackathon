@@ -41,5 +41,5 @@ data class StoreLocationModel(
     val name: String,
     val address: String,
     val distance: String,
-    val isMultiStore: Boolean = false // Flag jika user harus ke banyak tempat
+    val isMultiStore: Boolean = false
 )

@@ -4,84 +4,47 @@ import com.example.kalanacommerce.data.remote.dto.cart.CartItemDto
 import com.example.kalanacommerce.data.remote.dto.cart.CheckoutResponseDto
 import com.example.kalanacommerce.domain.model.CartItem
 import com.example.kalanacommerce.domain.model.CheckoutResult
-import kotlin.math.absoluteValue
 
 fun CartItemDto.toDomain(): CartItem {
-    val variantData = variant
-    val productData = variant?.product
+    val variantData = this.variant
+    val productData = variantData.product
 
-    val priceLong = variantData?.price?.toLongOrNull() ?: 0L
+    // 1. Parsing Harga (String -> Long)
+    val priceLong = variantData.price.toLongOrNull() ?: 0L
+    val originalPriceLong = variantData.originalPrice?.toLongOrNull()
 
-    // Seed untuk angka acak yang konsisten per produk
-    val uniqueSeed = productData?.id.hashCode()?.absoluteValue ?: 0
-
-    // A. Freshness (Mock Konsisten)
-    val displayFreshness = 85 + (uniqueSeed % 16)
-
-    // --- [MODIFIKASI: MOCKING 5 TOKO] ---
-    // Kita buat daftar toko dummy
-    val mockStores = listOf(
-        "Toko Sayur Kalana" to "mock_store_001",
-        "Mitra Tani Sejahtera" to "mock_store_002",
-        "Segar Abadi Mart" to "mock_store_003",
-        "Warung Bu Dewi" to "mock_store_004",
-        "Kebun Organik Pak Budi" to "mock_store_005"
-    )
-
-    // Pilih toko berdasarkan ID Produk (supaya konsisten tidak berubah-ubah)
-    val storeIndex = uniqueSeed % mockStores.size
-    val (displayOutletName, displayOutletId) = mockStores[storeIndex]
-    // ------------------------------------
-
-    // Diskon: Semua barang diskon (sesuai request sebelumnya)
-    val isDiscounted = true
-
-    val displayOriginalPrice = if (isDiscounted) {
-        // Markup harga 20% - 50%
-        val markup = 1.2 + ((uniqueSeed % 4) / 10.0)
-        (priceLong * markup).toLong()
+    // 2. Logic Penamaan Varian
+    // Jika variantName kosong atau "-", gunakan nama unit (misal: "Ikat", "Kg")
+    val finalVariantName = if (!variantData.variantName.isNullOrEmpty() && variantData.variantName != "-") {
+        variantData.variantName
     } else {
-        priceLong
-    }
-
-    // Hitung Persentase Diskon
-    val calculatedDiscount = if (displayOriginalPrice > priceLong) {
-        try {
-            ((displayOriginalPrice - priceLong).toDouble() / displayOriginalPrice * 100).toInt()
-        } catch (e: Exception) { 0 }
-    } else {
-        0
-    }
-
-    // Logic Nama Varian
-    val finalVariantName = if (!variantData?.variantName.isNullOrEmpty() && variantData?.variantName != "-") {
-        variantData?.variantName ?: ""
-    } else {
-        variantData?.unit?.name ?: "Satuan"
+        variantData.unit?.name ?: "Satuan"
     }
 
     return CartItem(
-        id = id,
-        productVariantId = variantData?.id ?: "",
-        productId = productData?.id ?: "",
-        productName = productData?.name ?: "Produk",
-        productImage = productData?.image ?: "",
+        id = this.id,
+        productVariantId = variantData.id,
+        productId = productData.id,
+        productName = productData.name,
+        productImage = productData.image ?: "",
 
         variantName = finalVariantName,
 
-        // Data Toko dari List Dummy (5 Toko)
-        outletName = displayOutletName,
-        outletId = displayOutletId,
+        // [MAPPING DATA ASLI] Ambil langsung dari object outlet
+        outletName = productData.outlet.name,
+        outletId = productData.outlet.id,
 
-        freshness = displayFreshness,
-        originalPrice = displayOriginalPrice,
-        discountPercentage = calculatedDiscount,
+        // [MAPPING DATA ASLI] Ambil langsung freshness level
+        freshness = productData.freshnessLevel ?: 100,
+        originalPrice = originalPriceLong,
 
         price = priceLong,
-        quantity = quantity,
+        quantity = this.quantity,
+
+        // Default values
         stock = 100,
         maxQuantity = 100,
-        totalPrice = priceLong * quantity
+        totalPrice = priceLong * this.quantity
     )
 }
 
@@ -91,7 +54,6 @@ fun CheckoutResponseDto.toDomain(): CheckoutResult {
         orderCode = orderCode,
         totalAmount = totalAmount,
         snapToken = snapToken ?: "",
-        // 👇 Pastikan ini mengambil dari field URL, bukan Token
         snapRedirectUrl = snapRedirectUrl ?: ""
     )
 }

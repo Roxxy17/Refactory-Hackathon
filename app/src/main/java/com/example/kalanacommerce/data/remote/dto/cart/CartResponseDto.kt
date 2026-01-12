@@ -1,6 +1,5 @@
 package com.example.kalanacommerce.data.remote.dto.cart
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -21,16 +20,16 @@ data class CartDataDto(
 data class CartItemDto(
     val id: String,
     val quantity: Int,
-    val variant: CartVariantDto? = null
+    val variant: CartVariantDto
 )
 
 @Serializable
 data class CartVariantDto(
     val id: String,
-    val variantName: String,
-    val price: String, // API mengirim string "18000"
-    val originalPrice: String? = null,
-    val product: CartProductDto? = null,
+    val variantName: String? = null, // Bisa null atau string
+    val price: String, // API mengirim harga dalam bentuk String
+    val originalPrice: String? = null, // [BARU] Harga sebelum diskon (nullable)
+    val product: CartProductDto,
     val unit: CartUnitDto? = null
 )
 
@@ -43,17 +42,14 @@ data class CartUnitDto(
 data class CartProductDto(
     val id: String,
     val name: String,
-    // Pastikan backend mengirim ini nanti
-    val freshnessLevel: Int? = null,
     val image: String? = null,
-
-    // [TAMBAHKAN INI] Untuk membaca nama toko asli
-    val outlet: CartOutletDto? = null
+    val freshnessLevel: Int? = 100, // [BARU] Tingkat kesegaran dari API
+    val outlet: CartOutletDto // [BARU] Data toko pemilik produk
 )
 
 @Serializable
 data class CartOutletDto(
     val id: String,
     val name: String
+    // lat & long bisa ditambahkan nanti jika butuh hitung jarak di cart
 )
-

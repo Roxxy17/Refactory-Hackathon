@@ -32,11 +32,15 @@ class CartViewModel(
                 when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                     is Resource.Success -> {
+                        // [PERBAIKAN] Sorting berdasarkan outletId agar item satu toko berkumpul (Grouping)
+                        val items = result.data ?: emptyList()
+                        val sortedItems = items.sortedBy { it.outletId }
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                cartItems = result.data ?: emptyList(),
-                                // [OPSIONAL] Tampilkan toast saat refresh selesai
+                                cartItems = sortedItems,
+                                // Tampilkan pesan sukses hanya jika refresh manual
                                 successMessage = if (isPullToRefresh) "Data keranjang diperbarui" else null
                             )
                         }
@@ -65,16 +69,17 @@ class CartViewModel(
     fun toggleSelectAll() {
         _uiState.update { state ->
             val allIds = state.cartItems.map { it.id }.toSet()
-            val newSelection = if (state.selectedItemIds.size == allIds.size) {
-                emptySet() // Unselect all
+            // Jika semua sudah terpilih, maka unselect semua. Jika belum, select semua.
+            val newSelection = if (state.selectedItemIds.containsAll(allIds) && allIds.isNotEmpty()) {
+                emptySet()
             } else {
-                allIds // Select all
+                allIds
             }
             state.copy(selectedItemIds = newSelection)
         }
     }
 
-    // --- CRUD ---
+    // --- CRUD QUANTITY ---
 
     fun incrementQuantity(itemId: String, currentQty: Int) {
         updateQuantity(itemId, currentQty + 1)
@@ -84,19 +89,16 @@ class CartViewModel(
         if (currentQty > 1) {
             updateQuantity(itemId, currentQty - 1)
         } else {
-            // Opsional: Tanya user mau hapus atau tidak
+            // Jika 1 dikurangi, hapus item
             deleteItem(itemId)
         }
     }
 
     private fun updateQuantity(itemId: String, newQty: Int) {
         viewModelScope.launch {
-            // Optimistic update (opsional, agar UI cepat) atau tunggu loading
             updateCartItemUseCase(itemId, newQty).collect { result ->
                 if (result is Resource.Success) {
-                    loadCartItems()
-                    // [BARU] Set pesan sukses
-                    _uiState.update { it.copy(successMessage = "Jumlah barang berhasil diubah") }
+                    loadCartItems() // Reload untuk sinkronisasi harga/total
                 } else if (result is Resource.Error) {
                     _uiState.update { it.copy(error = result.message) }
                 }
@@ -111,7 +113,7 @@ class CartViewModel(
                     _uiState.update {
                         it.copy(
                             selectedItemIds = it.selectedItemIds - itemId,
-                            successMessage = "Barang berhasil dihapus" // [BARU]
+                            successMessage = "Barang berhasil dihapus"
                         )
                     }
                     loadCartItems()
@@ -122,25 +124,21 @@ class CartViewModel(
         }
     }
 
-    // --- CHECKOUT ---
+    // --- CHECKOUT NAVIGATION ---
+
     fun clearMessages() {
-        // [UPDATE] Reset juga successMessage
         _uiState.update { it.copy(error = null, successMessage = null, checkoutResult = null) }
     }
 
-    // --- NAVIGASI KE CHECKOUT ---
     fun onCheckoutClicked() {
         val selectedIds = _uiState.value.selectedItemIds
         if (selectedIds.isEmpty()) {
-            _uiState.update { it.copy(error = "Pilih minimal 1 barang") }
+            _uiState.update { it.copy(error = "Pilih minimal 1 barang untuk checkout") }
             return
         }
 
-        // Gabungkan ID jadi string "id1,id2,id3" untuk dikirim ke CheckoutScreen
-        val idString = selectedIds.joinToString(",")
-        // Simpan di state khusus navigasi (tambahkan field ini di CartUiState jika belum ada, atau pakai event wrapper)
-        // Disini kita pakai checkoutResult sementara untuk trigger (atau buat field baru navigateToCheckout)
-        // Agar simple, kita asumsikan UI akan observe ini.
+        // Logic navigasi ditangani di UI dengan mengecek state,
+        // atau Anda bisa menambahkan flag navigasi di sini.
     }
 
     fun onCheckoutHandled() {

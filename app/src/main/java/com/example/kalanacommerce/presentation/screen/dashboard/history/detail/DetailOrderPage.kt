@@ -117,9 +117,13 @@ fun DetailOrderPage(
                     PaymentBottomBarEnhanced(
                         totalAmount = order.totalAmount,
                         onPayClick = {
-                            val snapToken = order.snapToken
-                            if (!snapToken.isNullOrEmpty()) {
-                                onNavigateToPayment(snapToken, orderId, order.paymentGroupId)
+                            val paymentUrl = order.snapRedirectUrl
+
+                            // Fallback: Jika URL kosong, baru coba token (atau tetap kosong)
+                            val targetUrl = if (!paymentUrl.isNullOrEmpty()) paymentUrl else order.snapToken
+
+                            if (!targetUrl.isNullOrEmpty()) {
+                                onNavigateToPayment(targetUrl, orderId, order.paymentGroupId)
                             }
                         }
                     )
