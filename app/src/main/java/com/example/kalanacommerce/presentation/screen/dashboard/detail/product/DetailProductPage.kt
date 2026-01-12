@@ -63,7 +63,8 @@ fun DetailProductPage(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit = {},
     onStoreClick: (String) -> Unit = {},
-    onNavigateToCheckout: (String) -> Unit
+    onNavigateToCheckout: (String) -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     LaunchedEffect(productId) {
         viewModel.loadProductDetail(productId)
@@ -398,7 +399,7 @@ fun DetailProductPage(
                 modifier = Modifier
                     .size(44.dp)
                     .glossyEffect(isDarkActive, CircleShape)
-                    .clickable { /* Cart Navigation */ },
+                    .clickable { onNavigateToCart() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

@@ -52,7 +52,8 @@ fun DetailStorePage(
     viewModel: DetailStoreViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onProductClick: (String) -> Unit
+    onProductClick: (String) -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     LaunchedEffect(outletId) {
         viewModel.loadStoreData(outletId)
@@ -167,6 +168,7 @@ fun DetailStorePage(
         // LAYER 3: Sticky Header Top Bar
         StoreHeaderTopBar(
             onBackClick = onBackClick,
+            onCartClick = onNavigateToCart, // [BARU] Pass ke sini
             isDark = isDarkActive,
             modifier = Modifier.align(Alignment.TopCenter)
         )
@@ -179,6 +181,7 @@ fun DetailStorePage(
 fun StoreHeaderTopBar(
     onBackClick: () -> Unit,
     isDark: Boolean,
+    onCartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -234,7 +237,7 @@ fun StoreHeaderTopBar(
             modifier = Modifier
                 .size(44.dp)
                 .glossyEffect(isDark, CircleShape)
-                .clickable { /* Cart */ },
+                .clickable { onCartClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(

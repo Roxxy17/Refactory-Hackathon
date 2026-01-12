@@ -62,7 +62,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onProductClick: (String) -> Unit,
-    onNavigateToCheckout: (String) -> Unit
+    onNavigateToCheckout: (String) -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -156,7 +157,8 @@ fun HomeScreen(
                         StickySearchBar(
                             searchQuery = uiState.searchQuery,
                             onSearchChange = viewModel::onSearchQueryChange,
-                            isDark = isDarkActive
+                            isDark = isDarkActive,
+                            onCartClick = onNavigateToCart // [BARU] Pass ke sini
                         )
                     }
 
@@ -289,7 +291,7 @@ fun thickGlossyModifier(isDark: Boolean, shape: androidx.compose.ui.graphics.Sha
 
 // --- STICKY 1: SEARCH BAR ---
 @Composable
-fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDark: Boolean) {
+fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDark: Boolean,onCartClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -343,7 +345,7 @@ fun StickySearchBar(searchQuery: String, onSearchChange: (String) -> Unit, isDar
                 modifier = Modifier
                     .size(56.dp)
                     .then(thickGlossyModifier(isDark, CircleShape))
-                    .clickable { /* Cart */ }
+                    .clickable { onCartClick() },
             ) {
                 Icon(
                     Icons.Outlined.ShoppingCart,

@@ -111,7 +111,10 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { id -> navController.navigate(Screen.DetailProduct.createRoute(id)) },
                 onStoreClick = { outletId -> navController.navigate(Screen.DetailStore.createRoute(outletId)) },
-                onNavigateToCheckout = { itemIds -> navController.navigate(Screen.Checkout.createRoute(itemIds)) }
+                onNavigateToCheckout = { itemIds -> navController.navigate(Screen.Checkout.createRoute(itemIds)) },
+                onNavigateToCart = {
+                    navController.navigate(Screen.Cart.route)
+                }
             )
         }
 
@@ -127,7 +130,10 @@ fun AppNavGraph(
                 outletId = outletId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
-                onProductClick = { productId -> navController.navigate(Screen.DetailProduct.createRoute(productId)) }
+                onProductClick = { productId -> navController.navigate(Screen.DetailProduct.createRoute(productId)) },
+                onNavigateToCart = {
+                    navController.navigate(Screen.Cart.route)
+                }
             )
         }
 

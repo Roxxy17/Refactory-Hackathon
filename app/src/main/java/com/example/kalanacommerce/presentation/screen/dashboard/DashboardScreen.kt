@@ -76,6 +76,10 @@ fun DashboardScreen(
                         },
                         onNavigateToCheckout = { payload ->
                             mainNavController.navigate(Screen.Checkout.createRoute(payload))
+                        },
+                        // [INTEGRASI] Navigasi ke Cart
+                        onNavigateToCart = {
+                            mainNavController.navigate(Screen.Cart.route)
                         }
                     )
                 }
@@ -98,7 +102,11 @@ fun DashboardScreen(
                         },
                         onNavigateToCheckout = { payload ->
                             mainNavController.navigate(Screen.Checkout.createRoute(payload))
+                        },
+                        onNavigateToCart = {
+                            mainNavController.navigate(Screen.Cart.route)
                         }
+
                     )
                 }
 
@@ -114,7 +122,11 @@ fun DashboardScreen(
                             },
                             // [PERBAIKAN] Menambahkan callback untuk Group Detail
                             onNavigateToGroupDetail = { groupId ->
-                                mainNavController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
+                                mainNavController.navigate(
+                                    Screen.TransactionGroupDetail.createRoute(
+                                        groupId
+                                    )
+                                )
                             }
                         )
                     } else {

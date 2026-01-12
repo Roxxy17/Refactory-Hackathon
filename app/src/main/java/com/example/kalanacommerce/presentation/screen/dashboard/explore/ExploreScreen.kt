@@ -52,7 +52,8 @@ fun ExploreScreen(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onNavigateToCheckout: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToCart: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -173,7 +174,8 @@ fun ExploreScreen(
                 searchQuery = uiState.searchQuery,
                 onSearchChange = viewModel::onSearchQueryChange,
                 isDark = isDarkActive,
-                modifier = Modifier.align(Alignment.TopCenter) // Pastikan nempel di atas
+                onCartClick = onNavigateToCart, // [BARU] Pass ke sini
+                modifier = Modifier.align(Alignment.TopCenter)
             )
         }
     }
@@ -198,7 +200,8 @@ fun ExploreHeader(
     searchQuery: String,
     onSearchChange: (String) -> Unit,
     isDark: Boolean,
-    modifier: Modifier = Modifier // Terima modifier agar bisa diatur posisinya
+    modifier: Modifier = Modifier,
+    onCartClick: () -> Unit// Terima modifier agar bisa diatur posisinya
 ) {
     val iconColor = if (isDark) Color.Gray else Color.Black
     val placeholderColor = Color.Gray
@@ -253,7 +256,7 @@ fun ExploreHeader(
             modifier = Modifier
                 .size(50.dp)
                 .then(thickGlossyModifier(isDark, CircleShape))
-                .clickable { /* Go to Cart */ },
+                .clickable { onCartClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Outlined.ShoppingCart, null, tint = iconColor)
