@@ -5,7 +5,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,7 +29,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 import com.example.kalanacommerce.presentation.components.CustomToast // Import CustomToast
@@ -45,7 +50,8 @@ import com.example.kalanacommerce.presentation.components.ToastType
 fun ForgotPasswordStepEmailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToOtp: (String) -> Unit,
-    viewModel: ForgotPasswordViewModel = koinViewModel()
+    viewModel: ForgotPasswordViewModel = koinViewModel(),
+    themeSetting: ThemeSetting
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -75,6 +81,17 @@ fun ForgotPasswordStepEmailScreen(
         }
     }
 
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+
     // ... (KODE ANIMASI BLOB TETAP SAMA) ...
     val blobColor1 = MaterialTheme.colorScheme.primary
     val blobColor2 = MaterialTheme.colorScheme.secondary
@@ -94,6 +111,13 @@ fun ForgotPasswordStepEmailScreen(
             .fillMaxSize()
             .background(backgroundColor)
     ) {
+
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         // ... (KODE CANVAS BLOB TETAP SAMA) ...
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(brush = Brush.radialGradient(colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale)
@@ -219,13 +243,5 @@ fun IconHeader(
             tint = primaryColor,
             modifier = Modifier.size(48.dp)
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ForgotPasswordStepEmailPreview() {
-    KalanaCommerceTheme {
-        ForgotPasswordStepEmailScreen(onNavigateBack = {}, onNavigateToOtp = {})
     }
 }

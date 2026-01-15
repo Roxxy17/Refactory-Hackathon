@@ -28,9 +28,7 @@ import org.koin.android.ext.android.inject
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
-
     private val SPLASH_SCREEN_DELAY: Long = 3000
-
     private val themeManager: ThemeManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {

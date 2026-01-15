@@ -8,40 +8,26 @@ import com.example.kalanacommerce.domain.model.CheckoutResult
 fun CartItemDto.toDomain(): CartItem {
     val variantData = this.variant
     val productData = variantData.product
-
-    // 1. Parsing Harga (String -> Long)
     val priceLong = variantData.price.toLongOrNull() ?: 0L
     val originalPriceLong = variantData.originalPrice?.toLongOrNull()
-
-    // 2. Logic Penamaan Varian
-    // Jika variantName kosong atau "-", gunakan nama unit (misal: "Ikat", "Kg")
     val finalVariantName = if (!variantData.variantName.isNullOrEmpty() && variantData.variantName != "-") {
         variantData.variantName
     } else {
         variantData.unit?.name ?: "Satuan"
     }
-
     return CartItem(
         id = this.id,
         productVariantId = variantData.id,
         productId = productData.id,
         productName = productData.name,
         productImage = productData.image ?: "",
-
         variantName = finalVariantName,
-
-        // [MAPPING DATA ASLI] Ambil langsung dari object outlet
         outletName = productData.outlet.name,
         outletId = productData.outlet.id,
-
-        // [MAPPING DATA ASLI] Ambil langsung freshness level
         freshness = productData.freshnessLevel ?: 100,
         originalPrice = originalPriceLong,
-
         price = priceLong,
         quantity = this.quantity,
-
-        // Default values
         stock = 100,
         maxQuantity = 100,
         totalPrice = priceLong * this.quantity

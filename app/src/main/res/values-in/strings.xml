@@ -318,6 +318,12 @@
     <string name="action_buy_now">Beli Sekarang</string>
     <string name="cd_close">Tutup Dialog</string>
     <string name="cd_product_image">Gambar Produk</string>
+    <string name="beranda_diperbarui">Beranda diperbarui</string>
 
+    <string name="access_restricted_title">Akses Terbatas</string>
+    <string name="access_restricted_btn">Masuk Sekarang</string>
+    <string name="login_req_cart_msg">Masuk dulu yuk untuk melihat keranjang belanjamu.</string>
+    <string name="login_req_chat_msg">Ingin tanya AI Assistant? Login dulu ya!</string>
+    <string name="login_req_history_msg">Silakan login untuk melihat riwayat pesananmu.</string>
 
 </resources>

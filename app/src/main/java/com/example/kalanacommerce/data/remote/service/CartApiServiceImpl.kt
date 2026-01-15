@@ -15,6 +15,13 @@ class CartApiServiceImpl(
         return client.get("carts").body()
     }
 
+    override suspend fun checkout(request: CheckoutRequestDto): BaseResponse<List<CheckoutResponseDto>> {
+        return client.post("carts/checkout") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
     override suspend fun addToCart(request: AddToCartRequestDto): BaseResponse<Unit> {
         return client.post("carts/items") {
             contentType(ContentType.Application.Json)
@@ -31,13 +38,6 @@ class CartApiServiceImpl(
 
     override suspend fun deleteCartItem(id: String): BaseResponse<Unit> {
         return client.delete("carts/items/$id").body()
-    }
-
-    override suspend fun checkout(request: CheckoutRequestDto): BaseResponse<List<CheckoutResponseDto>> {
-        return client.post("carts/checkout") {
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body()
     }
 
     override suspend fun directCheckout(request: DirectCheckoutRequestDto): BaseResponse<List<CheckoutResponseDto>> {

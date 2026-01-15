@@ -108,14 +108,7 @@ class AuthRepositoryImpl(
     private suspend inline fun <reified T> handleAuthError(e: Exception): String {
         return when (e) {
             is ClientRequestException -> {
-                // Error 4xx: Coba baca body response server (misal: "Email sudah dipakai")
-                try {
-                    // Asumsi T punya field 'message'. Jika struktur error beda, sesuaikan disini.
-                    // Cara paling aman jika T tidak pasti: Ambil sbg String map
-                    val errorBody = e.response.body<T>()
-                    // Reflection simple atau casting manual tergantung struktur DTO error kamu
-                    // Disini saya return pesan generic "Data tidak valid" kecuali kita tahu pasti T punya .message
-                    // Tapi untuk amannya, kita return pesan default yang rapi berdasarkan status code:
+                try { val errorBody = e.response.body<T>()
                     when (e.response.status.value) {
                         400 -> "Input tidak valid. Cek kembali data Anda."
                         401 -> "Email atau password salah."

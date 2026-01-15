@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 
 // Enum untuk status animasi masuk
@@ -38,7 +41,8 @@ private enum class ScreenState { Idle, Entered }
 @Composable
 fun GetStarted(
     onNavigateToLogin: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
+    themeSetting: ThemeSetting
 ) {
     // --- 1. AMBIL WARNA DARI TEMA (DYNAMIC) ---
     // Warna ini otomatis berubah sesuai Light/Dark mode dari Theme.kt
@@ -58,6 +62,17 @@ fun GetStarted(
     LaunchedEffect(Unit) {
         currentState = ScreenState.Entered
     }
+
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
 
     // Animasi Alpha untuk Logo
     val logoAlpha by transition.animateFloat(
@@ -123,6 +138,14 @@ fun GetStarted(
             .fillMaxSize()
             .background(backgroundColor) // MENGGUNAKAN WARNA TEMA
     ) {
+
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
         // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Blob Atas Kiri
@@ -285,13 +308,3 @@ fun GetStarted(
     }
 }
 
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun GetStartedPreview() {
-    KalanaCommerceTheme(darkTheme = false) { // Coba ganti true untuk preview dark mode
-        GetStarted(
-            onNavigateToLogin = {},
-            onNavigateToRegister = {}
-        )
-    }
-}

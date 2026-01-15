@@ -40,6 +40,7 @@ import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.CartItem
 import com.example.kalanacommerce.presentation.components.CustomToast
+import com.example.kalanacommerce.presentation.components.LoginRequiredView
 import com.example.kalanacommerce.presentation.components.PullToRefreshWrapper
 import com.example.kalanacommerce.presentation.components.ToastType
 import org.koin.androidx.compose.koinViewModel
@@ -56,13 +57,39 @@ val DarkCardBorder = Color(0xFF333333)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
+    isLoggedIn : Boolean,
     viewModel: CartViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onNavigateToCheckout: (String) -> Unit,
     onNavigateToDetailProduct: (String) -> Unit,
-    onNavigateToStore: (String) -> Unit
+    onNavigateToStore: (String) -> Unit,
+    onNavigateToLogin:() -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
+    // 1. CEK LOGIN TERLEBIH DAHULU
+    if (!isLoggedIn) {
+        // Tampilkan layar Login Required (Background Splash)
+        Box(modifier = Modifier.fillMaxSize()) {
+            LoginRequiredView(
+                themeSetting = themeSetting,
+                onLoginClick = onNavigateToLogin,
+                message = stringResource(R.string.login_req_cart_msg)
+            )
+            // Tombol Back tetap dimunculkan agar user bisa kembali
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Kembali",
+                    tint = if (isSystemInDarkTheme()) Color.White else Color.Black // Sesuaikan logic tema manual jika perlu
+                )
+            }
+        }
+        return // Hentikan eksekusi ke bawah (Kode Cart Asli tidak dijalankan)
+    }
     val uiState by viewModel.uiState.collectAsState()
 
     // --- STATE UNTUK CUSTOM TOAST ---
@@ -147,7 +174,10 @@ fun CartScreen(
                 .padding(top = 0.dp)
         ) {
             if (uiState.cartItems.isEmpty() && !uiState.isLoading) {
-                EmptyCartView(isDarkActive)
+                EmptyCartView(isDarkActive,onNavigateToHome = {
+                    onNavigateToHome()
+                    // Nanti di AppNavGraph: navController.navigate(Screen.Dashboard.route) { popUpTo(0) }
+                })
             } else {
                 val groupedItems = remember(uiState.cartItems) {
                     uiState.cartItems.groupBy { it.outletName }
@@ -633,7 +663,7 @@ fun formatRupiah(amount: Long): String {
 }
 
 @Composable
-fun EmptyCartView(isDark: Boolean) {
+fun EmptyCartView(isDark: Boolean, onNavigateToHome: () -> Unit  ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -660,7 +690,7 @@ fun EmptyCartView(isDark: Boolean) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = { /* Navigasi ke Home */ },
+            onClick = onNavigateToHome,
             colors = ButtonDefaults.buttonColors(containerColor = BrandGreen),
             shape = RoundedCornerShape(12.dp)
         ) {

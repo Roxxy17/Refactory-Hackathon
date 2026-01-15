@@ -18,6 +18,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -27,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.kalanacommerce.data.local.datastore.SessionManager
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.presentation.components.AppBottomNavigationBar
+import com.example.kalanacommerce.presentation.components.LoginRequiredView
 import com.example.kalanacommerce.presentation.navigation.BottomBarScreen
 import com.example.kalanacommerce.presentation.navigation.Graph
 import com.example.kalanacommerce.presentation.navigation.Screen
@@ -34,6 +36,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.explore.ExploreS
 import com.example.kalanacommerce.presentation.screen.dashboard.home.HomeScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.ProfileScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
+import com.example.kalanacommerce.R
 
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.get
@@ -131,18 +134,11 @@ fun DashboardScreen(
                         )
                     } else {
                         // Tampilkan Halaman Login Required jika Guest
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Silakan login untuk melihat riwayat")
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(onClick = { mainNavController.navigate(Graph.Auth) }) {
-                                    Text("Masuk Sekarang")
-                                }
-                            }
-                        }
+                        LoginRequiredView(
+                            themeSetting = themeSetting,
+                            onLoginClick = { mainNavController.navigate(Graph.Auth) },
+                            message = stringResource(R.string.login_req_history_msg)
+                        )
                     }
                 }
 

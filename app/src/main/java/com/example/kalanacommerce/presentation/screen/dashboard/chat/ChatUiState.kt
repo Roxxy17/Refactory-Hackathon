@@ -7,4 +7,3 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val error: String? = null
 )
-// JANGAN ada data class ChatMessage lagi di sini!

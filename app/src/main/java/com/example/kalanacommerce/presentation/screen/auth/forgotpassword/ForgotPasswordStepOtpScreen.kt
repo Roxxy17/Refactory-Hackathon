@@ -5,7 +5,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -35,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.presentation.components.CustomToast // Import
 import com.example.kalanacommerce.presentation.components.ToastType
 
@@ -44,7 +49,8 @@ fun ForgotPasswordStepOtpScreen(
     email: String,
     onNavigateBack: () -> Unit,
     onResetSuccess: () -> Unit,
-    viewModel: ForgotPasswordViewModel = koinViewModel()
+    viewModel: ForgotPasswordViewModel = koinViewModel(),
+    themeSetting: ThemeSetting
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
@@ -83,6 +89,18 @@ fun ForgotPasswordStepOtpScreen(
         }
     }
 
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+
+
     // ... (BLOB ANIMATION SAMA) ...
     val blobColor1 = MaterialTheme.colorScheme.primary
     val blobColor2 = MaterialTheme.colorScheme.secondary
@@ -100,6 +118,13 @@ fun ForgotPasswordStepOtpScreen(
     Box(
         modifier = Modifier.fillMaxSize().background(backgroundColor)
     ) {
+
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         // ... (CANVAS BLOB SAMA) ...
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(brush = Brush.radialGradient(colors = listOf(blobColor1.copy(alpha = 0.4f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale), center = Offset(0f, 0f), radius = size.width * 0.8f * blob1Scale)

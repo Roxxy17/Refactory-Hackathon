@@ -36,6 +36,7 @@ import coil.request.ImageRequest
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.domain.model.ChatMessage
+import com.example.kalanacommerce.presentation.components.LoginRequiredView
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
@@ -47,8 +48,32 @@ val DiscountRed = Color(0xFFFF5722)
 fun ChatScreen(
     viewModel: ChatViewModel = koinViewModel(),
     themeSetting: ThemeSetting, // [FIX 1] Terima setting tema
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    isLoggedIn: Boolean,
+    onNavigateToLogin : () -> Unit
 ) {
+    // 1. CEK LOGIN
+    if (!isLoggedIn) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LoginRequiredView(
+                themeSetting = themeSetting,
+                onLoginClick = onNavigateToLogin,
+                message = stringResource(R.string.login_req_chat_msg)
+            )
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Kembali",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
+        return
+    }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var messageInput by remember { mutableStateOf(TextFieldValue("")) }
     val messages = uiState.messages

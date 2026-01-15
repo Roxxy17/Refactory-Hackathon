@@ -29,9 +29,6 @@ class SessionManager(context: Context) {
         isLenient = true
     }
 
-    // --- FUNGSI UTAMA YANG DIPANGGIL REPOSITORY (LOGIN AWAL) ---
-    // Saya biarkan tetap sama agar tidak merusak kode Login yang sudah ada.
-    // Nanti jika API Login mengembalikan refresh token juga, update di sini.
     suspend fun saveSession(token: String, user: ProfileUserDto) {
         saveAuthData(token, true, user)
     }
@@ -52,7 +49,7 @@ class SessionManager(context: Context) {
         }
     }
 
-    // [BARU] Overload Fungsi untuk Refresh Token (Dipakai oleh NetworkModule)
+        // [BARU] Overload Fungsi untuk Refresh Token (Dipakai oleh NetworkModule)
     // Ktor akan memanggil ini saat token diperbarui secara otomatis di background
     suspend fun saveAuthData(accessToken: String, refreshToken: String) {
         dataStore.edit { preferences ->
@@ -113,3 +110,4 @@ class SessionManager(context: Context) {
         private val KEY_LAST_EMAIL = stringPreferencesKey("last_email")
     }
 }
+

@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +62,8 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -68,7 +71,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onSignInSuccess: () -> Unit,
-    viewModel: SignInViewModel = koinViewModel()
+    viewModel: SignInViewModel = koinViewModel(),
+    themeSetting: ThemeSetting
 ) {
 
     val blobColor1 = MaterialTheme.colorScheme.primary
@@ -101,6 +105,18 @@ fun LoginScreen(
     val isFormValid = remember(email, password) {
         email.isNotBlank() && password.isNotEmpty()
     }
+
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+
 
     // Logic Sukses
     LaunchedEffect(uiState.isSuccess) {
@@ -158,6 +174,13 @@ fun LoginScreen(
             .background(backgroundColor)
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
         // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Blob Atas Kiri
@@ -498,14 +521,3 @@ private fun LoginTextField(
     )
 }
 
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun LoginScreenPreview() {
-    KalanaCommerceTheme(darkTheme = false) { // Coba ganti true/false
-        LoginScreen(
-            onNavigateToRegister = {},
-            onNavigateToForgotPassword = {},
-            onSignInSuccess = {}
-        )
-    }
-}

@@ -1,7 +1,9 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kalanacommerce.R
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.domain.model.Category
 import com.example.kalanacommerce.domain.model.Product
@@ -17,7 +19,8 @@ class HomeViewModel(
     private val getProductsUseCase: GetProductsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val addToCartUseCase: AddToCartUseCase,
-    private val getCartItemsUseCase: com.example.kalanacommerce.domain.usecase.cart.GetCartItemsUseCase// [NEW] UseCase Cart
+    private val getCartItemsUseCase: com.example.kalanacommerce.domain.usecase.cart.GetCartItemsUseCase,
+    private val context: Context
 ) : ViewModel() {
 
     // Pastikan HomeUiState punya field: navigateToCheckoutWithId: String? = null
@@ -56,7 +59,7 @@ class HomeViewModel(
                         val allData = result.data ?: emptyList()
                         // Randomize for Home Display
                         val randomProducts = allData.shuffled().take(10)
-                        val msg = if (isPullRefresh) "Beranda diperbarui" else null
+                        val msg = if (isPullRefresh) context.getString(R.string.beranda_diperbarui) else null
 
                         _uiState.update {
                             it.copy(

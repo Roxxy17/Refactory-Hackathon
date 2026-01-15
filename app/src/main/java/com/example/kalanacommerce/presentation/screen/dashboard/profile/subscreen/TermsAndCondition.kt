@@ -2,7 +2,9 @@ package com.example.kalanacommerce.presentation.screen.dashboard.profile.subscre
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,23 +12,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.presentation.theme.KalanaCommerceTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermsAndConditionsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    themeSetting: ThemeSetting
 ) {
     val scrollState = rememberScrollState()
 
@@ -52,12 +60,31 @@ fun TermsAndConditionsScreen(
         label = "Blob2"
     )
 
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+
+
     // --- 2. ROOT CONTAINER (BOX) ---
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
     ) {
+
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
         // --- 3. BACKGROUND DECORATION (CANVAS) ---
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Blob Atas Kiri (Lebih Tebal: Alpha 0.4f)
@@ -207,22 +234,4 @@ fun TermsDivider() {
         modifier = Modifier.padding(vertical = 24.dp),
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     )
-}
-
-// --- Preview ---
-
-@Preview(showBackground = true)
-@Composable
-fun TermsPreviewLight() {
-    KalanaCommerceTheme(darkTheme = false) {
-        TermsAndConditionsScreen(onBack = {})
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TermsPreviewDark() {
-    KalanaCommerceTheme(darkTheme = true) {
-        TermsAndConditionsScreen(onBack = {})
-    }
 }

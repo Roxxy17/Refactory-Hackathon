@@ -321,7 +321,13 @@
     <string name="action_buy_now">Buy Now</string>
     <string name="cd_close">Close Dialog</string>
     <string name="cd_product_image">Product Image</string>
+    <string name="beranda_diperbarui">Dashboard updated</string>
 
+    <string name="access_restricted_title">Access Restricted</string>
+    <string name="access_restricted_btn">Login Now</string>
+    <string name="login_req_cart_msg">Please login to view your shopping cart.</string>
+    <string name="login_req_chat_msg">Want to ask AI Assistant? Please login first!</string>
+    <string name="login_req_history_msg">Please login to view your order history.</string>
 
 
 </resources>

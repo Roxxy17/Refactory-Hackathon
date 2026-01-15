@@ -64,8 +64,7 @@ val appModule = module {
 
     viewModel {
         EditProfileViewModel(
-            profileRepository = get(),
-            sessionManager = get()
+            profileRepository = get(), sessionManager = get()
         )
     }
 
@@ -74,15 +73,16 @@ val appModule = module {
             getProductsUseCase = get(),
             getCategoriesUseCase = get(),
             addToCartUseCase = get(),
-            getCartItemsUseCase = get()
+            getCartItemsUseCase = get(),
+            context = androidContext()
         )
     }
 
     viewModel {
         ChatViewModel(
-            sendMessageUseCase = get(),
-            welcomeMessage = androidContext().getString(R.string.chat_welcome_message)
-        )
+            get(),
+            welcomeMessage = androidContext().getString(R.string.chat_welcome_message),
+            )
     }
 
     viewModel {
@@ -93,22 +93,24 @@ val appModule = module {
 
     viewModel {
         DetailProductViewModel(
-            repository = get(),
-            addToCartUseCase = get()
+            repository = get(), addToCartUseCase = get()
         )
     }
     viewModel { DetailStoreViewModel(get()) }
     viewModel { OrderHistoryViewModel(get()) }
     viewModel { DetailOrderViewModel(get()) }
-    viewModel { CartViewModel(get(), get(), get(),) }
+
     viewModel {
-        CheckoutViewModel(
-            get(),
-            get(),
-            get(),
+        CartViewModel(
             get(),
             get(),
             get()
+        )
+    }
+
+    viewModel {
+        CheckoutViewModel(
+            get(), get(), get(), get(), get(), get()
         )
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kalanacommerce.R
+import com.example.kalanacommerce.data.local.datastore.ThemeSetting
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
 import com.example.kalanacommerce.presentation.theme.*
@@ -67,7 +70,8 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onContinue: () -> Unit,
     onNavigateToTerms: () -> Unit = {},
-    viewModel: RegisterViewModel = koinViewModel()
+    viewModel: RegisterViewModel = koinViewModel(),
+    themeSetting: ThemeSetting
 ) {
     val blobColor1 = MaterialTheme.colorScheme.primary
     val blobColor2 = MaterialTheme.colorScheme.secondary
@@ -98,6 +102,18 @@ fun RegisterScreen(
         name.isNotBlank() && phoneNumber.isNotBlank() && email.isNotBlank() &&
                 password.length >= 6 && agreeToTerms
     }
+
+    val systemInDark = isSystemInDarkTheme()
+    val isDarkActive = remember(themeSetting, systemInDark) {
+        when (themeSetting) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            ThemeSetting.SYSTEM -> systemInDark
+        }
+    }
+
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
+
 
     // --- Logic Sukses ---
     LaunchedEffect(uiState.isRegistered) {
@@ -144,6 +160,13 @@ fun RegisterScreen(
             .background(backgroundColor)
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
         // --- 4. BACKGROUND DECORATION (Modern Blobs) ---
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Blob Atas Kiri
@@ -482,12 +505,4 @@ private fun RegisterTextField(
             }
         } else null
     )
-}
-
-@Preview(showBackground = true, heightDp = 900)
-@Composable
-fun RegisterScreenPreview() {
-    KalanaCommerceTheme(darkTheme = false) {
-        RegisterScreen(onNavigateToLogin = {}, onContinue = {}, onNavigateToTerms = {})
-    }
 }
