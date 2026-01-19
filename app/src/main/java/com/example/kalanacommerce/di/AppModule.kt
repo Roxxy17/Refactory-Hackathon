@@ -98,7 +98,7 @@ val appModule = module {
     }
     viewModel { DetailStoreViewModel(get()) }
     viewModel { OrderHistoryViewModel(get()) }
-    viewModel { DetailOrderViewModel(get()) }
+    viewModel { DetailOrderViewModel(get(),get()) }
 
     viewModel {
         CartViewModel(

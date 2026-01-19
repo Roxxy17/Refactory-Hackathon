@@ -1,5 +1,6 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.detail.product
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,8 +54,6 @@ import com.example.kalanacommerce.presentation.components.ProductCardItem
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import kotlin.math.abs
-import android.widget.Toast // Untuk Toast sederhana
-import androidx.compose.ui.graphics.Shape
 
 @Composable
 fun DetailProductPage(
@@ -83,38 +83,27 @@ fun DetailProductPage(
     }
 
     LaunchedEffect(uiState.addToCartSuccessMessage, uiState.error, uiState.navigateToCheckoutWithId) {
-        // 1. Handle Toast Sukses
         uiState.addToCartSuccessMessage?.let { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.onMessageShown()
         }
-
-        // 2. Handle Error
         uiState.error?.let { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.onMessageShown()
         }
-
-        // 3. Handle Buy Now Navigation
         uiState.navigateToCheckoutWithId?.let { itemId ->
-            onNavigateToCheckout(itemId) // Pindah ke Checkout Screen
+            onNavigateToCheckout(itemId)
             viewModel.onMessageShown()
         }
     }
 
-    val backgroundImage = if (isDarkActive) {
-        R.drawable.splash_background_black
-    } else {
-        R.drawable.splash_background_white
-    }
-
+    val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val contentColor = if (isDarkActive) Color.White else Color.Black
     val mainGreen = Color(0xFF43A047)
 
     BackHandler { onBackClick() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // LAYER 1: Background Image (Full Screen)
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -122,10 +111,10 @@ fun DetailProductPage(
             modifier = Modifier.fillMaxSize()
         )
 
-        // LAYER 2: Konten Utama (Scrollable)
         Scaffold(
             containerColor = Color.Transparent,
-            // [MODIFIKASI] Hapus bottomBar dari Scaffold agar tidak menempel di bawah
+            // [MODIFIKASI PENTING] Set WindowInsets ke 0 agar konten (gambar) bisa nembus ke status bar
+            contentWindowInsets = WindowInsets(0.dp)
         ) { paddingValues ->
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading) {
@@ -141,7 +130,9 @@ fun DetailProductPage(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues) // Padding system bars
+                            // [MODIFIKASI PENTING] Jangan gunakan paddingValues penuh.
+                            // Hanya ambil padding bawah (untuk navigasi bar), biarkan atasnya 0.
+                            .padding(bottom = paddingValues.calculateBottomPadding())
                             .verticalScroll(rememberScrollState())
                     ) {
                         // --- 1. Product Image Header ---
@@ -167,16 +158,12 @@ fun DetailProductPage(
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            // Gradient Shadow
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(
                                         Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.Transparent,
-                                                Color.Black.copy(alpha = 0.6f)
-                                            ),
+                                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)),
                                             startY = 500f
                                         )
                                     )
@@ -198,7 +185,7 @@ fun DetailProductPage(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp)
+                                .padding(horizontal = 20.dp, vertical = 12.dp)
                         ) {
                             // Title & Tag
                             Row(
@@ -208,7 +195,10 @@ fun DetailProductPage(
                             ) {
                                 Text(
                                     text = product.name,
-                                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                                    style = MaterialTheme.typography.displaySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 24.sp
+                                    ),
                                     color = contentColor,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -232,14 +222,14 @@ fun DetailProductPage(
                             // Rating
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(top = 8.dp)
+                                modifier = Modifier.padding(top = 6.dp)
                             ) {
                                 repeat(5) {
                                     Icon(
                                         imageVector = Icons.Default.Star,
                                         contentDescription = null,
                                         tint = Color(0xFFFF9800),
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -256,14 +246,14 @@ fun DetailProductPage(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             // Harga & Stepper
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .glossyContainer(isDarkActive, RoundedCornerShape(20.dp))
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -271,7 +261,7 @@ fun DetailProductPage(
                                     Text(
                                         text = String.format(Locale("id", "ID"), "Rp %,d", currentPrice),
                                         style = MaterialTheme.typography.headlineSmall.copy(
-                                            fontWeight = FontWeight.ExtraBold,
+                                            fontWeight = FontWeight.SemiBold,
                                             color = mainGreen
                                         )
                                     )
@@ -294,7 +284,7 @@ fun DetailProductPage(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             // Deskripsi
                             Text(
@@ -302,35 +292,32 @@ fun DetailProductPage(
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = contentColor
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = product.description,
                                 style = MaterialTheme.typography.bodyLarge.copy(
-                                    lineHeight = 24.sp,
+                                    lineHeight = 22.sp,
                                     color = contentColor.copy(alpha = 0.85f)
                                 )
                             )
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
                             // Store Card
                             val storeName = product.outlet?.name ?: "Toko Kalana"
-
                             StoreCardSection(
                                 storeName = storeName,
                                 rating = "4.9/5.0",
                                 isDark = isDarkActive,
                                 onStoreClick = {
-                                    // [2. PANGGIL CALLBACK NAVIGASI]
-                                    // Ambil ID outlet dari produk, atau fallback jika null
-                                    val outletId = product.outlet?.id ?: ""// Pastikan id tersedia
+                                    val outletId = product.outlet?.id ?: ""
                                     if (outletId.isNotEmpty()) {
                                         onStoreClick(outletId)
                                     }
                                 }
                             )
 
-                            Spacer(modifier = Modifier.height(32.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
                             // Produk Lain
                             Text(
@@ -338,7 +325,7 @@ fun DetailProductPage(
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = contentColor
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             // Grid Produk Lain
                             val related = uiState.relatedProducts
@@ -366,7 +353,6 @@ fun DetailProductPage(
                                 Text("Tidak ada produk terkait", color = contentColor.copy(0.5f))
                             }
 
-                            // [PENTING] Extra space di bawah agar konten terakhir tidak tertutup Floating Bottom Bar
                             Spacer(modifier = Modifier.height(100.dp))
                         }
                     }
@@ -374,11 +360,11 @@ fun DetailProductPage(
             }
         }
 
-        // LAYER 3: Sticky Header Buttons (Top)
+        // LAYER 3: Sticky Header Buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+                .padding(top = 48.dp, start = 24.dp, end = 24.dp), // Top 48.dp memberi ruang agar tidak tertutup jam/sinyal
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
@@ -410,24 +396,19 @@ fun DetailProductPage(
             }
         }
 
-        // LAYER 4: FLOATING BOTTOM ACTION BAR (Bottom Overlay)
-        // Ini sekarang berada di luar Scaffold, di layer paling atas Box root
+        // LAYER 4: FLOATING BOTTOM ACTION BAR
         if (uiState.product != null) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter) // Tempel di bawah
-                    .padding(bottom = 24.dp, start = 24.dp, end = 24.dp) // Margin agar mengambang
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
             ) {
                 BottomActionSection(
                     price = uiState.totalPrice,
                     isDark = isDarkActive,
                     isLoading = uiState.isAddToCartLoading,
-                    onAddToCart = {
-                        viewModel.addToCart()
-                    },
-                    onBuyNow = {
-                        viewModel.buyNow()
-                    }
+                    onAddToCart = { viewModel.addToCart() },
+                    onBuyNow = { viewModel.buyNow() }
                 )
             }
         }
@@ -445,20 +426,18 @@ fun BottomActionSection(
     onAddToCart: () -> Unit,
     onBuyNow: () -> Unit
 ) {
-    // Container Utama (Glossy Floating Island)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glossyContainer(isDark, RoundedCornerShape(24.dp)) // Curve lebih bulat untuk floating
+            .glossyContainer(isDark, RoundedCornerShape(24.dp))
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 14.dp) // Padding Compact
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Info Harga (Kiri) - Compact
             Column(
                 modifier = Modifier.weight(0.35f),
                 verticalArrangement = Arrangement.Center
@@ -468,13 +447,10 @@ fun BottomActionSection(
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                     color = if (isDark) Color.White.copy(0.6f) else Color.Gray
                 )
-
-                // Animasi Harga
                 AnimatedContent(
                     targetState = price,
-                    transitionSpec = {
-                        slideInVertically { it } togetherWith slideOutVertically { -it }
-                    }, label = "PriceAnimation"
+                    transitionSpec = { slideInVertically { it } togetherWith slideOutVertically { -it } },
+                    label = "PriceAnimation"
                 ) { targetPrice ->
                     Text(
                         text = String.format(Locale("id", "ID"), "Rp%,d", targetPrice),
@@ -484,17 +460,13 @@ fun BottomActionSection(
                     )
                 }
             }
-
             Spacer(modifier = Modifier.width(8.dp))
-
-            // 2. Tombol Aksi (Kanan)
             Row(
                 modifier = Modifier.weight(0.65f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Tombol Keranjang
                 Surface(
-                    onClick = { if (!isLoading) onAddToCart() }, // Disable klik saat loading
+                    onClick = { if (!isLoading) onAddToCart() },
                     shape = RoundedCornerShape(12.dp),
                     color = Color.Transparent,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
@@ -504,7 +476,6 @@ fun BottomActionSection(
                         .glossyEffect(isDark, RoundedCornerShape(12.dp))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        // Icon Keranjang
                         Icon(
                             imageVector = Icons.Default.AddShoppingCart,
                             contentDescription = "Add Cart",
@@ -513,14 +484,10 @@ fun BottomActionSection(
                         )
                     }
                 }
-
-                // Tombol Beli Langsung
                 Button(
                     onClick = { if (!isLoading) onBuyNow() },
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier
                         .height(44.dp)
@@ -542,9 +509,6 @@ fun BottomActionSection(
     }
 }
 
-// ... (Sisa komponen seperti StoreCardSection, StoreAvatar, VariantSelector, QuantityStepper, dan Modifiers tetap SAMA)
-// Pastikan bagian bawah file tetap berisi komponen pendukung tersebut.
-
 @Composable
 fun StoreCardSection(storeName: String, rating: String, isDark: Boolean, onStoreClick: () -> Unit) {
     Row(
@@ -552,11 +516,11 @@ fun StoreCardSection(storeName: String, rating: String, isDark: Boolean, onStore
             .fillMaxWidth()
             .glossyContainer(isDark, RoundedCornerShape(16.dp))
             .clickable { onStoreClick() }
-            .padding(16.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         StoreAvatar(storeName)
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = storeName,
@@ -573,7 +537,7 @@ fun StoreCardSection(storeName: String, rating: String, isDark: Boolean, onStore
             imageVector = Icons.AutoMirrored.Outlined.Login,
             contentDescription = null,
             tint = Color(0xFF43A047),
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
 }
@@ -589,14 +553,12 @@ fun StoreAvatar(storeName: String) {
         R.drawable.ic_bumbu
     )
     val iconRes = storeIcons[randomSeed % storeIcons.size]
-    val bgColors = listOf(
-        Color(0xFFE3F2FD), Color(0xFFE8F5E9), Color(0xFFFFF3E0), Color(0xFFF3E5F5)
-    )
+    val bgColors = listOf(Color(0xFFE3F2FD), Color(0xFFE8F5E9), Color(0xFFFFF3E0), Color(0xFFF3E5F5))
     val bgColor = bgColors[randomSeed % bgColors.size]
 
     Box(
         modifier = Modifier
-            .size(54.dp)
+            .size(48.dp)
             .clip(CircleShape)
             .background(bgColor)
             .border(1.dp, Color.Black.copy(0.05f), CircleShape),
@@ -608,7 +570,7 @@ fun StoreAvatar(storeName: String) {
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(10.dp)
+                .padding(8.dp)
                 .clip(CircleShape)
         )
     }
@@ -667,7 +629,7 @@ fun QuantityStepper(
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(28.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .clickable { onDecrement() },
             contentAlignment = Alignment.Center
@@ -676,7 +638,7 @@ fun QuantityStepper(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "Decrease",
                 tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
 
@@ -684,7 +646,7 @@ fun QuantityStepper(
             modifier = Modifier
                 .padding(horizontal = 6.dp)
                 .background(Color.White, RoundedCornerShape(6.dp))
-                .padding(horizontal = 14.dp, vertical = 4.dp)
+                .padding(horizontal = 12.dp, vertical = 2.dp)
                 .heightIn(min = 24.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -697,7 +659,7 @@ fun QuantityStepper(
 
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(28.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .clickable { onIncrement() },
             contentAlignment = Alignment.Center
@@ -706,13 +668,11 @@ fun QuantityStepper(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Increase",
                 tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
     }
 }
-
-// --- HELPER MODIFIERS (Glassmorphism) ---
 
 @Composable
 fun Modifier.glossyEffect(isDark: Boolean, shape: Shape): Modifier {

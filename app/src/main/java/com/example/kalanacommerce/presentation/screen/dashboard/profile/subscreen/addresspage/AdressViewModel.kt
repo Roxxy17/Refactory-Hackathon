@@ -53,6 +53,7 @@ class AddressViewModel(
                             )
                         }
                     }
+
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
@@ -82,12 +83,38 @@ class AddressViewModel(
     }
 
     fun saveAddress(
-        isEdit: Boolean, addressId: String? = null, label: String, name: String, phone: String,
-        street: String, postalCode: String, provinceId: String, cityId: String, districtId: String, isDefault: Boolean
+        isEdit: Boolean,
+        addressId: String? = null,
+        label: String,
+        name: String,
+        phone: String,
+        street: String,
+        postalCode: String,
+        provinceId: String,
+        cityId: String,
+        districtId: String,
+        isDefault: Boolean,
+        latitude: Double,
+        longitude: Double
     ) {
         viewModelScope.launch {
-            val request = AddressRequest(label, name, phone, street, postalCode, provinceId, cityId, districtId, isDefault)
-            val flow = if (isEdit && addressId != null) repository.updateAddress(addressId, request) else repository.createAddress(request)
+            val request = AddressRequest(
+                label,
+                name,
+                phone,
+                street,
+                postalCode,
+                provinceId,
+                cityId,
+                districtId,
+                isDefault,
+                lat = latitude, // Kirim ke API
+                long = longitude // Kirim ke API
+            )
+            val flow = if (isEdit && addressId != null) repository.updateAddress(
+                addressId,
+                request
+            ) else repository.createAddress(request)
 
             flow.collect { result ->
                 when (result) {
@@ -96,7 +123,13 @@ class AddressViewModel(
                         _uiState.update { it.copy(isLoading = false, successMessage = result.data) }
                         loadAddresses()
                     }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
+
+                    is Resource.Error -> _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.message
+                        )
+                    }
                 }
             }
         }
@@ -105,13 +138,19 @@ class AddressViewModel(
     fun deleteAddress(id: String) {
         viewModelScope.launch {
             repository.deleteAddress(id).collect { result ->
-                when(result) {
+                when (result) {
                     is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                     is Resource.Success -> {
                         _uiState.update { it.copy(isLoading = false, successMessage = result.data) }
                         loadAddresses()
                     }
-                    is Resource.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
+
+                    is Resource.Error -> _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = result.message
+                        )
+                    }
                 }
             }
         }
@@ -128,6 +167,7 @@ class AddressViewModel(
                 _uiState.update { it.copy(isLoading = false) }
                 onSuccess(result.data)
             }
+
             is Resource.Error -> {
                 _uiState.update { it.copy(isLoading = false, error = result.message) }
             }

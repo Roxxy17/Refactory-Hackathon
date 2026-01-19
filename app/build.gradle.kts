@@ -128,4 +128,8 @@ android {
         // COIL (Image Loading for Compose)
         implementation("io.coil-kt:coil-compose:2.6.0")
         implementation("io.ktor:ktor-client-okhttp:2.3.12")
+
+        implementation("org.osmdroid:osmdroid-android:6.1.18")
+        implementation("com.github.MKergall:osmbonuspack:6.9.0")
+        implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
     }

@@ -3,6 +3,7 @@ package com.example.kalanacommerce.presentation.screen.dashboard.history
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -39,6 +41,7 @@ import com.example.kalanacommerce.domain.model.OrderStatus
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.glossyEffect
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
+import kotlin.math.abs
 
 @Composable
 fun HistoryScreen(
@@ -46,17 +49,14 @@ fun HistoryScreen(
     viewModel: OrderHistoryViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onNavigateToDetail: (String) -> Unit,
-    // [BARU] Callback untuk navigasi ke detail grup (Multi-toko)
     onNavigateToGroupDetail: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Refresh data saat masuk layar ini
     LaunchedEffect(Unit) {
         viewModel.fetchOrders()
     }
 
-    // --- Setup Tema ---
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
         when (themeSetting) {
@@ -190,8 +190,8 @@ fun HistoryScreen(
                                     GroupOrderCard(
                                         groupItem = item,
                                         isDark = isDarkActive,
-                                        onDetailClick = onNavigateToDetail, // Klik item kecil -> Detail Order
-                                        onGroupClick = { groupId -> onNavigateToGroupDetail(groupId) } // Klik card besar -> Screen Gabungan
+                                        onDetailClick = onNavigateToDetail,
+                                        onGroupClick = { groupId -> onNavigateToGroupDetail(groupId) }
                                     )
                                 }
                             }
@@ -223,7 +223,7 @@ fun OrderCardItemRefined(
             .padding(16.dp)
     ) {
         Column {
-            // Header
+            // Header: Icon Toko Biasa
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -267,13 +267,13 @@ fun OrderCardItemRefined(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Image
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f),
-                    modifier = Modifier.size(60.dp)
-                ) {
-                    if (firstItem != null) {
+                // Box Image Produk
+                if (firstItem != null && firstItem.image.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f),
+                        modifier = Modifier.size(60.dp)
+                    ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(firstItem.image)
@@ -283,11 +283,15 @@ fun OrderCardItemRefined(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
-                    } else {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ShoppingBag, null, tint = subTextColor)
-                        }
                     }
+                } else {
+                    // Fallback jika tidak ada gambar produk -> Single Order -> HIJAU
+                    StoreGraphicBox(
+                        seedKey = order.outletName,
+                        borderColor = Color(0xFF4CAF50), // [WARNA HIJAU UNTUK TUNGGAL]
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(60.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -376,11 +380,11 @@ fun GroupOrderCard(
         modifier = Modifier
             .fillMaxWidth()
             .glossyEffect(isDark, RoundedCornerShape(24.dp))
-            .clickable { onGroupClick(groupItem.paymentGroupId) } // [BARU] Klik card -> Navigasi ke Group Detail Screen
+            .clickable { onGroupClick(groupItem.paymentGroupId) }
             .padding(16.dp)
     ) {
         Column {
-            // Header Group
+            // Header Group: Icon Biasa
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -406,34 +410,25 @@ fun GroupOrderCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = subTextColor.copy(0.2f))
 
-            // List Order Kecil
+            // List Order Kecil (Per Toko)
             groupItem.orders.forEachIndexed { index, order ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onDetailClick(order.id) } // Klik item kecil -> Detail Order (Per toko)
+                        .clickable { onDetailClick(order.id) }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Preview Image Kecil
-                    val itemPreview = order.items.firstOrNull()
-                    Surface(
+                    // [UPDATED] Gabungan Order -> OREN
+                    StoreGraphicBox(
+                        seedKey = order.outletName,
+                        borderColor = Color(0xFFFF9800), // [WARNA OREN UNTUK GABUNGAN]
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(40.dp),
-                        color = if (isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f)
-                    ) {
-                        if (itemPreview != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(itemPreview.image)
-                                    .crossfade(true).build(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                        modifier = Modifier.size(40.dp)
+                    )
+
                     Spacer(modifier = Modifier.width(12.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(order.outletName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = textColor)
                         Text("Order #${order.orderCode.takeLast(6)}", fontSize = 11.sp, color = subTextColor)
@@ -455,7 +450,6 @@ fun GroupOrderCard(
             ) {
                 Text("$itemCountTotal Item Total", fontSize = 12.sp, color = subTextColor)
 
-                // Jika Pending, tampilkan Total dan Tombol Bayar
                 if (firstOrder.status == OrderStatus.PENDING) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -466,7 +460,7 @@ fun GroupOrderCard(
                             modifier = Modifier.padding(end = 12.dp)
                         )
                         Button(
-                            onClick = { onGroupClick(groupItem.paymentGroupId) }, // Klik tombol Bayar -> Screen Gabungan
+                            onClick = { onGroupClick(groupItem.paymentGroupId) },
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.height(32.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp),
@@ -488,7 +482,45 @@ fun GroupOrderCard(
     }
 }
 
-// --- UTILS ---
+// --- UTILS & HELPERS ---
+
+// [NEW COMPONENT REVISED]
+// Kotak Grafis Toko:
+// - Gambar Full (ContentScale.Crop, tanpa padding)
+// - Warna ditentukan oleh parameter [borderColor]
+@Composable
+fun StoreGraphicBox(
+    seedKey: String,
+    borderColor: Color, // [PARAMETER BARU]
+    shape: Shape,
+    modifier: Modifier = Modifier
+) {
+    val randomSeed = abs(seedKey.hashCode())
+    val storeIcons = listOf(
+        R.drawable.ic_sayuran,
+        R.drawable.ic_buah,
+        R.drawable.ic_proteinhewani,
+        R.drawable.ic_bahanpokok,
+        R.drawable.ic_bumbu
+    )
+    val iconRes = storeIcons[randomSeed % storeIcons.size]
+
+    Box(
+        modifier = modifier
+            .background(Color.White, shape) // Background putih bersih di belakang gambar
+            .border(2.dp, borderColor, shape), // Outline sesuai parameter
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            contentScale = ContentScale.Crop, // FULL IMAGE
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape) // Clip agar sesuai bentuk kotak
+        )
+    }
+}
 
 @Composable
 fun StatusBadge(text: String, color: Color) {

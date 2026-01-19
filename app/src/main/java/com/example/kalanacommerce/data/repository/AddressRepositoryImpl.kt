@@ -36,7 +36,9 @@ class AddressRepositoryImpl(
                     citiesId = dto.citiesId ?: "",
                     districtsId = dto.districtsId ?: "",
                     fullAddress = "${dto.street}, ${dto.citiesId ?: ""} ${dto.postalCode}",
-                    isDefault = dto.isDefault
+                    isDefault = dto.isDefault,
+                    latitude = dto.lat?.toDoubleOrNull() ?: 0.0,
+                    longitude = dto.long?.toDoubleOrNull() ?: 0.0
                 )
             }
             emit(Resource.Success(domainData))
@@ -63,7 +65,9 @@ class AddressRepositoryImpl(
                     citiesId = dto.citiesId ?: "",
                     districtsId = dto.districtsId ?: "",
                     fullAddress = "${dto.street}, ${dto.citiesId ?: ""} ${dto.postalCode}",
-                    isDefault = dto.isDefault
+                    isDefault = dto.isDefault,
+                    latitude = dto.lat?.toDoubleOrNull() ?: 0.0,
+                    longitude = dto.long?.toDoubleOrNull() ?: 0.0
                 )
                 emit(Resource.Success(address))
             } else {

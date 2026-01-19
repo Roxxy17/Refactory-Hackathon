@@ -17,6 +17,8 @@ data class AddressDto(
     val citiesId: String?,
     val districtsId: String?, // Tambahkan ini agar tidak error 'Unresolved reference districtsId'
 
+    val lat: String? = null,
+    val long: String? = null,
     val isDefault: Boolean,
     val createdAt: String? = null,
     val updatedAt: String? = null

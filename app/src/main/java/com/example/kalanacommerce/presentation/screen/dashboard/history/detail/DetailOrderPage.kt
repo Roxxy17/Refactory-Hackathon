@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
@@ -26,14 +27,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,7 +59,8 @@ fun DetailOrderPage(
     viewModel: DetailOrderViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onNavigateToPayment: (String, String, String?) -> Unit
+    onNavigateToPayment: (String, String, String?) -> Unit,
+    onNavigateToMaps: (Double, Double) -> Unit // [UBAH] Terima Lat & Long
 ) {
     LaunchedEffect(orderId) {
         viewModel.loadOrderDetail(orderId)
@@ -113,18 +112,20 @@ fun DetailOrderPage(
             contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
                 val order = uiState.order
+                // Tampilkan Bottom Bar hanya jika status PENDING
                 if (order != null && order.status == OrderStatus.PENDING) {
                     PaymentBottomBarEnhanced(
                         totalAmount = order.totalAmount,
                         onPayClick = {
                             val paymentUrl = order.snapRedirectUrl
-
-                            // Fallback: Jika URL kosong, baru coba token (atau tetap kosong)
                             val targetUrl = if (!paymentUrl.isNullOrEmpty()) paymentUrl else order.snapToken
-
                             if (!targetUrl.isNullOrEmpty()) {
                                 onNavigateToPayment(targetUrl, orderId, order.paymentGroupId)
                             }
+                        },
+                        // [FIX] Mengambil data dari UiState dan navigasi
+                        onMapsClick = {
+                            onNavigateToMaps(uiState.defaultLat, uiState.defaultLong)
                         }
                     )
                 }
@@ -142,7 +143,7 @@ fun DetailOrderPage(
                         .fillMaxSize()
                         .padding(paddingValues)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp) // Margin kiri kanan
+                        .padding(horizontal = 20.dp)
                 ) {
                     // --- Header ---
                     Spacer(modifier = Modifier.height(16.dp))
@@ -197,6 +198,8 @@ fun DetailOrderPage(
 }
 
 // --- COMPONENTS ---
+// (OrderTrackerSection, OrderIdSection, OrderItemsListEnhanced, OrderPaymentDetailEnhanced SAMA SEPERTI SEBELUMNYA)
+// ... Copy paste komponen UI yang lain ...
 
 @Composable
 fun OrderTrackerSection(
@@ -205,7 +208,6 @@ fun OrderTrackerSection(
     textColor: Color,
     subTextColor: Color
 ) {
-    // Tentukan warna utama status
     val statusColor = when (order.status) {
         OrderStatus.PENDING -> BrandOrange
         OrderStatus.PAID, OrderStatus.PROCESSED -> BrandBlue
@@ -239,7 +241,6 @@ fun OrderTrackerSection(
             .padding(20.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Icon Besar
             Surface(
                 shape = CircleShape,
                 color = statusColor.copy(alpha = 0.1f),
@@ -265,7 +266,6 @@ fun OrderTrackerSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Deskripsi Singkat
             val desc = when(order.status) {
                 OrderStatus.PENDING -> "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
                 OrderStatus.PROCESSED -> "Penjual sedang menyiapkan barang pesananmu."
@@ -316,7 +316,6 @@ fun OrderIdSection(
                 )
             }
 
-            // Tombol Copy
             IconButton(
                 onClick = {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -351,7 +350,6 @@ fun OrderItemsListEnhanced(
             .padding(20.dp)
     ) {
         Column {
-            // Store Info
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Store, null, tint = BrandGreen, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -368,10 +366,8 @@ fun OrderItemsListEnhanced(
                 color = if(isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
             )
 
-            // Items Loop
             items.forEachIndexed { index, item ->
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    // Gambar Produk
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if(isDark) Color.White.copy(0.05f) else Color.Gray.copy(0.1f),
@@ -390,7 +386,6 @@ fun OrderItemsListEnhanced(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Info Produk
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = item.productName,
@@ -415,7 +410,6 @@ fun OrderItemsListEnhanced(
                         )
                     }
 
-                    // Total per item
                     Text(
                         text = String.format(Locale("id", "ID"), "Rp%,d", item.totalPrice),
                         fontWeight = FontWeight.Bold,
@@ -424,7 +418,6 @@ fun OrderItemsListEnhanced(
                     )
                 }
 
-                // Jarak antar item (kecuali item terakhir)
                 if (index < items.size - 1) {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -454,29 +447,25 @@ fun OrderPaymentDetailEnhanced(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Metode Pembayaran
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("Metode", color = subTextColor, fontSize = 14.sp)
                 Text(order.paymentMethod, fontWeight = FontWeight.Medium, color = textColor, fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Subtotal (Contoh perhitungan sederhana)
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("Total Harga (${order.itemCount} barang)", color = subTextColor, fontSize = 14.sp)
                 Text(String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount), color = textColor, fontSize = 14.sp)
             }
 
-            // Biaya Layanan / Ongkir (Jika ada di data model, tambahkan disini. Dummy 0 dulu)
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("Biaya Pengiriman", color = subTextColor, fontSize = 14.sp)
-                Text("Rp 0", color = BrandGreen, fontSize = 14.sp) // Gratis Ongkir style
+                Text("Rp 0", color = BrandGreen, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Garis putus-putus (Simulasi)
             HorizontalDivider(
                 color = if(isDark) Color.White.copy(0.2f) else Color.Black.copy(0.1f),
                 thickness = 1.dp
@@ -484,7 +473,6 @@ fun OrderPaymentDetailEnhanced(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Grand Total
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("Total Belanja", fontWeight = FontWeight.Bold, color = textColor, fontSize = 16.sp)
                 Text(
@@ -497,26 +485,27 @@ fun OrderPaymentDetailEnhanced(
     }
 }
 
+
+// [FIX] Definisi Komponen yang Benar (Tanpa Logic aneh di parameter)
 @Composable
 fun PaymentBottomBarEnhanced(
     totalAmount: Long,
-    onPayClick: () -> Unit
+    onPayClick: () -> Unit,
+    onMapsClick: () -> Unit // Callback sederhana
 ) {
-    // Menggunakan Surface dengan shadow yang lebih smooth
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 24.dp, // Shadow lebih tinggi agar terlihat floating
+        shadowElevation = 24.dp,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
+        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
+            // Baris Info Harga
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     "Total Tagihan",
                     style = MaterialTheme.typography.labelMedium,
@@ -529,17 +518,44 @@ fun PaymentBottomBarEnhanced(
                 )
             }
 
-            Button(
-                onClick = onPayClick,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandOrange,
-                    contentColor = Color.White
-                ),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Baris Tombol Aksi
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
+                // Tombol Maps
+                OutlinedButton(
+                    onClick = onMapsClick, // [FIX] Panggil callback langsung
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue),
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Map,
+                        contentDescription = null,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Rute Toko", fontWeight = FontWeight.Bold, color = BrandBlue, fontSize = 13.sp)
+                }
+
+                // Tombol Bayar
+                Button(
+                    onClick = onPayClick,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandOrange,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.weight(1.5f).height(48.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

@@ -37,6 +37,8 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.Det
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen // Import screen baru ini
+import com.example.kalanacommerce.presentation.screen.dashboard.map.MapPickerScreen
+import com.example.kalanacommerce.presentation.screen.dashboard.map.MapRouteScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
@@ -115,6 +117,56 @@ fun AppNavGraph(
                     ) { inclusive = true }
                 }
             }
+        }
+
+        // Di AppNavGraph.kt
+
+        composable(
+            route = Screen.MapRoute.route,
+            arguments = listOf(
+                navArgument("lat") { type = NavType.StringType }, // Gunakan StringType biar aman passing via URL
+                navArgument("long") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            // Ambil data
+            val latString = backStackEntry.arguments?.getString("lat") ?: "0.0"
+            val longString = backStackEntry.arguments?.getString("long") ?: "0.0"
+
+
+            val lat = latString.toDoubleOrNull() ?: -7.7717 // Default Jogja jika error
+            val long = longString.toDoubleOrNull() ?: 110.377
+
+            MapRouteScreen(
+                userLat = lat,   // [BARU] Kirim ke Screen
+                userLong = long, // [BARU] Kirim ke Screen
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.MapPicker.route,
+            arguments = listOf(
+                navArgument("lat") { type = NavType.StringType; defaultValue = "0.0" },
+                navArgument("long") { type = NavType.StringType; defaultValue = "0.0" }
+            )
+        ) { backStackEntry ->
+            val latStr = backStackEntry.arguments?.getString("lat") ?: "0.0"
+            val longStr = backStackEntry.arguments?.getString("long") ?: "0.0"
+
+            MapPickerScreen(
+                initialLat = latStr.toDoubleOrNull() ?: 0.0,
+                initialLong = longStr.toDoubleOrNull() ?: 0.0,
+                onBackClick = { navController.popBackStack() },
+                onConfirmLocation = { lat, long ->
+                    // [LOGIC PENGEMBALIAN DATA]
+                    // Kita set data ke "SavedStateHandle" milik screen SEBELUMNYA (Form Address)
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("location_result", "$lat,$long") // Kirim string biar gampang
+
+                    navController.popBackStack() // Tutup map picker
+                }
+            )
         }
 
         // --- DASHBOARD ---
@@ -315,12 +367,13 @@ fun AppNavGraph(
                         route += "?paymentGroupId=$groupId"
                     }
                     navController.navigate(route)
+                },
+                onNavigateToMaps = { lat, long ->
+                    navController.navigate(Screen.MapRoute.createRoute(lat, long))
                 }
             )
         }
 
-        // [UPDATE] Payment Screen dengan Support Group ID (Optional)
-        // Route di Screen.kt sebaiknya: "payment_screen/{paymentUrl}/{orderId}?paymentGroupId={paymentGroupId}"
         composable(
             route = Screen.Payment.route,
             arguments = listOf(
@@ -427,7 +480,18 @@ fun AppNavGraph(
         composable(Screen.AddressCreate.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
-                AddressFormScreen(addressId = null, onBack = { navController.popBackStack() })
+                AddressFormScreen(
+                    addressId = null,
+                    onBack = { navController.popBackStack() },
+
+                    // [BARU] Pass NavController
+                    navController = navController,
+
+                    // [BARU] Aksi buka Map Picker
+                    onNavigateToMapPicker = { lat, long ->
+                        navController.navigate(Screen.MapPicker.createRoute(lat, long))
+                    }
+                )
             }
         }
 
@@ -437,8 +501,18 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val addressId = backStackEntry.arguments?.getString("addressId")
             val sessionManager: SessionManager = get()
+
             RequireAuth(sessionManager, navController) {
-                AddressFormScreen(addressId = addressId, onBack = { navController.popBackStack() })
+                AddressFormScreen(
+                    addressId = addressId,
+                    onBack = { navController.popBackStack() },
+
+                    // [PERBAIKAN] Tambahkan 2 parameter ini:
+                    navController = navController,
+                    onNavigateToMapPicker = { lat, long ->
+                        navController.navigate(Screen.MapPicker.createRoute(lat, long))
+                    }
+                )
             }
         }
 

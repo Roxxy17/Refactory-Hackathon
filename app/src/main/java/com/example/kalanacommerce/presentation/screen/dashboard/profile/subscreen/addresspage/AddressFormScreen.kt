@@ -1,6 +1,8 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,8 +14,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -21,17 +26,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
+import androidx.compose.ui.unit.sp
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.presentation.components.CustomToast
 import com.example.kalanacommerce.presentation.components.ToastType
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressFormScreen(
     addressId: String? = null,
     viewModel: AddressViewModel = koinViewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToMapPicker: (Double, Double) -> Unit,
+    navController: androidx.navigation.NavController
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isEditMode = addressId != null
@@ -48,10 +56,28 @@ fun AddressFormScreen(
     var provinceId by remember { mutableStateOf("") }
     var cityId by remember { mutableStateOf("") }
     var districtId by remember { mutableStateOf("") }
-
+    var latitude by remember { mutableDoubleStateOf(0.0) }
+    var longitude by remember { mutableDoubleStateOf(0.0) }
     var isDefault by remember { mutableStateOf(false) }
 
-    // --- LOAD DATA ---
+    // --- MAP RESULT LISTENER ---
+    // Mengambil hasil dari MapPickerScreen via SavedStateHandle
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+    val mapResult by savedStateHandle?.getLiveData<String>("location_result")?.observeAsState() ?: mutableStateOf(null)
+
+    LaunchedEffect(mapResult) {
+        mapResult?.let { resultString ->
+            val parts = resultString.split(",")
+            if (parts.size == 2) {
+                latitude = parts[0].toDoubleOrNull() ?: 0.0
+                longitude = parts[1].toDoubleOrNull() ?: 0.0
+                // Hapus data agar tidak trigaer ulang
+                savedStateHandle?.remove<String>("location_result")
+            }
+        }
+    }
+
+    // --- LOAD DATA (EDIT MODE) ---
     LaunchedEffect(addressId) {
         if (addressId != null) {
             viewModel.loadAddressDetail(addressId)
@@ -70,10 +96,12 @@ fun AddressFormScreen(
             cityId = data.citiesId
             districtId = data.districtsId
             isDefault = data.isDefault
+            latitude = data.latitude
+            longitude = data.longitude
         }
     }
 
-    // --- HANDLE RESPONSE ---
+    // --- HANDLE TOAST ---
     var showToast by remember { mutableStateOf(false) }
     var toastMsg by remember { mutableStateOf("") }
     var toastType by remember { mutableStateOf(ToastType.Success) }
@@ -123,12 +151,14 @@ fun AddressFormScreen(
             )
         },
         bottomBar = {
+            // Tombol Simpan Floating
             Surface(
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 16.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(20.dp)) {
                     Button(
                         onClick = {
                             viewModel.saveAddress(
@@ -142,7 +172,9 @@ fun AddressFormScreen(
                                 provinceId = provinceId.ifEmpty { "ID-PROV-DUMMY" },
                                 cityId = cityId.ifEmpty { "ID-CITY-DUMMY" },
                                 districtId = districtId.ifEmpty { "ID-DIS-DUMMY" },
-                                isDefault = isDefault
+                                isDefault = isDefault,
+                                latitude = latitude,
+                                longitude = longitude
                             )
                         },
                         modifier = Modifier
@@ -178,9 +210,11 @@ fun AddressFormScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
             // --- SECTION 1: LABEL ---
             FormSection(
                 title = stringResource(R.string.label_address_label),
@@ -190,11 +224,10 @@ fun AddressFormScreen(
                     value = label,
                     onValueChange = { label = it },
                     label = { Text(stringResource(R.string.hint_address_label)) },
-                    placeholder = { Text(stringResource(R.string.placeholder_address_label)) },
+                    placeholder = { Text("Contoh: Rumah, Kantor, Kost") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    leadingIcon = { Icon(Icons.Default.BookmarkBorder, null) },
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
                         imeAction = ImeAction.Next
@@ -203,7 +236,7 @@ fun AddressFormScreen(
                 )
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // --- SECTION 2: KONTAK PENERIMA ---
             FormSection(
@@ -243,7 +276,7 @@ fun AddressFormScreen(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // --- SECTION 3: DETAIL LOKASI ---
             FormSection(
@@ -282,8 +315,56 @@ fun AddressFormScreen(
                         ),
                         colors = inputColors()
                     )
+
+                    // [IMPROVED MAP BUTTON UI]
+                    val isLocationSet = latitude != 0.0 && longitude != 0.0
+                    val mapBorderColor = if (isLocationSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    val mapContainerColor = if (isLocationSet) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else Color.Transparent
+
+                    Surface(
+                        onClick = { onNavigateToMapPicker(latitude, longitude) },
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, mapBorderColor),
+                        color = mapContainerColor,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isLocationSet) Icons.Default.CheckCircle else Icons.Default.Map,
+                                contentDescription = null,
+                                tint = if (isLocationSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (isLocationSet) "Lokasi Terpilih" else "Pilih Titik di Peta",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (isLocationSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                if (isLocationSet) {
+                                    Text(
+                                        text = "${String.format("%.5f", latitude)}, ${String.format("%.5f", longitude)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Atur pinpoint untuk pengiriman akurat",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // --- SECTION 4: DATA WILAYAH ---
             FormSection(
@@ -301,7 +382,7 @@ fun AddressFormScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.helper_area_id),
+                            text = "Info Wilayah (Otomatis/Manual)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -349,14 +430,16 @@ fun AddressFormScreen(
 
             // --- SECTION 5: UTAMA SWITCH ---
             val switchBorderColor = if (isDefault) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            val switchContainerColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface
+            val switchContainerColor = if (isDefault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
 
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = switchContainerColor),
                 border = BorderStroke(1.dp, switchBorderColor),
-                onClick = { isDefault = !isDefault },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { isDefault = !isDefault }
             ) {
                 Row(
                     modifier = Modifier
@@ -390,7 +473,7 @@ fun AddressFormScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
 
         CustomToast(
@@ -412,18 +495,26 @@ fun FormSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -434,7 +525,9 @@ fun FormSection(
 @Composable
 fun inputColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
     focusedLabelColor = MaterialTheme.colorScheme.primary,
-    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+    unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
 )

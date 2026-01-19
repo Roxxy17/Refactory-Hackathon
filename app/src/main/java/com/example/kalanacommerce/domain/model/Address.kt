@@ -11,5 +11,7 @@ data class Address(
     val citiesId: String,
     val districtsId: String,
     val fullAddress: String,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val latitude: Double,
+    val longitude: Double
 )

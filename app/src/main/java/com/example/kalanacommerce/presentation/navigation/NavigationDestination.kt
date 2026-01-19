@@ -56,7 +56,7 @@ sealed class Screen(val route: String) {
         fun createRoute(itemIds: String) = "checkout_screen/$itemIds"
     }
 
-    data object Payment : Screen("payment_screen/{paymentUrl}/{orderId}") {
+    data object Payment : Screen("payment_screen/{paymentUrl}/{orderId}?paymentGroupId={paymentGroupId}") {
         fun createRoute(paymentUrl: String, orderId: String) = "payment_screen/$paymentUrl/$orderId"
     }
     data object TransactionGroupDetail : Screen("transaction_group_detail/{paymentGroupId}") {
@@ -76,6 +76,14 @@ sealed class Screen(val route: String) {
 
     data object AddressEdit : Screen("address_edit/{addressId}") {
         fun createRoute(addressId: String) = "address_edit/$addressId"
+    }
+
+    data object MapRoute : Screen("map_route_screen/{lat}/{long}") {
+        fun createRoute(lat: Double, long: Double) = "map_route_screen/$lat/$long"
+    }
+
+    data object MapPicker : Screen("map_picker_screen?lat={lat}&long={long}") {
+        fun createRoute(lat: Double = 0.0, long: Double = 0.0) = "map_picker_screen?lat=$lat&long=$long"
     }
 }
 
