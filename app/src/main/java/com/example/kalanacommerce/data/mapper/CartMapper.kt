@@ -40,6 +40,7 @@ fun CheckoutResponseDto.toDomain(): CheckoutResult {
         orderCode = orderCode,
         totalAmount = totalAmount,
         snapToken = snapToken ?: "",
-        snapRedirectUrl = snapRedirectUrl ?: ""
+        snapRedirectUrl = snapRedirectUrl ?: "",
+        paymentGroupId = paymentGroupId ?: ""
     )
 }

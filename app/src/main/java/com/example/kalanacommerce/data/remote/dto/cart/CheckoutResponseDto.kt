@@ -8,5 +8,6 @@ data class CheckoutResponseDto(
     val orderCode: String,
     val totalAmount: Long,
     val snapToken: String?,
-    val snapRedirectUrl: String?
+    val snapRedirectUrl: String?,
+    val paymentGroupId: String? = null
 )

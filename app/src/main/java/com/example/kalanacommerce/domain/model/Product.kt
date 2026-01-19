@@ -42,6 +42,15 @@ data class ProductVariant(
     val unitName: String
 )
 
-data class Outlet(val id: String, val name: String, val location: String, val canPickup: Boolean, val canDelivery: Boolean)
+data class Outlet(
+    val id: String,
+    val name: String,
+    val location: String,
+    val canPickup: Boolean,
+    val canDelivery: Boolean,
+    val lat: String? = null,
+    val long: String? = null
+)
+
 data class Category(val id: String, val name: String)
 data class MeasurementUnit(val id: String, val name: String)

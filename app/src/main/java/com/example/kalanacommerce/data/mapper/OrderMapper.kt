@@ -10,6 +10,7 @@ fun OrderDto.toDomain(): Order {
     return Order(
         id = id,
         orderCode = orderCode,
+        outletId = outletId,
         outletName = outlet?.name ?: "Toko Kalana",
         totalAmount = totalAmount,
         status = parseStatus(status),

@@ -41,7 +41,7 @@ fun ProductDto.toDomain(): Product {
         variants = variants?.map { it.toDomain() } ?: emptyList(),
         outletName = outlet?.name ?: "Unknown Outlet",
         categoryName = category?.name ?: "Uncategorized",
-        outlet = outlet?.toDomain()
+        outlet = outlet?.toDomain(),
     )
 }
 
@@ -61,7 +61,9 @@ fun OutletDto.toDomain(): Outlet {
         name = name,
         location = "${latitude ?: "0.0"}, ${longitude ?: "0.0"}",
         canPickup = settings?.pickup ?: false,
-        canDelivery = settings?.delivery ?: false
+        canDelivery = settings?.delivery ?: false,
+        lat = latitude,
+        long = longitude
     )
 }
 

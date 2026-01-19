@@ -57,7 +57,13 @@ sealed class Screen(val route: String) {
     }
 
     data object Payment : Screen("payment_screen/{paymentUrl}/{orderId}?paymentGroupId={paymentGroupId}") {
-        fun createRoute(paymentUrl: String, orderId: String) = "payment_screen/$paymentUrl/$orderId"
+        fun createRoute(paymentUrl: String, orderId: String, paymentGroupId: String? = null): String {
+            return if (paymentGroupId != null) {
+                "payment_screen/$paymentUrl/$orderId?paymentGroupId=$paymentGroupId"
+            } else {
+                "payment_screen/$paymentUrl/$orderId"
+            }
+        }
     }
     data object TransactionGroupDetail : Screen("transaction_group_detail/{paymentGroupId}") {
         fun createRoute(paymentGroupId: String) = "transaction_group_detail/$paymentGroupId"
@@ -85,6 +91,18 @@ sealed class Screen(val route: String) {
     data object MapPicker : Screen("map_picker_screen?lat={lat}&long={long}") {
         fun createRoute(lat: Double = 0.0, long: Double = 0.0) = "map_picker_screen?lat=$lat&long=$long"
     }
+
+    data object OrderSuccess : Screen("order_success?orderId={orderId}&paymentGroupId={paymentGroupId}") {
+        fun createRoute(orderId: String? = null, paymentGroupId: String? = null): String {
+            // Helper simple logic
+            return if (paymentGroupId != null) {
+                "order_success?paymentGroupId=$paymentGroupId"
+            } else {
+                "order_success?orderId=$orderId"
+            }
+        }
+    }
+
 }
 
 // Navigation Bottom Bar Screen

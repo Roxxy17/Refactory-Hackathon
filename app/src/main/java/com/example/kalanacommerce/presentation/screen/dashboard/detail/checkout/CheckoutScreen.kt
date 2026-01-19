@@ -53,7 +53,7 @@ fun CheckoutScreen(
     viewModel: CheckoutViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onNavigateToPayment: (String, String) -> Unit,
+    onNavigateToPayment: (String, String, String?) -> Unit,
     onNavigateToAddress: () -> Unit
 ) {
     LaunchedEffect(itemIdsString) {
@@ -91,9 +91,11 @@ fun CheckoutScreen(
         uiState.checkoutResult?.let { result ->
             val paymentUrl = result.snapRedirectUrl
             val orderId = result.id
+            val paymentGroupId = result.paymentGroupId
 
             if (paymentUrl.isNotEmpty() && orderId.isNotEmpty()) {
-                onNavigateToPayment(paymentUrl, orderId)
+                // [FIX] Kirim 3 parameter
+                onNavigateToPayment(paymentUrl, orderId, paymentGroupId)
                 viewModel.onPaymentNavigationHandled()
             }
         }

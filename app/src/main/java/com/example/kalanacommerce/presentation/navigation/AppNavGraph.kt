@@ -34,6 +34,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.checkout.
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.payment.PaymentScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.DetailProductPage
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.DetailStorePage
+import com.example.kalanacommerce.presentation.screen.dashboard.detail.success.OrderSuccessScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen // Import screen baru ini
@@ -292,13 +293,13 @@ fun AppNavGraph(
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
 
-                // [NOTE] Idealnya di sini kirim paymentGroupId juga jika Checkout Result sudah diupdate
-                // Untuk sementara kita pakai route payment default, nanti payment screen handle fallback
-                onNavigateToPayment = { paymentUrl, orderId ->
-                    val encodedUrl =
-                        URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
-                    // Kirim paymentGroupId = orderId (sebagai default/hack sementara) atau null string
-                    navController.navigate(Screen.Payment.createRoute(encodedUrl, orderId))
+                onNavigateToPayment = { paymentUrl, orderId, paymentGroupId ->
+                    val encodedUrl = URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
+
+                    // [FIX] Gunakan createRoute yang baru
+                    navController.navigate(
+                        Screen.Payment.createRoute(encodedUrl, orderId, paymentGroupId)
+                    )
                 },
                 onNavigateToAddress = {
                     navController.navigate(Screen.AddressList.route)
@@ -360,13 +361,8 @@ fun AppNavGraph(
                 // [PERBAIKAN] Menerima 3 parameter: url, id, groupId
                 onNavigateToPayment = { snapUrl, id, groupId ->
                     val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
-
-                    // Bangun rute dengan parameter opsional
-                    var route = Screen.Payment.createRoute(encodedUrl, id)
-                    if (groupId != null) {
-                        route += "?paymentGroupId=$groupId"
-                    }
-                    navController.navigate(route)
+                    // Gunakan createRoute yang aman
+                    navController.navigate(Screen.Payment.createRoute(encodedUrl, id, groupId))
                 },
                 onNavigateToMaps = { lat, long ->
                     navController.navigate(Screen.MapRoute.createRoute(lat, long))
@@ -393,22 +389,14 @@ fun AppNavGraph(
                 paymentUrl = url,
                 orderId = orderId,
                 onPaymentFinished = { _ ->
-                    // [LOGIC PENTING]
-                    // Jika ada Group ID, arahkan ke layar Gabungan. Jika tidak, ke History biasa.
-                    if (!paymentGroupId.isNullOrEmpty()) {
-                        navController.navigate(
-                            Screen.TransactionGroupDetail.createRoute(
-                                paymentGroupId
-                            )
-                        ) {
-                            popUpTo(Screen.Dashboard.route) // Bersihkan stack
-                            launchSingleTop = true
-                        }
-                    } else {
-                        navController.navigate(Screen.Transaction.route) {
-                            popUpTo(Screen.Dashboard.route)
-                            launchSingleTop = true
-                        }
+                    val targetRoute = Screen.OrderSuccess.createRoute(
+                        orderId = if (paymentGroupId == null) orderId else null,
+                        paymentGroupId = paymentGroupId
+                    )
+
+                    navController.navigate(targetRoute) {
+                        // Hapus PaymentScreen dari stack agar kalau di-back tidak balik ke webview
+                        popUpTo(Screen.Payment.route) { inclusive = true }
                     }
                 },
                 onBackClick = { navController.popBackStack() }
@@ -515,6 +503,36 @@ fun AppNavGraph(
                 )
             }
         }
+
+        composable(
+            route = Screen.OrderSuccess.route,
+            arguments = listOf(
+                navArgument("orderId") { type = NavType.StringType; nullable = true },
+                navArgument("paymentGroupId") { type = NavType.StringType; nullable = true }
+            )
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId")
+            val groupId = backStackEntry.arguments?.getString("paymentGroupId")
+
+            OrderSuccessScreen(
+                orderId = orderId,
+                paymentGroupId = groupId,
+                onNavigateToHistory = {
+                    // Saat klik selesai, baru ke history/group detail
+                    if (groupId != null) {
+                        navController.navigate(Screen.TransactionGroupDetail.createRoute(groupId)) {
+                            popUpTo(Screen.Dashboard.route)
+                        }
+                    } else {
+                        navController.navigate(Screen.Transaction.route) {
+                            popUpTo(Screen.Dashboard.route)
+                        }
+                    }
+                }
+            )
+        }
+
+
 
         // --- AUTH GRAPH ---
         authGraph(

@@ -3,6 +3,7 @@ package com.example.kalanacommerce.domain.model
 data class Order(
     val id: String,
     val orderCode: String,
+    val outletId: String,
     val outletName: String,
     val totalAmount: Long,
     val status: OrderStatus, // Enum biar aman
