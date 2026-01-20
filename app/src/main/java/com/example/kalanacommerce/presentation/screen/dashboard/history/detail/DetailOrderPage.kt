@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payment
@@ -47,11 +48,12 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.g
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
-// Warna Brand
+// Warna Brand (Sama seperti sebelumnya)
 val BrandOrange = Color(0xFFF96D20)
 val BrandGreen = Color(0xFF43A047)
 val BrandRed = Color(0xFFE53935)
 val BrandBlue = Color(0xFF2196F3)
+val BrandYellow = Color(0xFFFFA000)
 
 @Composable
 fun DetailOrderPage(
@@ -60,7 +62,8 @@ fun DetailOrderPage(
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onNavigateToPayment: (String, String, String?) -> Unit,
-    onNavigateToMaps: (Double, Double) -> Unit // [UBAH] Terima Lat & Long
+    // [UBAH] Parameter sekarang String (orderId), bukan Double (Lat/Long)
+    onNavigateToMaps: (String) -> Unit
 ) {
     LaunchedEffect(orderId) {
         viewModel.loadOrderDetail(orderId)
@@ -69,7 +72,6 @@ fun DetailOrderPage(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Setup Tema
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
         when (themeSetting) {
@@ -85,7 +87,6 @@ fun DetailOrderPage(
     BackHandler { onBackClick() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Background Image
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -93,7 +94,6 @@ fun DetailOrderPage(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Gradient Overlay Halus
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -112,22 +112,34 @@ fun DetailOrderPage(
             contentWindowInsets = WindowInsets(0.dp),
             bottomBar = {
                 val order = uiState.order
-                // Tampilkan Bottom Bar hanya jika status PENDING
-                if (order != null && order.status == OrderStatus.PENDING) {
-                    PaymentBottomBarEnhanced(
-                        totalAmount = order.totalAmount,
-                        onPayClick = {
-                            val paymentUrl = order.snapRedirectUrl
-                            val targetUrl = if (!paymentUrl.isNullOrEmpty()) paymentUrl else order.snapToken
-                            if (!targetUrl.isNullOrEmpty()) {
-                                onNavigateToPayment(targetUrl, orderId, order.paymentGroupId)
+                if (order != null) {
+                    // KONDISI 1: Belum Bayar -> Tombol Bayar
+                    if (order.status == OrderStatus.PENDING) {
+                        PaymentBottomBarEnhanced(
+                            totalAmount = order.totalAmount,
+                            isPending = true,
+                            onPayClick = {
+                                val paymentUrl = order.snapRedirectUrl
+                                val targetUrl = if (!paymentUrl.isNullOrEmpty()) paymentUrl else order.snapToken
+                                if (!targetUrl.isNullOrEmpty()) {
+                                    onNavigateToPayment(targetUrl, orderId, order.paymentGroupId)
+                                }
+                            },
+                            onMapsClick = {}
+                        )
+                    }
+                    // KONDISI 2: Sudah Bayar & Belum Diambil -> Tombol Tracking (Ke OrderSuccess)
+                    else if ((order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP") {
+                        PaymentBottomBarEnhanced(
+                            totalAmount = order.totalAmount,
+                            isPending = false,
+                            onPayClick = {},
+                            onMapsClick = {
+                                // [UBAH] Panggil navigasi dengan Order ID
+                                onNavigateToMaps(orderId)
                             }
-                        },
-                        // [FIX] Mengambil data dari UiState dan navigasi
-                        onMapsClick = {
-                            onNavigateToMaps(uiState.defaultLat, uiState.defaultLong)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         ) { paddingValues ->
@@ -145,7 +157,6 @@ fun DetailOrderPage(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 20.dp)
                 ) {
-                    // --- Header ---
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -172,25 +183,15 @@ fun DetailOrderPage(
                         )
                     }
 
-                    // --- Status Section (Tracker) ---
+                    // Section Komponen (Sama seperti sebelumnya)
                     OrderTrackerSection(order, isDarkActive, textColor, subTextColor)
-
                     Spacer(modifier = Modifier.height(20.dp))
-
-                    // --- Order ID & Info ---
                     OrderIdSection(context, order, isDarkActive, textColor, subTextColor)
-
                     Spacer(modifier = Modifier.height(20.dp))
-
-                    // --- List Produk ---
                     OrderItemsListEnhanced(order.items, order.outletName, isDarkActive, textColor, subTextColor)
-
                     Spacer(modifier = Modifier.height(20.dp))
-
-                    // --- Rincian Pembayaran ---
                     OrderPaymentDetailEnhanced(order, isDarkActive, textColor, subTextColor)
-
-                    Spacer(modifier = Modifier.height(120.dp)) // Spacer bawah
+                    Spacer(modifier = Modifier.height(120.dp))
                 }
             }
         }
@@ -198,8 +199,6 @@ fun DetailOrderPage(
 }
 
 // --- COMPONENTS ---
-// (OrderTrackerSection, OrderIdSection, OrderItemsListEnhanced, OrderPaymentDetailEnhanced SAMA SEPERTI SEBELUMNYA)
-// ... Copy paste komponen UI yang lain ...
 
 @Composable
 fun OrderTrackerSection(
@@ -208,30 +207,52 @@ fun OrderTrackerSection(
     textColor: Color,
     subTextColor: Color
 ) {
-    val statusColor = when (order.status) {
-        OrderStatus.PENDING -> BrandOrange
-        OrderStatus.PAID, OrderStatus.PROCESSED -> BrandBlue
-        OrderStatus.SHIPPED -> BrandBlue
-        OrderStatus.COMPLETED -> BrandGreen
-        OrderStatus.CANCELLED, OrderStatus.FAILED, OrderStatus.EXPIRED -> BrandRed
-        else -> Color.Gray
-    }
-
-    val statusIcon = when (order.status) {
-        OrderStatus.PENDING -> Icons.Default.Payment
-        OrderStatus.SHIPPED -> Icons.Default.LocalShipping
-        OrderStatus.COMPLETED -> Icons.Default.Check
-        else -> Icons.Default.ShoppingBag
-    }
-
-    val statusText = when(order.status) {
-        OrderStatus.PENDING -> "Menunggu Pembayaran"
-        OrderStatus.PAID -> "Sudah Dibayar"
-        OrderStatus.PROCESSED -> "Sedang Diproses"
-        OrderStatus.SHIPPED -> "Sedang Dikirim"
-        OrderStatus.COMPLETED -> "Pesanan Selesai"
-        OrderStatus.CANCELLED -> "Dibatalkan"
-        else -> "Status Order"
+    // [LOGIC STATUS DINAMIS]
+    val (statusColor, statusIcon, statusText, desc) = when {
+        // 1. PENDING
+        order.status == OrderStatus.PENDING -> Quad(
+            BrandOrange,
+            Icons.Default.Payment,
+            "Menunggu Pembayaran",
+            "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
+        )
+        // 2. PAID / PROCESSED (Cek status pickup)
+        order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED -> {
+            when (order.pickupStatus) {
+                "READY" -> Quad(
+                    BrandYellow, // Orange/Kuning Warning
+                    Icons.Default.Store,
+                    "Siap Diambil",
+                    "Silakan datang ke toko dan tunjukkan kode pesanan ini."
+                )
+                "PICKED_UP" -> Quad(
+                    BrandGreen,
+                    Icons.Default.Check,
+                    "Selesai Diambil",
+                    "Barang telah berhasil diambil. Terima kasih!"
+                )
+                else -> Quad( // "PROCESS"
+                    BrandBlue,
+                    Icons.Default.Inventory2, // Ikon Paket/Barang
+                    "Pesanan Diproses",
+                    "Penjual sedang menyiapkan barang pesananmu."
+                )
+            }
+        }
+        // 3. COMPLETED
+        order.status == OrderStatus.COMPLETED -> Quad(
+            BrandGreen,
+            Icons.Default.Check,
+            "Pesanan Selesai",
+            "Transaksi telah selesai sepenuhnya."
+        )
+        // 4. CANCELLED / FAILED
+        else -> Quad(
+            BrandRed,
+            Icons.Default.ShoppingBag,
+            "Dibatalkan",
+            "Pesanan ini telah dibatalkan."
+        )
     }
 
     Box(
@@ -266,13 +287,6 @@ fun OrderTrackerSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val desc = when(order.status) {
-                OrderStatus.PENDING -> "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
-                OrderStatus.PROCESSED -> "Penjual sedang menyiapkan barang pesananmu."
-                OrderStatus.SHIPPED -> "Kurir sedang menuju ke lokasimu."
-                OrderStatus.COMPLETED -> "Barang telah diterima. Terima kasih!"
-                else -> "Cek status secara berkala untuk update terbaru."
-            }
             Text(
                 text = desc,
                 style = MaterialTheme.typography.bodySmall,
@@ -283,6 +297,9 @@ fun OrderTrackerSection(
         }
     }
 }
+
+// Helper Class untuk Return 4 Value
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Composable
 fun OrderIdSection(
@@ -485,13 +502,13 @@ fun OrderPaymentDetailEnhanced(
     }
 }
 
-
-// [FIX] Definisi Komponen yang Benar (Tanpa Logic aneh di parameter)
+// [FIX] Bottom Bar fleksibel (Bisa mode bayar atau mode rute)
 @Composable
 fun PaymentBottomBarEnhanced(
     totalAmount: Long,
+    isPending: Boolean,
     onPayClick: () -> Unit,
-    onMapsClick: () -> Unit // Callback sederhana
+    onMapsClick: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -500,7 +517,7 @@ fun PaymentBottomBarEnhanced(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
-            // Baris Info Harga
+            // Baris Info Harga (Hanya jika pending atau mau ditampilkan selalu)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -521,40 +538,47 @@ fun PaymentBottomBarEnhanced(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Baris Tombol Aksi
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Tombol Maps
-                OutlinedButton(
-                    onClick = onMapsClick, // [FIX] Panggil callback langsung
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    contentPadding = PaddingValues(0.dp)
+            if (isPending) {
+                // MODE BAYAR: Ada tombol "Lokasi" (disabled/info) dan "Bayar Sekarang"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Map,
-                        contentDescription = null,
-                        tint = BrandBlue,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Rute Toko", fontWeight = FontWeight.Bold, color = BrandBlue, fontSize = 13.sp)
-                }
+                    // Tombol Lokasi (Bisa di-disable atau arah ke toko, tapi fokus bayar dulu)
+                    OutlinedButton(
+                        onClick = onMapsClick,
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue),
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(Icons.Default.Map, null, tint = BrandBlue, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Rute Toko", fontWeight = FontWeight.Bold, color = BrandBlue, fontSize = 13.sp)
+                    }
 
-                // Tombol Bayar
+                    Button(
+                        onClick = onPayClick,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandOrange, contentColor = Color.White),
+                        modifier = Modifier.weight(1.5f).height(48.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    ) {
+                        Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                // MODE PICKUP: Hanya tombol "Lihat Rute / Ambil Barang"
                 Button(
-                    onClick = onPayClick,
+                    onClick = onMapsClick,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandOrange,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.weight(1.5f).height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                 ) {
-                    Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Map, null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Lihat Rute / Ambil Barang", fontWeight = FontWeight.Bold)
                 }
             }
         }

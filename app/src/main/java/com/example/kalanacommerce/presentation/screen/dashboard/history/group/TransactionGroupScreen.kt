@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,7 +46,8 @@ fun TransactionGroupScreen(
     viewModel: TransactionGroupViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
-    onNavigateToOrderDetail: (String) -> Unit
+    onNavigateToOrderDetail: (String) -> Unit,
+    onNavigateToMaps: (String) -> Unit
 ) {
     LaunchedEffect(paymentGroupId) {
         viewModel.loadGroupData(paymentGroupId)
@@ -218,7 +220,8 @@ fun TransactionGroupScreen(
                             textColor = textColor,
                             subTextColor = subTextColor,
                             brandGreen = brandGreen,
-                            onDetailClick = { onNavigateToOrderDetail(order.id) }
+                            onDetailClick = { onNavigateToOrderDetail(order.id) },
+                            onMapsClick = { onNavigateToMaps(order.id) }
                         )
                     }
 
@@ -280,8 +283,23 @@ fun StoreOrderCardTransparent(
     textColor: Color,
     subTextColor: Color,
     brandGreen: Color,
-    onDetailClick: () -> Unit
+    onDetailClick: () -> Unit,
+    onMapsClick: () -> Unit // [BARU]
 ) {
+    // [LOGIC STATUS LABEL]
+    val pickupStatusText = when (order.pickupStatus) {
+        "PROCESS" -> "Diproses"
+        "READY" -> "Siap Diambil"
+        "PICKED_UP" -> "Selesai"
+        else -> ""
+    }
+    val pickupColor = when (order.pickupStatus) {
+        "READY" -> Color(0xFFFFA000)
+        "PROCESS" -> Color(0xFF2196F3)
+        "PICKED_UP" -> Color(0xFF43A047)
+        else -> Color.Gray
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -302,8 +320,25 @@ fun StoreOrderCardTransparent(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(order.outletName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = textColor)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Lihat Detail", fontSize = 11.sp, color = subTextColor)
+
+                // [BARU] Tampilkan Badge Status Pickup atau Tombol Rute
+                if (order.status == OrderStatus.PAID && order.pickupStatus != "PICKED_UP") {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = pickupColor.copy(alpha = 0.1f),
+                        border = BorderStroke(1.dp, pickupColor),
+                        modifier = Modifier.clickable { onMapsClick() } // Klik badge -> Maps
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Default.Map, null, tint = pickupColor, modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(pickupStatusText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = pickupColor)
+                        }
+                    }
+                } else {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = subTextColor, modifier = Modifier.size(16.dp))
                 }
             }
@@ -313,7 +348,7 @@ fun StoreOrderCardTransparent(
                 color = if (isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
             )
 
-            // Items Preview (Maksimal 2 item)
+            // Items Preview
             order.items.take(2).forEachIndexed { index, item ->
                 GroupProductItemTransparent(item, isDark, textColor, subTextColor)
                 if (index < order.items.size - 1 && index < 1) {
@@ -321,20 +356,27 @@ fun StoreOrderCardTransparent(
                 }
             }
 
-            // Jika item lebih dari 2
             if (order.items.size > 2) {
-                Text(
-                    text = "+ ${order.items.size - 2} produk lainnya...",
-                    fontSize = 11.sp,
-                    color = subTextColor,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Text("+ ${order.items.size - 2} produk lainnya...", fontSize = 11.sp, color = subTextColor, modifier = Modifier.padding(top = 8.dp))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Subtotal Toko
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            // Footer (Subtotal + Tombol Aksi jika perlu)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                // Jika belum selesai, beri opsi Lihat Rute
+                if ((order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP") {
+                    Text(
+                        text = "Lihat Rute",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2196F3),
+                        modifier = Modifier.clickable { onMapsClick() }
+                    )
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
                 Text(
                     text = "Subtotal: ${String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount)}",
                     fontWeight = FontWeight.SemiBold,

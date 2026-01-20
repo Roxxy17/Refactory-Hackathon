@@ -123,13 +123,13 @@ fun DashboardScreen(
                                 // Navigasi ke Detail Order (Single)
                                 mainNavController.navigate(Screen.DetailOrder.createRoute(orderId))
                             },
-                            // [PERBAIKAN] Menambahkan callback untuk Group Detail
                             onNavigateToGroupDetail = { groupId ->
-                                mainNavController.navigate(
-                                    Screen.TransactionGroupDetail.createRoute(
-                                        groupId
-                                    )
-                                )
+                                // Navigasi ke Group Detail
+                                mainNavController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
+                            },
+                            // [PERBAIKAN] Tambahkan parameter wajib ini untuk Tracking/Maps
+                            onNavigateToMaps = { orderId ->
+                                mainNavController.navigate(Screen.OrderSuccess.createRoute(orderId = orderId))
                             }
                         )
                     } else {

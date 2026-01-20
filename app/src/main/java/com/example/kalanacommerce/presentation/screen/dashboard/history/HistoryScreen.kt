@@ -1,3 +1,4 @@
+// File: presentation/screen/dashboard/history/HistoryScreen.kt
 package com.example.kalanacommerce.presentation.screen.dashboard.history
 
 import androidx.compose.foundation.BorderStroke
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -43,13 +45,20 @@ import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import kotlin.math.abs
 
+// Warna Status
+val StatusOrange = Color(0xFFFFA000)
+val StatusBlue = Color(0xFF2196F3)
+val StatusGreen = Color(0xFF43A047)
+
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: OrderHistoryViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onNavigateToDetail: (String) -> Unit,
-    onNavigateToGroupDetail: (String) -> Unit
+    onNavigateToGroupDetail: (String) -> Unit,
+    // [BARU] Callback navigasi ke Maps (OrderSuccessScreen)
+    onNavigateToMaps: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -70,7 +79,6 @@ fun HistoryScreen(
     val mainGreen = Color(0xFF43A047)
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 1. Background Image
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -78,19 +86,16 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Gradient Overlay
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            if (isDarkActive) Color.Black.copy(0.3f) else Color.White.copy(0.3f),
-                            Color.Transparent,
-                            if (isDarkActive) Color.Black.copy(0.1f) else Color.White.copy(0.1f)
-                        )
+            modifier = Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        if (isDarkActive) Color.Black.copy(0.3f) else Color.White.copy(0.3f),
+                        Color.Transparent,
+                        if (isDarkActive) Color.Black.copy(0.1f) else Color.White.copy(0.1f)
                     )
                 )
+            )
         )
 
         Scaffold(
@@ -98,23 +103,12 @@ fun HistoryScreen(
             contentWindowInsets = WindowInsets(0.dp),
             modifier = Modifier.fillMaxSize()
         ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // --- Header Section ---
-                Column(
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                ) {
+            Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                // Header
+                Column(modifier = Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp)) {
                     Text(
                         text = stringResource(R.string.history_title),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
                         color = mainGreen
                     )
                     Text(
@@ -124,7 +118,7 @@ fun HistoryScreen(
                     )
                 }
 
-                // --- Tabs ---
+                // Tabs
                 val tabs = listOf(
                     stringResource(R.string.history_tab_process),
                     stringResource(R.string.history_tab_completed),
@@ -165,7 +159,7 @@ fun HistoryScreen(
                     }
                 }
 
-                // --- List Content ---
+                // List Content
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = mainGreen)
@@ -183,7 +177,8 @@ fun HistoryScreen(
                                     OrderCardItemRefined(
                                         order = item.order,
                                         isDark = isDarkActive,
-                                        onClick = { onNavigateToDetail(item.order.id) }
+                                        onClick = { onNavigateToDetail(item.order.id) },
+                                        onMapsClick = { onNavigateToMaps(item.order.id) } // Pass ID
                                     )
                                 }
                                 is HistoryUiItem.Group -> {
@@ -208,10 +203,24 @@ fun HistoryScreen(
 fun OrderCardItemRefined(
     order: Order,
     isDark: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMapsClick: () -> Unit // [BARU]
 ) {
-    val statusColor = getStatusColor(order.status)
-    val statusText = getStatusText(order.status)
+    // [LOGIC STATUS LABEL DINAMIS]
+    val (statusText, statusColor) = when {
+        order.status == OrderStatus.PENDING -> "Menunggu Bayar" to StatusOrange
+        order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED -> {
+            when (order.pickupStatus) {
+                "READY" -> "Siap Diambil" to StatusOrange
+                "PICKED_UP" -> "Selesai" to StatusGreen
+                else -> "Diproses Penjual" to StatusBlue
+            }
+        }
+        order.status == OrderStatus.COMPLETED -> "Selesai" to StatusGreen
+        order.status == OrderStatus.CANCELLED -> "Dibatalkan" to Color.Red
+        else -> getStatusText(order.status) to getStatusColor(order.status)
+    }
+
     val textColor = if (isDark) Color.White else Color.Black
     val subTextColor = if (isDark) Color.White.copy(0.6f) else Color.Gray
 
@@ -223,35 +232,20 @@ fun OrderCardItemRefined(
             .padding(16.dp)
     ) {
         Column {
-            // Header: Icon Toko Biasa
+            // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Store,
-                        contentDescription = "Store",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    Icon(Icons.Default.Store, "Store", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(
-                            text = order.outletName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = textColor
-                        )
-                        Text(
-                            text = order.date,
-                            fontSize = 10.sp,
-                            color = subTextColor
-                        )
+                        Text(order.outletName, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = textColor)
+                        Text(order.date, fontSize = 10.sp, color = subTextColor)
                     }
                 }
-
                 StatusBadge(text = statusText, color = statusColor)
             }
 
@@ -261,13 +255,9 @@ fun OrderCardItemRefined(
                 color = if (isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
             )
 
-            // Content Preview
+            // Content
             val firstItem = order.items.firstOrNull()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Box Image Produk
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (firstItem != null && firstItem.image.isNotEmpty()) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
@@ -275,20 +265,16 @@ fun OrderCardItemRefined(
                         modifier = Modifier.size(60.dp)
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(firstItem.image)
-                                .crossfade(true)
-                                .build(),
+                            model = ImageRequest.Builder(LocalContext.current).data(firstItem.image).crossfade(true).build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 } else {
-                    // Fallback jika tidak ada gambar produk -> Single Order -> HIJAU
                     StoreGraphicBox(
                         seedKey = order.outletName,
-                        borderColor = Color(0xFF4CAF50), // [WARNA HIJAU UNTUK TUNGGAL]
+                        borderColor = Color(0xFF4CAF50),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.size(60.dp)
                     )
@@ -296,22 +282,10 @@ fun OrderCardItemRefined(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Info
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = firstItem?.productName ?: "Item Order",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text(firstItem?.productName ?: "Item Order", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (order.itemCount > 1) "+ ${order.itemCount - 1} produk lainnya" else "${firstItem?.quantity ?: 1} Barang",
-                        fontSize = 12.sp,
-                        color = subTextColor
-                    )
+                    Text(if (order.itemCount > 1) "+ ${order.itemCount - 1} produk lainnya" else "${firstItem?.quantity ?: 1} Barang", fontSize = 12.sp, color = subTextColor)
                 }
             }
 
@@ -325,25 +299,36 @@ fun OrderCardItemRefined(
             ) {
                 Column {
                     Text("Total Belanja", fontSize = 10.sp, color = subTextColor)
-                    Text(
-                        text = String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text(String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
                 }
 
-                // Tombol Aksi
+                // [LOGIC TOMBOL AKSI]
                 if (order.status == OrderStatus.PENDING) {
                     OutlinedButton(
-                        onClick = onClick,
+                        onClick = onClick, // Ke Detail -> Payment
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         modifier = Modifier.height(36.dp)
                     ) {
                         Text("Bayar", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                     }
-                } else if (order.status == OrderStatus.COMPLETED) {
+                }
+                // [BARU] Jika sudah bayar tapi belum diambil -> Ke MAPS
+                else if ((order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP") {
+                    Button(
+                        onClick = onMapsClick, // Ke Maps
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Icon(Icons.Default.Map, null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val btnText = if (order.pickupStatus == "READY") "Ambil Barang" else "Lacak"
+                        Text(btnText, fontSize = 12.sp)
+                    }
+                }
+                else if (order.status == OrderStatus.COMPLETED || order.pickupStatus == "PICKED_UP") {
                     Button(
                         onClick = { /* Logic Beli Lagi */ },
                         shape = RoundedCornerShape(12.dp),
@@ -359,7 +344,8 @@ fun OrderCardItemRefined(
     }
 }
 
-// --- GROUP ORDER CARD (MULTI STORE) ---
+// ... (GroupOrderCard, StoreGraphicBox, StatusBadge, EmptyState, getStatusColor, getStatusText SAMA SEPERTI SEBELUMNYA) ...
+// Copy paste saja bagian bawah file HistoryScreen.kt yang lama
 @Composable
 fun GroupOrderCard(
     groupItem: HistoryUiItem.Group,
@@ -367,6 +353,7 @@ fun GroupOrderCard(
     onDetailClick: (String) -> Unit,
     onGroupClick: (String) -> Unit
 ) {
+    // ... (Isi sama dengan kode sebelumnya, tidak perlu diubah logicnya karena tombol ada di dalam Detail Group) ...
     val firstOrder = groupItem.orders.first()
     val totalGroupAmount = groupItem.orders.sumOf { it.totalAmount }
     val itemCountTotal = groupItem.orders.sumOf { it.itemCount }
@@ -384,7 +371,6 @@ fun GroupOrderCard(
             .padding(16.dp)
     ) {
         Column {
-            // Header Group: Icon Biasa
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -410,7 +396,6 @@ fun GroupOrderCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = subTextColor.copy(0.2f))
 
-            // List Order Kecil (Per Toko)
             groupItem.orders.forEachIndexed { index, order ->
                 Row(
                     modifier = Modifier
@@ -419,10 +404,9 @@ fun GroupOrderCard(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // [UPDATED] Gabungan Order -> OREN
                     StoreGraphicBox(
                         seedKey = order.outletName,
-                        borderColor = Color(0xFFFF9800), // [WARNA OREN UNTUK GABUNGAN]
+                        borderColor = Color(0xFFFF9800),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.size(40.dp)
                     )
@@ -442,7 +426,6 @@ fun GroupOrderCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = subTextColor.copy(0.2f))
 
-            // Footer Group
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -482,16 +465,10 @@ fun GroupOrderCard(
     }
 }
 
-// --- UTILS & HELPERS ---
-
-// [NEW COMPONENT REVISED]
-// Kotak Grafis Toko:
-// - Gambar Full (ContentScale.Crop, tanpa padding)
-// - Warna ditentukan oleh parameter [borderColor]
 @Composable
 fun StoreGraphicBox(
     seedKey: String,
-    borderColor: Color, // [PARAMETER BARU]
+    borderColor: Color,
     shape: Shape,
     modifier: Modifier = Modifier
 ) {
@@ -507,17 +484,15 @@ fun StoreGraphicBox(
 
     Box(
         modifier = modifier
-            .background(Color.White, shape) // Background putih bersih di belakang gambar
-            .border(2.dp, borderColor, shape), // Outline sesuai parameter
+            .background(Color.White, shape)
+            .border(2.dp, borderColor, shape),
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(id = iconRes),
             contentDescription = null,
-            contentScale = ContentScale.Crop, // FULL IMAGE
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape) // Clip agar sesuai bentuk kotak
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().clip(shape)
         )
     }
 }

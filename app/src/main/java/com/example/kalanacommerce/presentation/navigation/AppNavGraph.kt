@@ -317,11 +317,14 @@ fun AppNavGraph(
                 HistoryScreen(
                     themeSetting = themeSetting,
                     onNavigateToDetail = { orderId ->
-                        // Cek apakah ini Single Order atau Group (Logic bisa dihandle di HistoryScreen)
                         navController.navigate(Screen.DetailOrder.createRoute(orderId))
                     },
                     onNavigateToGroupDetail = { groupId ->
                         navController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
+                    },
+                    // [FIX] Tambahkan ini: Navigasi ke OrderSuccess untuk tracking
+                    onNavigateToMaps = { orderId ->
+                        navController.navigate(Screen.OrderSuccess.createRoute(orderId = orderId))
                     }
                 )
             }
@@ -329,7 +332,7 @@ fun AppNavGraph(
 
         // [BARU] Screen Gabungan (Multi-Toko)
         composable(
-            route = Screen.TransactionGroupDetail.route, // Pastikan route ini ada di Screen.kt
+            route = Screen.TransactionGroupDetail.route,
             arguments = listOf(navArgument("paymentGroupId") { type = NavType.StringType })
         ) { backStackEntry ->
             val groupId = backStackEntry.arguments?.getString("paymentGroupId") ?: ""
@@ -342,6 +345,10 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToOrderDetail = { orderId ->
                     navController.navigate(Screen.DetailOrder.createRoute(orderId))
+                },
+                // [FIX] Tambahkan ini: Navigasi ke OrderSuccess per item
+                onNavigateToMaps = { orderId ->
+                    navController.navigate(Screen.OrderSuccess.createRoute(orderId = orderId))
                 }
             )
         }
@@ -364,8 +371,8 @@ fun AppNavGraph(
                     // Gunakan createRoute yang aman
                     navController.navigate(Screen.Payment.createRoute(encodedUrl, id, groupId))
                 },
-                onNavigateToMaps = { lat, long ->
-                    navController.navigate(Screen.MapRoute.createRoute(lat, long))
+                onNavigateToMaps = { id ->
+                    navController.navigate(Screen.OrderSuccess.createRoute(orderId = id))
                 }
             )
         }

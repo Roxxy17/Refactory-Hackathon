@@ -25,105 +25,92 @@ class OrderSuccessViewModel(
     private val _uiState = MutableStateFlow(OrderSuccessUiState())
     val uiState = _uiState.asStateFlow()
 
-    // [FUNGSI UPDATE STATUS PER ITEM]
+    // Fungsi Update Status (Tidak berubah)
     fun updateOrderPickupStatus(orderId: String, newStatus: String) {
-        Log.d("SIMULASI", "Tombol ditekan untuk OrderID: $orderId -> Status Baru: $newStatus")
-
         viewModelScope.launch {
-            // Panggil API Patch
             updatePickupStatusUseCase(orderId, newStatus).collect { result ->
                 when(result) {
                     is Resource.Success -> {
-                        Log.d("SIMULASI", "Sukses Update API: ${result.data?.pickupStatus}")
-
-                        // [LOGIC UPDATE LIST] Cari item di list, ganti dengan yang baru, lalu simpan lagi
                         _uiState.update { currentState ->
                             val updatedList = currentState.orders.map { order ->
-                                if (order.id == orderId) {
-                                    // Update data order ini dengan response terbaru
-                                    result.data ?: order.copy(pickupStatus = newStatus)
-                                } else {
-                                    order // Order lain biarkan tetap sama
-                                }
+                                if (order.id == orderId) result.data ?: order.copy(pickupStatus = newStatus) else order
                             }
-                            currentState.copy(orders = updatedList) // Trigger UI Refresh
+                            currentState.copy(orders = updatedList)
                         }
                     }
-                    is Resource.Error -> {
-                        Log.e("SIMULASI", "Gagal Update API: ${result.message}")
-                        _uiState.update { it.copy(error = result.message) }
-                    }
-                    is Resource.Loading -> {
-                        // Opsional: Handle loading per item
-                    }
+                    is Resource.Error -> _uiState.update { it.copy(error = result.message) }
+                    is Resource.Loading -> {}
                 }
             }
         }
     }
 
-    fun loadData(navOrderId: String?, groupId: String?) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+    fun loadData(orderId: String?, groupId: String?) {
+        _uiState.update { it.copy(isLoading = true) }
 
-            // 1. Logic Alamat User
-            var userGeo: GeoPoint? = null
+        // 1. Jalankan Alamat User secara Paralel (agar tidak saling tunggu)
+        viewModelScope.launch {
             addressRepository.getAddresses().collect { result ->
                 if (result is Resource.Success) {
                     val targetAddr = result.data?.find { it.isDefault } ?: result.data?.firstOrNull()
                     if (targetAddr != null && targetAddr.latitude != 0.0) {
-                        userGeo = GeoPoint(targetAddr.latitude, targetAddr.longitude)
-                    }
-                }
-            }
-
-            // 2. Logic Order (Ambil LIST, bukan Single ID)
-            val targetOrders = mutableListOf<com.example.kalanacommerce.domain.model.Order>()
-            val targetOutletIds = mutableListOf<String>()
-
-            getOrdersUseCase().collect { result ->
-                if (result is Resource.Success) {
-                    val allOrders = result.data ?: emptyList()
-
-                    // Filter: Ambil semua order dalam group ini
-                    val relevantOrders = if (groupId != null) {
-                        allOrders.filter { it.paymentGroupId == groupId }
-                    } else {
-                        allOrders.filter { it.id == navOrderId }
-                    }
-
-                    targetOrders.addAll(relevantOrders)
-                    targetOutletIds.addAll(relevantOrders.map { it.outletId }.distinct())
-                }
-            }
-
-            // 3. Logic Koordinat Toko
-            val storeGeos = mutableListOf<GeoPoint>()
-            if (targetOutletIds.isNotEmpty()) {
-                productRepository.getOutlets().collect { result ->
-                    if (result is Resource.Success) {
-                        val allOutlets = result.data ?: emptyList()
-                        targetOutletIds.forEach { id ->
-                            val outlet = allOutlets.find { it.id == id }
-                            if (outlet != null) {
-                                val lat = outlet.lat?.toDoubleOrNull() ?: 0.0
-                                val long = outlet.long?.toDoubleOrNull() ?: 0.0
-                                if (lat != 0.0 && long != 0.0) {
-                                    storeGeos.add(GeoPoint(lat, long))
-                                }
-                            }
+                        _uiState.update {
+                            it.copy(userLocation = GeoPoint(targetAddr.latitude, targetAddr.longitude))
                         }
                     }
                 }
             }
+        }
 
-            // Update State Akhir
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    userLocation = userGeo ?: GeoPoint(-7.77, 110.37),
-                    storeLocations = storeGeos,
-                    orders = targetOrders // [PENTING] Masukkan list order ke state
-                )
+        // 2. Jalankan Logika Order & Toko (Dependent Logic)
+        viewModelScope.launch {
+            getOrdersUseCase().collect { result ->
+                if (result is Resource.Success) {
+                    val allOrders = result.data ?: emptyList()
+
+                    // Filter Order
+                    val relevantOrders = if (groupId != null) {
+                        allOrders.filter { it.paymentGroupId == groupId }
+                    } else {
+                        allOrders.filter { it.id == orderId }
+                    }
+
+                    // Ambil ID Toko Unik
+                    val targetOutletIds = relevantOrders.map { it.outletId }.distinct()
+
+                    // [PERBAIKAN UTAMA] Fetch Outlet DI DALAM sini, jangan di luar
+                    if (targetOutletIds.isNotEmpty()) {
+                        productRepository.getOutlets().collect { outletResult ->
+                            if (outletResult is Resource.Success) {
+                                val allOutlets = outletResult.data ?: emptyList()
+                                val storeGeos = mutableListOf<GeoPoint>()
+
+                                targetOutletIds.forEach { id ->
+                                    val outlet = allOutlets.find { it.id == id }
+                                    if (outlet != null) {
+                                        val lat = outlet.lat?.toDoubleOrNull() ?: 0.0
+                                        val long = outlet.long?.toDoubleOrNull() ?: 0.0
+                                        if (lat != 0.0 && long != 0.0) {
+                                            storeGeos.add(GeoPoint(lat, long))
+                                        }
+                                    }
+                                }
+
+                                // Update State Lengkap (Order + Lokasi Toko)
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        orders = relevantOrders,
+                                        storeLocations = storeGeos // Lokasi toko terisi
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // Case jika tidak ada toko (jarang terjadi)
+                        _uiState.update { it.copy(isLoading = false, orders = relevantOrders) }
+                    }
+                }
             }
         }
     }
