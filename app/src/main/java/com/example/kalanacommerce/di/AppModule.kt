@@ -111,7 +111,7 @@ val appModule = module {
 
     viewModel {
         OrderSuccessViewModel(
-            get(), get(), get()
+            get(), get(), get(),get()
         )
     }
 }

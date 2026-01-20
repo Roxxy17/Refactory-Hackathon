@@ -7,4 +7,5 @@ import kotlinx.coroutines.flow.Flow
 interface OrderRepository {
     fun getOrders(): Flow<Resource<List<Order>>>
     fun getOrderDetail(orderId: String): Flow<Resource<Order>>
+    fun updatePickupStatus(orderId: String, status: String): Flow<Resource<Order>>
 }

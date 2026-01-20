@@ -13,6 +13,7 @@ import com.example.kalanacommerce.domain.usecase.cart.UpdateCartItemUseCase
 import com.example.kalanacommerce.domain.usecase.chat.SendMessageUseCase
 import com.example.kalanacommerce.domain.usecase.order.GetOrderDetailUseCase
 import com.example.kalanacommerce.domain.usecase.order.GetOrdersUseCase
+import com.example.kalanacommerce.domain.usecase.order.UpdatePickupStatusUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoriesUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetCategoryDetailUseCase
 import com.example.kalanacommerce.domain.usecase.product.GetOutletDetailUseCase
@@ -59,4 +60,5 @@ val useCaseModule = module {
     factory { DirectCheckoutUseCase(get()) }
     factory { GetOrdersUseCase(get()) }
     factory { GetOrderDetailUseCase(get()) }
+    factory { UpdatePickupStatusUseCase(get()) }
 }

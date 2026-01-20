@@ -20,7 +20,8 @@ fun OrderDto.toDomain(): Order {
         snapRedirectUrl = snapRedirectUrl,
         paymentGroupId = paymentGroupId,
         itemCount = _count?.items ?: items?.size ?: 0,
-        items = items?.map { it.toDomain() } ?: emptyList()
+        items = items?.map { it.toDomain() } ?: emptyList(),
+        pickupStatus = statusPickup ?: "PROCESS",
     )
 }
 

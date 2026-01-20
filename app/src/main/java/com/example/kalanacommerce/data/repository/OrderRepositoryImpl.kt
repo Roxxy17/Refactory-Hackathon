@@ -2,6 +2,7 @@ package com.example.kalanacommerce.data.repository
 
 import com.example.kalanacommerce.core.util.Resource
 import com.example.kalanacommerce.data.mapper.toDomain
+import com.example.kalanacommerce.data.remote.dto.order.UpdateStatusRequest
 import com.example.kalanacommerce.data.remote.service.OrderApiService
 import com.example.kalanacommerce.domain.model.Order
 import com.example.kalanacommerce.domain.repository.OrderRepository
@@ -47,4 +48,20 @@ class OrderRepositoryImpl(
             emit(Resource.Error(e.message ?: "Gagal memuat detail pesanan"))
         }
     }
+
+    override fun updatePickupStatus(orderId: String, status: String): Flow<Resource<Order>> = flow {
+        emit(Resource.Loading())
+        try {
+            val request = UpdateStatusRequest(orderId, status)
+            val response = apiService.updatePickupStatus(request)
+            if (response.status && response.data != null) {
+                emit(Resource.Success(response.data.toDomain()))
+            } else {
+                emit(Resource.Error(response.message))
+            }
+        } catch (e: Exception) {
+            emit(Resource.Error(e.localizedMessage ?: "Error updating status"))
+        }
+    }
+
 }

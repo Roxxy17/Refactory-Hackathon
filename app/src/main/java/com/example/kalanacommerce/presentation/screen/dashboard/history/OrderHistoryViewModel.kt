@@ -49,26 +49,32 @@ class OrderHistoryViewModel(
     private fun filterOrders(tabIndex: Int) {
         val allOrders = _uiState.value.orders
 
-        // [PERBAIKAN LOGIC KATEGORI]
         val filteredOrders = when (tabIndex) {
-            // Tab 0: "Dalam Proses" -> Khusus MENUNGGU PEMBAYARAN (PENDING)
-            0 -> allOrders.filter {
-                it.status == OrderStatus.PENDING
+            // Tab 0: "Dalam Proses"
+            // Mencakup: Menunggu Bayar (PENDING) ATAU Sudah Bayar tapi belum diambil (PROCESS/READY)
+            0 -> allOrders.filter { order ->
+                val isPendingPayment = order.status == OrderStatus.PENDING
+
+                // Jika sudah dibayar, cek status pickupnya
+                val isPaidButNotPickedUp = (order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) &&
+                        (order.pickupStatus == "PROCESS" || order.pickupStatus == "READY")
+
+                isPendingPayment || isPaidButNotPickedUp
             }
 
-            // Tab 1: "Selesai" -> SUDAH BAYAR (PAID), DIPROSES, DIKIRIM, SELESAI
-            1 -> allOrders.filter {
-                it.status == OrderStatus.PAID ||
-                        it.status == OrderStatus.PROCESSED ||
-                        it.status == OrderStatus.SHIPPED ||
-                        it.status == OrderStatus.COMPLETED
+            // Tab 1: "Selesai"
+            // Mencakup: Status Order COMPLETED ATAU Pickup Status PICKED_UP
+            1 -> allOrders.filter { order ->
+                order.status == OrderStatus.COMPLETED ||
+                        order.pickupStatus == "PICKED_UP"
             }
 
-            // Tab 2: "Dibatalkan" -> CANCELLED, FAILED, EXPIRED
-            2 -> allOrders.filter {
-                it.status == OrderStatus.CANCELLED ||
-                        it.status == OrderStatus.FAILED ||
-                        it.status == OrderStatus.EXPIRED
+            // Tab 2: "Dibatalkan"
+            2 -> allOrders.filter { order ->
+                order.status == OrderStatus.CANCELLED ||
+                        order.status == OrderStatus.FAILED ||
+                        order.status == OrderStatus.EXPIRED ||
+                        order.pickupStatus == "CANCELLED"
             }
             else -> allOrders
         }

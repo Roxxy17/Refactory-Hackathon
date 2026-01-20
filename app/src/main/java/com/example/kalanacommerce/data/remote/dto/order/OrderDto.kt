@@ -20,7 +20,8 @@ data class OrderDto(
     val updatedAt: String,
     val outlet: OrderOutletDto?,
     val items: List<OrderItemDto>? = null,
-    val _count: OrderCountDto? = null
+    val _count: OrderCountDto? = null,
+    val statusPickup: String? = "PROCESS",
 )
 
 @Serializable
@@ -63,4 +64,12 @@ data class OrderVariantDetailDto(
 data class OrderProductDetailDto(
     val name: String,
     val image: String? = null
+)
+
+
+
+@Serializable
+data class UpdateStatusRequest(
+    val orderId: String,
+    val status: String // "READY" atau "PICKED_UP"
 )

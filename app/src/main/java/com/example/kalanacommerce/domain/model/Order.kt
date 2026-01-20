@@ -14,6 +14,7 @@ data class Order(
     val itemCount: Int,
     val redirectUrl: String = "",
     val paymentGroupId: String? = null,
+    val pickupStatus: String = "PROCESS",
 
     // Untuk Detail
     val items: List<OrderItem> = emptyList()
