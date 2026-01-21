@@ -329,5 +329,14 @@
     <string name="login_req_chat_msg">Want to ask AI Assistant? Please login first!</string>
     <string name="login_req_history_msg">Please login to view your order history.</string>
 
+    <string name="settings_title">Notification Settings</string>
+    <string name="settings_subtitle">Manage your notification preferences</string>
+    <string name="settings_section_general">General</string>
+    <string name="settings_notif_transaction_title">Transaction Alerts</string>
+    <string name="settings_notif_transaction_desc">Order status &amp; delivery updates</string>
+    <string name="settings_notif_promo_title">Promos &amp; Discounts</string>
+    <string name="settings_notif_promo_desc">Exclusive offers &amp; vouchers</string>
+    <string name="settings_notif_account_title">Account Security</string>
+    <string name="settings_notif_account_desc">New logins &amp; data changes</string>
 
 </resources>

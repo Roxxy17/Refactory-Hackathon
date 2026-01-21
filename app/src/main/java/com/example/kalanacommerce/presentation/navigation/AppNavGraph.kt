@@ -39,7 +39,6 @@ import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryS
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
 import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen // Import screen baru ini
 import com.example.kalanacommerce.presentation.screen.dashboard.map.MapPickerScreen
-import com.example.kalanacommerce.presentation.screen.dashboard.map.MapRouteScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.addresspage.AddressFormScreen
@@ -118,30 +117,6 @@ fun AppNavGraph(
                     ) { inclusive = true }
                 }
             }
-        }
-
-        // Di AppNavGraph.kt
-
-        composable(
-            route = Screen.MapRoute.route,
-            arguments = listOf(
-                navArgument("lat") { type = NavType.StringType }, // Gunakan StringType biar aman passing via URL
-                navArgument("long") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            // Ambil data
-            val latString = backStackEntry.arguments?.getString("lat") ?: "0.0"
-            val longString = backStackEntry.arguments?.getString("long") ?: "0.0"
-
-
-            val lat = latString.toDoubleOrNull() ?: -7.7717 // Default Jogja jika error
-            val long = longString.toDoubleOrNull() ?: 110.377
-
-            MapRouteScreen(
-                userLat = lat,   // [BARU] Kirim ke Screen
-                userLong = long, // [BARU] Kirim ke Screen
-                onBackClick = { navController.popBackStack() }
-            )
         }
 
         composable(
@@ -347,8 +322,13 @@ fun AppNavGraph(
                     navController.navigate(Screen.DetailOrder.createRoute(orderId))
                 },
                 // [FIX] Tambahkan ini: Navigasi ke OrderSuccess per item
-                onNavigateToMaps = { orderId ->
-                    navController.navigate(Screen.OrderSuccess.createRoute(orderId = orderId))
+                onNavigateToMaps = { orderId, paymentGroupId ->
+                    navController.navigate(
+                        Screen.OrderSuccess.createRoute(
+                            orderId = orderId,
+                            paymentGroupId = paymentGroupId
+                        )
+                    )
                 }
             )
         }
@@ -434,7 +414,16 @@ fun AppNavGraph(
             ) { EditProfilePage(onBack = { navController.popBackStack() }) }
         }
         composable(Screen.Settings.route) {
-            SettingsPage(onBack = { navController.popBackStack() })
+            // 1. Ambil ThemeManager
+            val themeManager: ThemeManager = get()
+            // 2. Observasi state tema
+            val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+
+            // 3. Masukkan themeSetting ke dalam SettingsPage
+            SettingsPage(
+                onBack = { navController.popBackStack() },
+                themeSetting = themeSetting
+            )
         }
 
         // --- ADDRESS CRUD ---

@@ -1,5 +1,10 @@
+// File: presentation/screen/dashboard/history/group/TransactionGroupScreen.kt
 package com.example.kalanacommerce.presentation.screen.dashboard.history.group
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,7 +18,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -39,23 +51,35 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.g
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
+// Warna Brand
+val BrandOrange = Color(0xFFF96D20)
+val BrandGreen = Color(0xFF43A047)
+val BrandRed = Color(0xFFE53935)
+val BrandBlue = Color(0xFF2196F3)
+val BrandYellow = Color(0xFFFFA000)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionGroupScreen(
-    paymentGroupId: String,
+    paymentGroupId: String?, // Nullable
     viewModel: TransactionGroupViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onNavigateToOrderDetail: (String) -> Unit,
-    onNavigateToMaps: (String) -> Unit
+    onNavigateToMaps: (String?, String?) -> Unit
 ) {
-    LaunchedEffect(paymentGroupId) {
-        viewModel.loadGroupData(paymentGroupId)
+    // [FIX] Gunakan safeGroupId ini di seluruh kode UI untuk menghindari error null
+    val safeGroupId = paymentGroupId ?: ""
+
+    LaunchedEffect(safeGroupId) {
+        if (safeGroupId.isNotEmpty()) {
+            viewModel.loadGroupData(safeGroupId)
+        }
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // --- Setup Tema & Warna ---
     val systemInDark = isSystemInDarkTheme()
     val isDarkActive = remember(themeSetting, systemInDark) {
         when (themeSetting) {
@@ -65,14 +89,11 @@ fun TransactionGroupScreen(
         }
     }
 
-    // Asset & Color Palette
     val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val textColor = if (isDarkActive) Color.White else Color.Black
     val subTextColor = if (isDarkActive) Color.White.copy(0.6f) else Color.Gray
-    val brandGreen = Color(0xFF43A047)
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Background Image Full Screen
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
@@ -80,7 +101,6 @@ fun TransactionGroupScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Gradient Overlay agar konten terbaca
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -96,42 +116,45 @@ fun TransactionGroupScreen(
         )
 
         Scaffold(
-            containerColor = Color.Transparent, // Transparan agar background terlihat
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            "Rincian Gabungan",
-                            fontWeight = FontWeight.Bold,
-                            color = textColor
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp),
+            bottomBar = {
+                if (!uiState.isLoading && uiState.orders.isNotEmpty()) {
+                    val firstOrder = uiState.orders.first()
+                    val anyNotPickedUp = uiState.orders.any {
+                        (it.status == OrderStatus.PAID || it.status == OrderStatus.PROCESSED) &&
+                                it.pickupStatus != "PICKED_UP"
+                    }
+
+                    if (firstOrder.status == OrderStatus.PENDING) {
+                        GroupPaymentBottomBar(
+                            totalAmount = uiState.totalGroupAmount,
+                            buttonText = "Bayar Semua (${uiState.orders.size} Toko)",
+                            btnColor = BrandOrange,
+                            isDark = isDarkActive,
+                            onClick = {
+                                val targetUrl = firstOrder.snapRedirectUrl ?: firstOrder.snapToken
+                                if (!targetUrl.isNullOrEmpty()) {
+                                    Toast.makeText(context, "Redirecting...", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         )
-                    },
-                    navigationIcon = {
-                        // Tombol Back Glossy
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 16.dp)
-                                .size(40.dp)
-                                .glossyEffect(isDarkActive, CircleShape)
-                                .clickable { onBackClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = textColor
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent
-                    )
-                )
+                    } else if (anyNotPickedUp) {
+                        GroupPaymentBottomBar(
+                            totalAmount = uiState.totalGroupAmount,
+                            buttonText = "Lacak Semua Lokasi",
+                            btnColor = BrandBlue,
+                            isDark = isDarkActive,
+                            onClick = { onNavigateToMaps(null, safeGroupId) },
+                            icon = Icons.Default.Map
+                        )
+                    }
+                }
             }
         ) { paddingValues ->
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = brandGreen)
+                    CircularProgressIndicator(color = BrandGreen)
                 }
             } else {
                 Column(
@@ -139,10 +162,32 @@ fun TransactionGroupScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 10.dp), // Margin kiri kanan
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 20.dp)
                 ) {
-                    // 1. HEADER BRAND & ID (Glossy Box)
+                    // --- Header Title ---
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.statusBarsPadding().padding(bottom = 20.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .glossyEffect(isDarkActive, CircleShape)
+                                .clickable { onBackClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = textColor)
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Rincian Gabungan",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = textColor
+                        )
+                    }
+
+                    // --- 1. HEADER BRAND & ID ---
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -155,191 +200,368 @@ fun TransactionGroupScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "KALANA",
+                                "KALANA",
                                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                color = brandGreen,
+                                color = BrandGreen,
                                 letterSpacing = 2.sp
                             )
-
                             Column(horizontalAlignment = Alignment.End) {
                                 val status = uiState.orders.firstOrNull()?.status ?: OrderStatus.UNKNOWN
                                 StatusBadgeGroup(status)
-
                                 Spacer(modifier = Modifier.height(6.dp))
+
+                                // [FIXED LINE] Gunakan safeGroupId, BUKAN paymentGroupId
                                 Text(
-                                    "Group ID: #${paymentGroupId.takeLast(6).uppercase()}",
+                                    "Group ID: #${safeGroupId.takeLast(6).uppercase()}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = subTextColor
                                 )
-                                Text(
-                                    uiState.transactionDate,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = subTextColor
-                                )
+                                Text(uiState.transactionDate, style = MaterialTheme.typography.labelSmall, color = subTextColor)
                             }
                         }
                     }
 
-                    // 2. INFO TRANSAKSI (Glossy Box)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .glossyEffect(isDarkActive, RoundedCornerShape(20.dp))
-                            .padding(16.dp)
-                    ) {
-                        Column {
-                            Text("Info Transaksi", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textColor)
-                            Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Metode Pembayaran", color = subTextColor, fontSize = 13.sp)
-                                Text(uiState.paymentMethod, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = textColor)
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Total Toko", color = subTextColor, fontSize = 13.sp)
-                                Text("${uiState.orders.size} Toko", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = textColor)
-                            }
-                        }
-                    }
+                    // --- 2. TRACKER SECTION ---
+                    val masterStatus = uiState.orders.firstOrNull()?.status ?: OrderStatus.UNKNOWN
+                    val overallPickupStatus = if (uiState.orders.any { it.pickupStatus == "READY" }) "READY"
+                    else if (uiState.orders.any { it.pickupStatus == "PROCESS" }) "PROCESS"
+                    else "PICKED_UP"
 
-                    // 3. TITLE SECTION
-                    Text(
-                        "Daftar Pesanan",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = textColor,
-                        modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                    GroupTrackerSection(masterStatus, overallPickupStatus, isDarkActive, textColor, subTextColor)
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // --- 3. GROUP INFO ---
+                    GroupInfoSection(
+                        context = context,
+                        groupId = safeGroupId, // Pass String aman
+                        date = uiState.transactionDate,
+                        method = uiState.paymentMethod,
+                        isDark = isDarkActive,
+                        textColor = textColor,
+                        subTextColor = subTextColor
                     )
 
-                    // 4. LOOPING TOKO (Glossy Box per Toko)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- 4. LIST TOKO HEADER ---
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Store, null, tint = BrandGreen, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Daftar Pesanan Toko",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = textColor
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        color = if(isDarkActive) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
+                    )
+
+                    // --- LIST TOKO CONTENT ---
                     uiState.orders.forEach { order ->
-                        StoreOrderCardTransparent(
+                        StoreOrderCardGlossy(
                             order = order,
                             isDark = isDarkActive,
                             textColor = textColor,
                             subTextColor = subTextColor,
-                            brandGreen = brandGreen,
+                            brandGreen = BrandGreen,
                             onDetailClick = { onNavigateToOrderDetail(order.id) },
-                            onMapsClick = { onNavigateToMaps(order.id) }
+                            onMapsClick = { onNavigateToMaps(order.id, null) }
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // 5. CARD RINCIAN BAYAR GABUNGAN (Glossy Box)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .glossyEffect(isDarkActive, RoundedCornerShape(20.dp))
-                            .padding(16.dp)
-                    ) {
-                        Column {
-                            Text("Rincian Pembayaran", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textColor)
-                            Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Total Item (${uiState.totalItemCount})", color = subTextColor, fontSize = 13.sp)
-                                Text(
-                                    text = String.format(Locale("id", "ID"), "Rp %,d", uiState.totalGroupAmount),
-                                    fontWeight = FontWeight.Bold,
-                                    color = textColor
-                                )
-                            }
+                    // --- 5. RINCIAN PEMBAYARAN ---
+                    GroupPaymentDetailSection(
+                        totalAmount = uiState.totalGroupAmount,
+                        itemCount = uiState.totalItemCount,
+                        paymentMethod = uiState.paymentMethod,
+                        isDark = isDarkActive,
+                        textColor = textColor,
+                        subTextColor = subTextColor
+                    )
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Biaya Layanan (Total)", color = subTextColor, fontSize = 13.sp)
-                                Text("Rp 0", color = brandGreen, fontSize = 13.sp)
-                            }
-
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                color = if (isDarkActive) Color.White.copy(0.2f) else Color.Black.copy(0.1f)
-                            )
-
-                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Grand Total", fontWeight = FontWeight.Bold, color = textColor)
-                                Text(
-                                    text = String.format(Locale("id", "ID"), "Rp %,d", uiState.totalGroupAmount),
-                                    fontWeight = FontWeight.Bold,
-                                    color = brandGreen,
-                                    fontSize = 18.sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(120.dp))
                 }
             }
         }
     }
 }
 
-// --- COMPONENT PER TOKO (Transparent/Glossy) ---
+// ==========================================
+// COMPONENTS
+// ==========================================
+
 @Composable
-fun StoreOrderCardTransparent(
+fun GroupTrackerSection(
+    status: OrderStatus,
+    pickupStatus: String,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
+    val (statusColor, statusIcon, statusText, desc) = when {
+        status == OrderStatus.PENDING -> Quad(
+            BrandOrange, Icons.Default.Payment, "Menunggu Pembayaran",
+            "Selesaikan pembayaran untuk ${status.name} toko sekaligus."
+        )
+        status == OrderStatus.PAID || status == OrderStatus.PROCESSED -> {
+            when (pickupStatus) {
+                "READY" -> Quad(
+                    BrandYellow,
+                    Icons.Default.Store,
+                    "Siap Diambil",
+                    "Satu atau lebih toko siap untuk diambil."
+                )
+                "PICKED_UP" -> Quad(
+                    BrandGreen,
+                    Icons.Default.Check,
+                    "Selesai Diambil",
+                    "Semua barang telah berhasil diambil."
+                )
+                else -> Quad(
+                    BrandBlue,
+                    Icons.Default.Inventory2,
+                    "Diproses",
+                    "Penjual sedang menyiapkan barang pesananmu."
+                )
+            }
+        }
+        status == OrderStatus.COMPLETED -> Quad(
+            BrandGreen,
+            Icons.Default.Check,
+            "Transaksi Selesai",
+            "Terima kasih telah berbelanja!"
+        )
+        else -> Quad(
+            BrandRed,
+            Icons.Default.Inventory2,
+            "Dibatalkan",
+            "Transaksi ini telah dibatalkan."
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .padding(20.dp)
+    ) {
+        // [PERBAIKAN] Tambahkan fillMaxWidth() agar Column memenuhi Box dan Align Center bekerja
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = statusColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(64.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(statusIcon, null, modifier = Modifier.size(32.dp), tint = statusColor)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = statusColor
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = desc,
+                style = MaterialTheme.typography.bodySmall,
+                color = subTextColor,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun GroupInfoSection(
+    context: Context,
+    groupId: String?,
+    date: String,
+    method: String,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Header Row (ID)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Group ID",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = subTextColor
+                    )
+                    // [SAFE CALL] Pastikan tidak error
+                    val displayId = groupId?.takeLast(6)?.uppercase() ?: "-"
+                    Text(
+                        "#$displayId",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        ),
+                        color = textColor
+                    )
+                }
+                if (groupId != null) {
+                    IconButton(
+                        onClick = {
+                            val clipboard =
+                                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("Group ID", groupId)
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Group ID Disalin", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            null,
+                            tint = BrandGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(
+                color = if (isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
+            )
+
+            // Info Details
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Tanggal",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = subTextColor
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        date,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = textColor
+                    )
+                }
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    Text(
+                        "Metode",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = subTextColor
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        method,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = textColor
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StoreOrderCardGlossy(
     order: Order,
     isDark: Boolean,
     textColor: Color,
     subTextColor: Color,
     brandGreen: Color,
     onDetailClick: () -> Unit,
-    onMapsClick: () -> Unit // [BARU]
+    onMapsClick: () -> Unit
 ) {
-    // [LOGIC STATUS LABEL]
-    val pickupStatusText = when (order.pickupStatus) {
-        "PROCESS" -> "Diproses"
-        "READY" -> "Siap Diambil"
-        "PICKED_UP" -> "Selesai"
-        else -> ""
-    }
-    val pickupColor = when (order.pickupStatus) {
-        "READY" -> Color(0xFFFFA000)
-        "PROCESS" -> Color(0xFF2196F3)
-        "PICKED_UP" -> Color(0xFF43A047)
-        else -> Color.Gray
+    val isReadyToPickup =
+        (order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP"
+    val (statusColor, statusIcon, statusText) = when (order.pickupStatus) {
+        "READY" -> Triple(BrandYellow, Icons.Default.Store, "Siap Diambil")
+        "PICKED_UP" -> Triple(brandGreen, Icons.Default.CheckCircle, "Selesai")
+        else -> Triple(BrandBlue, Icons.Default.Inventory2, "Diproses")
     }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .glossyEffect(isDark, RoundedCornerShape(20.dp))
+            .clickable { onDetailClick() }
             .padding(16.dp)
     ) {
         Column {
             // Header Toko
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onDetailClick() },
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Store, null, tint = brandGreen, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(order.outletName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = textColor)
-                }
-
-                // [BARU] Tampilkan Badge Status Pickup atau Tombol Rute
-                if (order.status == OrderStatus.PAID && order.pickupStatus != "PICKED_UP") {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = pickupColor.copy(alpha = 0.1f),
-                        border = BorderStroke(1.dp, pickupColor),
-                        modifier = Modifier.clickable { onMapsClick() } // Klik badge -> Maps
+                        shape = CircleShape,
+                        color = brandGreen.copy(alpha = 0.1f),
+                        modifier = Modifier.size(32.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(Icons.Default.Map, null, tint = pickupColor, modifier = Modifier.size(12.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(pickupStatusText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = pickupColor)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Filled.Store,
+                                null,
+                                tint = brandGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
-                } else {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = subTextColor, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        order.outletName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = textColor
+                    )
+                }
+
+                // Badge Status
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = statusColor.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, statusColor.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            statusIcon,
+                            null,
+                            tint = statusColor,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            statusText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor
+                        )
+                    }
                 }
             }
 
@@ -348,40 +570,132 @@ fun StoreOrderCardTransparent(
                 color = if (isDark) Color.White.copy(0.1f) else Color.Black.copy(0.05f)
             )
 
-            // Items Preview
+            // Daftar Item
             order.items.take(2).forEachIndexed { index, item ->
-                GroupProductItemTransparent(item, isDark, textColor, subTextColor)
-                if (index < order.items.size - 1 && index < 1) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
+                GroupProductItemGlossy(item, isDark, textColor, subTextColor)
+                if (index < order.items.size - 1 && index < 1) Spacer(modifier = Modifier.height(12.dp))
             }
 
             if (order.items.size > 2) {
-                Text("+ ${order.items.size - 2} produk lainnya...", fontSize = 11.sp, color = subTextColor, modifier = Modifier.padding(top = 8.dp))
+                Text(
+                    text = "+ ${order.items.size - 2} produk lainnya...",
+                    fontSize = 11.sp,
+                    color = subTextColor,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Footer (Subtotal + Tombol Aksi jika perlu)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                // Jika belum selesai, beri opsi Lihat Rute
-                if ((order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP") {
+            // Tombol Aksi per Toko
+            if (isReadyToPickup) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onMapsClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (order.pickupStatus == "READY") BrandYellow else BrandBlue
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Map,
+                        null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Lihat Rute",
+                        if (order.pickupStatus == "READY") "Ambil Barang" else "Lacak Toko Ini",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2196F3),
-                        modifier = Modifier.clickable { onMapsClick() }
+                        color = Color.White
                     )
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
                 }
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Subtotal", fontSize = 12.sp, color = subTextColor)
+                    Text(
+                        text = String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = textColor
+                    )
+                }
+            }
+        }
+    }
+}
 
+@Composable
+fun GroupPaymentDetailSection(
+    totalAmount: Long,
+    itemCount: Int,
+    paymentMethod: String,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .padding(20.dp)
+    ) {
+        Column {
+            Text(
+                "Rincian Pembayaran",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = textColor
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Total Item ($itemCount)", color = subTextColor, fontSize = 14.sp)
                 Text(
-                    text = "Subtotal: ${String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount)}",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                    color = textColor
+                    String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
+                    color = textColor,
+                    fontSize = 14.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Biaya Layanan", color = subTextColor, fontSize = 14.sp)
+                Text("Rp 0", color = BrandGreen, fontSize = 14.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(
+                color = if (isDark) Color.White.copy(0.2f) else Color.Black.copy(0.1f),
+                thickness = 1.dp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Total Belanja",
+                    fontWeight = FontWeight.Bold,
+                    color = textColor,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                    color = BrandGreen
                 )
             }
         }
@@ -389,66 +703,134 @@ fun StoreOrderCardTransparent(
 }
 
 @Composable
-fun GroupProductItemTransparent(
+fun GroupPaymentBottomBar(
+    totalAmount: Long,
+    buttonText: String,
+    btnColor: Color,
+    isDark: Boolean,
+    onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+) {
+    Surface(
+        color = if (isDark) Color.Black.copy(0.8f) else Color.White.copy(0.9f),
+        shadowElevation = 24.dp,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
+            // Total Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Total Tagihan",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isDark) Color.LightGray else Color.Gray
+                )
+                Text(
+                    String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = BrandOrange
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Action Button
+            Button(
+                onClick = onClick,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = btnColor,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+            ) {
+                if (icon != null) {
+                    Icon(icon, null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(buttonText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
+    }
+}
+
+// Data Class Helper
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
+@Composable
+fun GroupProductItemGlossy(
     item: OrderItem,
     isDark: Boolean,
     textColor: Color,
     subTextColor: Color
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        // Image
         Surface(
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier.size(60.dp),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.size(64.dp),
             color = if (isDark) Color.White.copy(0.05f) else Color.Black.copy(0.05f)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current).data(item.image).crossfade(true).build(),
+                model = ImageRequest.Builder(LocalContext.current).data(item.image).crossfade(true)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Detail
+        Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(item.productName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, color = textColor)
-
+            Text(
+                item.productName,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = textColor
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${item.quantity} x ${String.format(Locale("id", "ID"), "Rp %,d", item.price)}",
                 color = subTextColor,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(top = 4.dp)
+                fontSize = 12.sp
             )
         }
     }
 }
 
 @Composable
-fun StatusBadgeGroup(status: OrderStatus) {
-    val (color, text) = when(status) {
-        OrderStatus.PAID -> Color(0xFF00C853) to "PAID"
-        OrderStatus.PENDING -> Color(0xFFFF9800) to "UNPAID"
-        OrderStatus.CANCELLED -> Color(0xFFEF4444) to "CANCELLED"
-        OrderStatus.COMPLETED -> Color(0xFF00C853) to "COMPLETE"
-        else -> Color.Gray to status.name
+fun StatusBadgeGroup(
+    status: OrderStatus, // [FIX] Ubah parameter dari String ke OrderStatus
+    modifier: Modifier = Modifier
+) {
+    // Tentukan warna dan teks berdasarkan Enum OrderStatus
+    val (backgroundColor, contentColor, text) = when (status) {
+        OrderStatus.PAID -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "PAID")       // Hijau
+        OrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFEF6C00), "UNPAID")  // Orange
+        OrderStatus.CANCELLED -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "CANCELED") // Merah
+        OrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "COMPLETE") // Hijau
+        else -> Triple(Color.LightGray.copy(alpha = 0.3f), Color.DarkGray, status.name)
     }
 
-    // Transparent Badge
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.15f), // Sedikit transparan
-        border = BorderStroke(1.dp, color.copy(0.3f)),
-        modifier = Modifier.padding(start = 8.dp)
+    Box(
+        modifier = modifier
+            .background(color = backgroundColor, shape = RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = color,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
         )
     }
 }
