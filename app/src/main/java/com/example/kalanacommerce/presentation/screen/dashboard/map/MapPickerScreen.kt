@@ -1,8 +1,6 @@
 package com.example.kalanacommerce.presentation.screen.dashboard.map
 
 import android.content.Context
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.osmdroid.config.Configuration
@@ -35,11 +34,16 @@ fun MapPickerScreen(
 ) {
     val context = LocalContext.current
 
-    // State untuk menyimpan koordinat tengah peta saat ini
+    // [PERBAIKAN 3] Lokasi Default: Titik Nol Kilometer Yogyakarta
+    // Jika initialLat/Long bukan 0.0 (artinya mode edit atau data sudah ada), pakai itu.
+    // Jika 0.0 (data baru), pakai default Yogya.
+    val defaultLat = -7.801368 // Koordinat sekitar Nol Km Yogya / Alun-alun
+    val defaultLong = 110.364757
+
     var currentCenter by remember {
         mutableStateOf(
-            if (initialLat != 0.0) GeoPoint(initialLat, initialLong)
-            else GeoPoint(-6.200000, 106.816666) // Default Jakarta/Indonesia
+            if (initialLat != 0.0 && initialLong != 0.0) GeoPoint(initialLat, initialLong)
+            else GeoPoint(defaultLat, defaultLong)
         )
     }
 
@@ -69,7 +73,7 @@ fun MapPickerScreen(
                     MapView(ctx).apply {
                         setTileSource(TileSourceFactory.MAPNIK)
                         setMultiTouchControls(true)
-                        controller.setZoom(18.0)
+                        controller.setZoom(18.0) // Zoom level cukup dekat untuk detail
                         controller.setCenter(currentCenter)
 
                         // Listener saat peta digeser
@@ -112,8 +116,9 @@ fun MapPickerScreen(
                         color = Color.Gray
                     )
                     Text(
-                        text = "${currentCenter.latitude}, ${currentCenter.longitude}",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "${String.format("%.6f", currentCenter.latitude)}, ${String.format("%.6f", currentCenter.longitude)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
