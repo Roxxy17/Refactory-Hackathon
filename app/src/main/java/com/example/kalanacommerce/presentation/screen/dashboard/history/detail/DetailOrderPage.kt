@@ -1,3 +1,4 @@
+// File: presentation/screen/dashboard/history/detail/DetailOrderPage.kt
 package com.example.kalanacommerce.presentation.screen.dashboard.history.detail
 
 import android.content.ClipData
@@ -5,8 +6,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -19,7 +22,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -28,6 +30,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -48,7 +51,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.product.g
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
-// Warna Brand (Sama seperti sebelumnya)
+// Warna Brand
 val BrandOrange = Color(0xFFF96D20)
 val BrandGreen = Color(0xFF43A047)
 val BrandRed = Color(0xFFE53935)
@@ -62,7 +65,6 @@ fun DetailOrderPage(
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onNavigateToPayment: (String, String, String?) -> Unit,
-    // [UBAH] Parameter sekarang String (orderId), bukan Double (Lat/Long)
     onNavigateToMaps: (String) -> Unit
 ) {
     LaunchedEffect(orderId) {
@@ -80,6 +82,8 @@ fun DetailOrderPage(
             ThemeSetting.SYSTEM -> systemInDark
         }
     }
+
+    // Background Image
     val backgroundImage = if (isDarkActive) R.drawable.splash_background_black else R.drawable.splash_background_white
     val textColor = if (isDarkActive) Color.White else Color.Black
     val subTextColor = if (isDarkActive) Color.White.copy(0.6f) else Color.Gray
@@ -94,6 +98,7 @@ fun DetailOrderPage(
             modifier = Modifier.fillMaxSize()
         )
 
+        // Gradient Overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -101,7 +106,8 @@ fun DetailOrderPage(
                     Brush.verticalGradient(
                         colors = listOf(
                             if (isDarkActive) Color.Black.copy(0.4f) else Color.White.copy(0.4f),
-                            Color.Transparent
+                            Color.Transparent,
+                            if (isDarkActive) Color.Black.copy(0.2f) else Color.White.copy(0.2f)
                         )
                     )
                 )
@@ -113,11 +119,12 @@ fun DetailOrderPage(
             bottomBar = {
                 val order = uiState.order
                 if (order != null) {
-                    // KONDISI 1: Belum Bayar -> Tombol Bayar
+                    // Logic Bottom Bar (Sama seperti sebelumnya)
                     if (order.status == OrderStatus.PENDING) {
                         PaymentBottomBarEnhanced(
                             totalAmount = order.totalAmount,
                             isPending = true,
+                            isDark = isDarkActive,
                             onPayClick = {
                                 val paymentUrl = order.snapRedirectUrl
                                 val targetUrl = if (!paymentUrl.isNullOrEmpty()) paymentUrl else order.snapToken
@@ -128,16 +135,13 @@ fun DetailOrderPage(
                             onMapsClick = {}
                         )
                     }
-                    // KONDISI 2: Sudah Bayar & Belum Diambil -> Tombol Tracking (Ke OrderSuccess)
                     else if ((order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED) && order.pickupStatus != "PICKED_UP") {
                         PaymentBottomBarEnhanced(
                             totalAmount = order.totalAmount,
                             isPending = false,
+                            isDark = isDarkActive,
                             onPayClick = {},
-                            onMapsClick = {
-                                // [UBAH] Panggil navigasi dengan Order ID
-                                onNavigateToMaps(orderId)
-                            }
+                            onMapsClick = { onNavigateToMaps(orderId) }
                         )
                     }
                 }
@@ -157,6 +161,7 @@ fun DetailOrderPage(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 20.dp)
                 ) {
+                    // --- HEADER NAVIGATION ---
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -169,11 +174,7 @@ fun DetailOrderPage(
                                 .clickable { onBackClick() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = textColor
-                            )
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = textColor)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
@@ -183,14 +184,24 @@ fun DetailOrderPage(
                         )
                     }
 
-                    // Section Komponen (Sama seperti sebelumnya)
+                    // --- 1. HEADER BRAND & ID (NEW STYLE) ---
+                    OrderHeaderSection(context, order, isDarkActive, textColor, subTextColor)
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // --- 2. TRACKER SECTION (NEW GLOW) ---
                     OrderTrackerSection(order, isDarkActive, textColor, subTextColor)
+
                     Spacer(modifier = Modifier.height(20.dp))
-                    OrderIdSection(context, order, isDarkActive, textColor, subTextColor)
-                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // --- 3. ITEMS LIST ---
                     OrderItemsListEnhanced(order.items, order.outletName, isDarkActive, textColor, subTextColor)
+
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    // --- 4. PAYMENT DETAIL ---
                     OrderPaymentDetailEnhanced(order, isDarkActive, textColor, subTextColor)
+
                     Spacer(modifier = Modifier.height(120.dp))
                 }
             }
@@ -201,108 +212,7 @@ fun DetailOrderPage(
 // --- COMPONENTS ---
 
 @Composable
-fun OrderTrackerSection(
-    order: Order,
-    isDark: Boolean,
-    textColor: Color,
-    subTextColor: Color
-) {
-    // [LOGIC STATUS DINAMIS]
-    val (statusColor, statusIcon, statusText, desc) = when {
-        // 1. PENDING
-        order.status == OrderStatus.PENDING -> Quad(
-            BrandOrange,
-            Icons.Default.Payment,
-            "Menunggu Pembayaran",
-            "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
-        )
-        // 2. PAID / PROCESSED (Cek status pickup)
-        order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED -> {
-            when (order.pickupStatus) {
-                "READY" -> Quad(
-                    BrandYellow, // Orange/Kuning Warning
-                    Icons.Default.Store,
-                    "Siap Diambil",
-                    "Silakan datang ke toko dan tunjukkan kode pesanan ini."
-                )
-                "PICKED_UP" -> Quad(
-                    BrandGreen,
-                    Icons.Default.Check,
-                    "Selesai Diambil",
-                    "Barang telah berhasil diambil. Terima kasih!"
-                )
-                else -> Quad( // "PROCESS"
-                    BrandBlue,
-                    Icons.Default.Inventory2, // Ikon Paket/Barang
-                    "Pesanan Diproses",
-                    "Penjual sedang menyiapkan barang pesananmu."
-                )
-            }
-        }
-        // 3. COMPLETED
-        order.status == OrderStatus.COMPLETED -> Quad(
-            BrandGreen,
-            Icons.Default.Check,
-            "Pesanan Selesai",
-            "Transaksi telah selesai sepenuhnya."
-        )
-        // 4. CANCELLED / FAILED
-        else -> Quad(
-            BrandRed,
-            Icons.Default.ShoppingBag,
-            "Dibatalkan",
-            "Pesanan ini telah dibatalkan."
-        )
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .glossyEffect(isDark, RoundedCornerShape(24.dp))
-            .padding(20.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Surface(
-                shape = CircleShape,
-                color = statusColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(64.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = statusIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = statusColor
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = statusText,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = statusColor
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = desc,
-                style = MaterialTheme.typography.bodySmall,
-                color = subTextColor,
-                modifier = Modifier.padding(horizontal = 8.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-        }
-    }
-}
-
-// Helper Class untuk Return 4 Value
-data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
-
-@Composable
-fun OrderIdSection(
+fun OrderHeaderSection(
     context: Context,
     order: Order,
     isDark: Boolean,
@@ -312,7 +222,7 @@ fun OrderIdSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glossyEffect(isDark, RoundedCornerShape(16.dp))
+            .glossyEffect(isDark, RoundedCornerShape(20.dp))
             .padding(16.dp)
     ) {
         Row(
@@ -320,34 +230,103 @@ fun OrderIdSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            // KIRI: Logo Text
+            Text(
+                "KALANA",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = BrandGreen,
+                letterSpacing = 2.sp
+            )
+
+            // KANAN: Status & ID
+            Column(horizontalAlignment = Alignment.End) {
+                // Status Badge
+                StatusBadgeSingle(order.status)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Order ID + Copy Icon
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "#${order.orderCode.takeLast(8).uppercase()}",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                        color = textColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy",
+                        tint = BrandGreen,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clickable {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("Order ID", order.orderCode)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "ID Disalin", Toast.LENGTH_SHORT).show()
+                            }
+                    )
+                }
+
+                // Tanggal
                 Text(
-                    text = "ID Pesanan",
-                    style = MaterialTheme.typography.labelMedium,
+                    text = order.date,
+                    style = MaterialTheme.typography.labelSmall,
                     color = subTextColor
                 )
-                Text(
-                    text = order.orderCode,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = textColor
-                )
             }
+        }
+    }
+}
 
-            IconButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("Order ID", order.orderCode)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "ID Pesanan disalin", Toast.LENGTH_SHORT).show()
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Copy ID",
-                    tint = BrandGreen,
-                    modifier = Modifier.size(20.dp)
-                )
+@Composable
+fun OrderTrackerSection(
+    order: Order,
+    isDark: Boolean,
+    textColor: Color,
+    subTextColor: Color
+) {
+    // [LOGIC STATUS DINAMIS]
+    val (statusColor, statusIcon, statusText, desc) = when {
+        order.status == OrderStatus.PENDING -> Quad(
+            BrandOrange, Icons.Default.Payment, "Menunggu Pembayaran",
+            "Mohon selesaikan pembayaran sebelum batas waktu berakhir."
+        )
+        order.status == OrderStatus.PAID || order.status == OrderStatus.PROCESSED -> {
+            when (order.pickupStatus) {
+                "READY" -> Quad(BrandYellow, Icons.Default.Store, "Siap Diambil", "Silakan datang ke toko dan tunjukkan kode pesanan ini.")
+                "PICKED_UP" -> Quad(BrandGreen, Icons.Default.Check, "Selesai Diambil", "Barang telah berhasil diambil. Terima kasih!")
+                else -> Quad(BrandBlue, Icons.Default.Inventory2, "Pesanan Diproses", "Penjual sedang menyiapkan barang pesananmu.")
             }
+        }
+        order.status == OrderStatus.COMPLETED -> Quad(BrandGreen, Icons.Default.Check, "Pesanan Selesai", "Transaksi telah selesai sepenuhnya.")
+        else -> Quad(BrandRed, Icons.Default.ShoppingBag, "Dibatalkan", "Pesanan ini telah dibatalkan.")
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glossyEffect(isDark, RoundedCornerShape(24.dp))
+            .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(24.dp)) // [NEW] Glow Border
+            .padding(24.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(), // [FIX] Center Alignment
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = statusColor.copy(alpha = 0.1f),
+                modifier = Modifier.size(72.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(statusIcon, null, modifier = Modifier.size(36.dp), tint = statusColor)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(statusText, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp), color = statusColor)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(desc, style = MaterialTheme.typography.bodyMedium, color = subTextColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(horizontal = 8.dp))
         }
     }
 }
@@ -370,12 +349,7 @@ fun OrderItemsListEnhanced(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Store, null, tint = BrandGreen, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = storeName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = textColor
-                )
+                Text(storeName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = textColor)
             }
 
             HorizontalDivider(
@@ -391,53 +365,24 @@ fun OrderItemsListEnhanced(
                         modifier = Modifier.size(64.dp)
                     ) {
                         AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(item.image)
-                                .crossfade(true)
-                                .build(),
+                            model = ImageRequest.Builder(LocalContext.current).data(item.image).crossfade(true).build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
-
                     Spacer(modifier = Modifier.width(16.dp))
-
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = item.productName,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            color = textColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(item.productName, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = textColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         if (item.variantName != "-" && item.variantName.isNotEmpty()) {
-                            Text(
-                                text = "Varian: ${item.variantName}",
-                                fontSize = 12.sp,
-                                color = subTextColor
-                            )
+                            Text("Varian: ${item.variantName}", fontSize = 12.sp, color = subTextColor)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${item.quantity} x ${String.format(Locale("id", "ID"), "Rp%,d", item.price)}",
-                            fontSize = 12.sp,
-                            color = subTextColor
-                        )
+                        Text("${item.quantity} x ${String.format(Locale("id", "ID"), "Rp%,d", item.price)}", fontSize = 12.sp, color = subTextColor)
                     }
-
-                    Text(
-                        text = String.format(Locale("id", "ID"), "Rp%,d", item.totalPrice),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = textColor
-                    )
+                    Text(String.format(Locale("id", "ID"), "Rp%,d", item.totalPrice), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = textColor)
                 }
-
-                if (index < items.size - 1) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+                if (index < items.size - 1) Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -457,11 +402,7 @@ fun OrderPaymentDetailEnhanced(
             .padding(20.dp)
     ) {
         Column {
-            Text(
-                text = "Rincian Pembayaran",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = textColor
-            )
+            Text("Rincian Pembayaran", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = textColor)
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -469,25 +410,18 @@ fun OrderPaymentDetailEnhanced(
                 Text(order.paymentMethod, fontWeight = FontWeight.Medium, color = textColor, fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
-
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("Total Harga (${order.itemCount} barang)", color = subTextColor, fontSize = 14.sp)
                 Text(String.format(Locale("id", "ID"), "Rp %,d", order.totalAmount), color = textColor, fontSize = 14.sp)
             }
-
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Biaya Pengiriman", color = subTextColor, fontSize = 14.sp)
+                Text("Biaya Layanan", color = subTextColor, fontSize = 14.sp)
                 Text("Rp 0", color = BrandGreen, fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            HorizontalDivider(
-                color = if(isDark) Color.White.copy(0.2f) else Color.Black.copy(0.1f),
-                thickness = 1.dp
-            )
-
+            HorizontalDivider(color = if(isDark) Color.White.copy(0.2f) else Color.Black.copy(0.1f), thickness = 1.dp)
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -502,79 +436,66 @@ fun OrderPaymentDetailEnhanced(
     }
 }
 
-// [FIX] Bottom Bar fleksibel (Bisa mode bayar atau mode rute)
 @Composable
 fun PaymentBottomBarEnhanced(
     totalAmount: Long,
     isPending: Boolean,
+    isDark: Boolean, // New param
     onPayClick: () -> Unit,
     onMapsClick: () -> Unit
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surface,
+        color = if(isDark) Color.Black.copy(0.8f) else Color.White.copy(0.9f),
         shadowElevation = 24.dp,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
-            // Baris Info Harga (Hanya jika pending atau mau ditampilkan selalu)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Total Tagihan",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Gray
-                )
+                Text("Total Tagihan", style = MaterialTheme.typography.labelMedium, color = if(isDark) Color.LightGray else Color.Gray)
                 Text(
                     text = String.format(Locale("id", "ID"), "Rp %,d", totalAmount),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = BrandOrange
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Baris Tombol Aksi
             if (isPending) {
-                // MODE BAYAR: Ada tombol "Lokasi" (disabled/info) dan "Bayar Sekarang"
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Tombol Lokasi (Bisa di-disable atau arah ke toko, tapi fokus bayar dulu)
-                    OutlinedButton(
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
                         onClick = onMapsClick,
                         shape = RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBlue),
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        contentPadding = PaddingValues(0.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue.copy(alpha = 0.1f), contentColor = BrandBlue),
+                        border = BorderStroke(1.dp, BrandBlue),
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        elevation = ButtonDefaults.buttonElevation(0.dp)
                     ) {
-                        Icon(Icons.Default.Map, null, tint = BrandBlue, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Map, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Rute Toko", fontWeight = FontWeight.Bold, color = BrandBlue, fontSize = 13.sp)
+                        Text("Lokasi", fontWeight = FontWeight.Bold)
                     }
-
                     Button(
                         onClick = onPayClick,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = BrandOrange, contentColor = Color.White),
-                        modifier = Modifier.weight(1.5f).height(48.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                        modifier = Modifier.weight(1.5f).height(50.dp),
+                        elevation = ButtonDefaults.buttonElevation(6.dp)
                     ) {
                         Text("Bayar Sekarang", fontWeight = FontWeight.Bold)
                     }
                 }
             } else {
-                // MODE PICKUP: Hanya tombol "Lihat Rute / Ambil Barang"
                 Button(
                     onClick = onMapsClick,
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    elevation = ButtonDefaults.buttonElevation(6.dp)
                 ) {
                     Icon(Icons.Default.Map, null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -584,3 +505,31 @@ fun PaymentBottomBarEnhanced(
         }
     }
 }
+
+// Badge Helper Lokal
+@Composable
+fun StatusBadgeSingle(status: OrderStatus) {
+    val (color, text) = when(status) {
+        OrderStatus.PAID -> Color(0xFF00C853) to "PAID"
+        OrderStatus.PENDING -> Color(0xFFFF9800) to "UNPAID"
+        OrderStatus.CANCELLED -> Color(0xFFEF4444) to "CANCELLED"
+        OrderStatus.COMPLETED -> Color(0xFF00C853) to "COMPLETE"
+        else -> Color.Gray to status.name
+    }
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.15f),
+        border = BorderStroke(1.dp, color.copy(0.3f))
+    ) {
+        Text(
+            text = text,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+// Data Class Helper
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
