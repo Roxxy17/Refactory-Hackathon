@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -61,14 +62,13 @@ val BrandYellow = Color(0xFFFFA000)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionGroupScreen(
-    paymentGroupId: String?, // Nullable
+    paymentGroupId: String?,
     viewModel: TransactionGroupViewModel = koinViewModel(),
     themeSetting: ThemeSetting,
     onBackClick: () -> Unit,
     onNavigateToOrderDetail: (String) -> Unit,
     onNavigateToMaps: (String?, String?) -> Unit
 ) {
-    // [FIX] Gunakan safeGroupId ini di seluruh kode UI untuk menghindari error null
     val safeGroupId = paymentGroupId ?: ""
 
     LaunchedEffect(safeGroupId) {
@@ -210,7 +210,6 @@ fun TransactionGroupScreen(
                                 StatusBadgeGroup(status)
                                 Spacer(modifier = Modifier.height(6.dp))
 
-                                // [FIXED LINE] Gunakan safeGroupId, BUKAN paymentGroupId
                                 Text(
                                     "Group ID: #${safeGroupId.takeLast(6).uppercase()}",
                                     style = MaterialTheme.typography.labelSmall,
@@ -236,7 +235,7 @@ fun TransactionGroupScreen(
                     // --- 3. GROUP INFO ---
                     GroupInfoSection(
                         context = context,
-                        groupId = safeGroupId, // Pass String aman
+                        groupId = safeGroupId,
                         date = uiState.transactionDate,
                         method = uiState.paymentMethod,
                         isDark = isDarkActive,
@@ -352,9 +351,10 @@ fun GroupTrackerSection(
         modifier = Modifier
             .fillMaxWidth()
             .glossyEffect(isDark, RoundedCornerShape(24.dp))
-            .padding(20.dp)
+            .border(1.dp, statusColor.copy(alpha = 0.3f), RoundedCornerShape(24.dp)) // [NEW] Border warna status
+            .padding(24.dp)
     ) {
-        // [PERBAIKAN] Tambahkan fillMaxWidth() agar Column memenuhi Box dan Align Center bekerja
+        // [FIX] fillMaxWidth agar centering bekerja sempurna
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -362,24 +362,26 @@ fun GroupTrackerSection(
             Surface(
                 shape = CircleShape,
                 color = statusColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(72.dp) // Icon lebih besar sedikit
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(statusIcon, null, modifier = Modifier.size(32.dp), tint = statusColor)
+                    Icon(statusIcon, null, modifier = Modifier.size(36.dp), tint = statusColor)
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = statusText,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = statusColor
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = statusColor,
+                fontSize = 18.sp
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = desc,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = subTextColor,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
     }
@@ -414,7 +416,6 @@ fun GroupInfoSection(
                         style = MaterialTheme.typography.labelMedium,
                         color = subTextColor
                     )
-                    // [SAFE CALL] Pastikan tidak error
                     val displayId = groupId?.takeLast(6)?.uppercase() ?: "-"
                     Text(
                         "#$displayId",
@@ -806,15 +807,14 @@ fun GroupProductItemGlossy(
 
 @Composable
 fun StatusBadgeGroup(
-    status: OrderStatus, // [FIX] Ubah parameter dari String ke OrderStatus
+    status: OrderStatus,
     modifier: Modifier = Modifier
 ) {
-    // Tentukan warna dan teks berdasarkan Enum OrderStatus
     val (backgroundColor, contentColor, text) = when (status) {
-        OrderStatus.PAID -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "PAID")       // Hijau
-        OrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFEF6C00), "UNPAID")  // Orange
-        OrderStatus.CANCELLED -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "CANCELED") // Merah
-        OrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "COMPLETE") // Hijau
+        OrderStatus.PAID -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "PAID")
+        OrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFEF6C00), "UNPAID")
+        OrderStatus.CANCELLED -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "CANCELED")
+        OrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "COMPLETE")
         else -> Triple(Color.LightGray.copy(alpha = 0.3f), Color.DarkGray, status.name)
     }
 
