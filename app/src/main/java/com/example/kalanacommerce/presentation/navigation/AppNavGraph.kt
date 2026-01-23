@@ -1,3 +1,5 @@
+// File: presentation/navigation/AppNavGraph.kt
+
 package com.example.kalanacommerce.presentation.navigation
 
 import androidx.compose.foundation.background
@@ -37,7 +39,7 @@ import com.example.kalanacommerce.presentation.screen.dashboard.detail.store.Det
 import com.example.kalanacommerce.presentation.screen.dashboard.detail.success.OrderSuccessScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.HistoryScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.history.detail.DetailOrderPage
-import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen // Import screen baru ini
+import com.example.kalanacommerce.presentation.screen.dashboard.history.group.TransactionGroupScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.map.MapPickerScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.HelpCenterScreen
 import com.example.kalanacommerce.presentation.screen.dashboard.profile.subscreen.TermsAndConditionsScreen
@@ -51,6 +53,7 @@ import org.koin.androidx.compose.koinViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+// --- Helper Composable untuk Memaksa Login ---
 @Composable
 fun RequireAuth(
     sessionManager: SessionManager,
@@ -61,13 +64,12 @@ fun RequireAuth(
     when (isLoggedIn) {
         true -> content()
         false -> LaunchedEffect(Unit) {
+            // Jika belum login, lempar ke Auth Graph
             navController.navigate(Graph.Auth) {
-                popUpTo(0) {
-                    inclusive = true
-                }
+                // Opsional: Agar saat back dari login tidak stuck
+                popUpTo(0) { inclusive = true }
             }
         }
-
         null -> Box(
             Modifier
                 .fillMaxSize()
@@ -86,9 +88,7 @@ fun RedirectIfLoggedIn(
     val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) navController.navigate(Screen.Dashboard.route) {
-            popUpTo(
-                0
-            ) { inclusive = true }
+            popUpTo(0) { inclusive = true }
         }
     }
     if (!isLoggedIn) content()
@@ -112,9 +112,7 @@ fun AppNavGraph(
             val isLoggedInState by sessionManager.isLoggedInFlow.collectAsState(initial = null)
             LaunchedEffect(isLoggedInState) {
                 if (isLoggedInState != null) navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(
-                        0
-                    ) { inclusive = true }
+                    popUpTo(0) { inclusive = true }
                 }
             }
         }
@@ -134,13 +132,10 @@ fun AppNavGraph(
                 initialLong = longStr.toDoubleOrNull() ?: 0.0,
                 onBackClick = { navController.popBackStack() },
                 onConfirmLocation = { lat, long ->
-                    // [LOGIC PENGEMBALIAN DATA]
-                    // Kita set data ke "SavedStateHandle" milik screen SEBELUMNYA (Form Address)
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("location_result", "$lat,$long") // Kirim string biar gampang
-
-                    navController.popBackStack() // Tutup map picker
+                        ?.set("location_result", "$lat,$long")
+                    navController.popBackStack()
                 }
             )
         }
@@ -163,7 +158,7 @@ fun AppNavGraph(
             HelpCenterScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // --- DETAIL SCREENS ---
+        // --- DETAIL SCREENS (PRODUCT) ---
         composable(
             route = Screen.DetailProduct.route,
             arguments = listOf(navArgument("productId") { type = NavType.StringType })
@@ -172,27 +167,34 @@ fun AppNavGraph(
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
 
+            // [LOGIC PENTING] Ambil status login untuk cek tombol beli/keranjang
+            val sessionManager: SessionManager = get()
+            val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
+
             DetailProductPage(
                 productId = productId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { id -> navController.navigate(Screen.DetailProduct.createRoute(id)) },
                 onStoreClick = { outletId ->
-                    navController.navigate(
-                        Screen.DetailStore.createRoute(
-                            outletId
-                        )
-                    )
+                    navController.navigate(Screen.DetailStore.createRoute(outletId))
                 },
+                // [PROTEKSI 1] Saat mau Checkout dari Detail Produk
                 onNavigateToCheckout = { itemIds ->
-                    navController.navigate(
-                        Screen.Checkout.createRoute(
-                            itemIds
-                        )
-                    )
+                    if (isLoggedIn) {
+                        navController.navigate(Screen.Checkout.createRoute(itemIds))
+                    } else {
+                        // Jika belum login, lempar ke Login Page
+                        navController.navigate(Graph.Auth)
+                    }
                 },
+                // [PROTEKSI 2] Saat mau lihat Keranjang
                 onNavigateToCart = {
-                    navController.navigate(Screen.Cart.route)
+                    if (isLoggedIn) {
+                        navController.navigate(Screen.Cart.route)
+                    } else {
+                        navController.navigate(Graph.Auth)
+                    }
                 }
             )
         }
@@ -205,56 +207,61 @@ fun AppNavGraph(
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
 
+            // [LOGIC PENTING] Ambil status login
+            val sessionManager: SessionManager = get()
+            val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
+
             DetailStorePage(
                 outletId = outletId,
                 themeSetting = themeSetting,
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->
-                    navController.navigate(
-                        Screen.DetailProduct.createRoute(
-                            productId
-                        )
-                    )
+                    navController.navigate(Screen.DetailProduct.createRoute(productId))
                 },
+                // [PROTEKSI 3] Navigasi ke Keranjang dari Toko
                 onNavigateToCart = {
-                    navController.navigate(Screen.Cart.route)
+                    if (isLoggedIn) {
+                        navController.navigate(Screen.Cart.route)
+                    } else {
+                        navController.navigate(Graph.Auth)
+                    }
                 }
             )
         }
 
         // --- TRANSACTION FLOW ---
+
+        // [PROTEKSI 4] Keranjang Belanja Wajib Login (Sesuai Request)
         composable(Screen.Cart.route) {
             val sessionManager: SessionManager = get()
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
-
-            // [BARU] Ambil status login langsung di sini
             val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
 
-            // [HAPUS] RequireAuth(...) { ... }
-            // Karena CartScreen sekarang menangani logika UI "Belum Login" sendiri
-            CartScreen(
-                isLoggedIn = isLoggedIn, // Pass status login
-                themeSetting = themeSetting,
-                onBackClick = { navController.popBackStack() },
-                onNavigateToLogin = { navController.navigate(Graph.Auth) }, // Pass aksi login
-                onNavigateToHome = { // Pass aksi kembali ke Home (jika cart kosong)
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0)
+            // Bungkus dengan RequireAuth agar tidak bisa diakses url-nya tanpa login
+            RequireAuth(sessionManager, navController) {
+                CartScreen(
+                    isLoggedIn = isLoggedIn,
+                    themeSetting = themeSetting,
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToLogin = { navController.navigate(Graph.Auth) },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Dashboard.route) { popUpTo(0) }
+                    },
+                    onNavigateToCheckout = { ids ->
+                        navController.navigate(Screen.Checkout.createRoute(ids))
+                    },
+                    onNavigateToDetailProduct = { productId ->
+                        navController.navigate(Screen.DetailProduct.createRoute(productId))
+                    },
+                    onNavigateToStore = { outletId ->
+                        navController.navigate(Screen.DetailStore.createRoute(outletId))
                     }
-                },
-                onNavigateToCheckout = { ids ->
-                    navController.navigate(Screen.Checkout.createRoute(ids))
-                },
-                onNavigateToDetailProduct = { productId ->
-                    navController.navigate(Screen.DetailProduct.createRoute(productId))
-                },
-                onNavigateToStore = { outletId ->
-                    navController.navigate(Screen.DetailStore.createRoute(outletId))
-                }
-            )
+                )
+            }
         }
 
+        // [PROTEKSI 5] Checkout Wajib Login
         composable(
             route = Screen.Checkout.route,
             arguments = listOf(navArgument("itemIds") { type = NavType.StringType })
@@ -262,24 +269,25 @@ fun AppNavGraph(
             val itemIds = backStackEntry.arguments?.getString("itemIds") ?: ""
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+            val sessionManager: SessionManager = get()
 
-            CheckoutScreen(
-                itemIdsString = itemIds,
-                themeSetting = themeSetting,
-                onBackClick = { navController.popBackStack() },
-
-                onNavigateToPayment = { paymentUrl, orderId, paymentGroupId ->
-                    val encodedUrl = URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
-
-                    // [FIX] Gunakan createRoute yang baru
-                    navController.navigate(
-                        Screen.Payment.createRoute(encodedUrl, orderId, paymentGroupId)
-                    )
-                },
-                onNavigateToAddress = {
-                    navController.navigate(Screen.AddressList.route)
-                }
-            )
+            // Gunakan RequireAuth
+            RequireAuth(sessionManager, navController) {
+                CheckoutScreen(
+                    itemIdsString = itemIds,
+                    themeSetting = themeSetting,
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToPayment = { paymentUrl, orderId, paymentGroupId ->
+                        val encodedUrl = URLEncoder.encode(paymentUrl, StandardCharsets.UTF_8.toString())
+                        navController.navigate(
+                            Screen.Payment.createRoute(encodedUrl, orderId, paymentGroupId)
+                        )
+                    },
+                    onNavigateToAddress = {
+                        navController.navigate(Screen.AddressList.route)
+                    }
+                )
+            }
         }
 
         // --- HISTORY & ORDER DETAIL ---
@@ -297,7 +305,6 @@ fun AppNavGraph(
                     onNavigateToGroupDetail = { groupId ->
                         navController.navigate(Screen.TransactionGroupDetail.createRoute(groupId))
                     },
-                    // [FIX] Tambahkan ini: Navigasi ke OrderSuccess untuk tracking
                     onNavigateToMaps = { orderId ->
                         navController.navigate(Screen.OrderSuccess.createRoute(orderId = orderId))
                     }
@@ -305,7 +312,7 @@ fun AppNavGraph(
             }
         }
 
-        // [BARU] Screen Gabungan (Multi-Toko)
+        // [PROTEKSI 6] Detail Group Transaction Wajib Login
         composable(
             route = Screen.TransactionGroupDetail.route,
             arguments = listOf(navArgument("paymentGroupId") { type = NavType.StringType })
@@ -313,26 +320,29 @@ fun AppNavGraph(
             val groupId = backStackEntry.arguments?.getString("paymentGroupId") ?: ""
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+            val sessionManager: SessionManager = get()
 
-            TransactionGroupScreen(
-                paymentGroupId = groupId,
-                themeSetting = themeSetting,
-                onBackClick = { navController.popBackStack() },
-                onNavigateToOrderDetail = { orderId ->
-                    navController.navigate(Screen.DetailOrder.createRoute(orderId))
-                },
-                // [FIX] Tambahkan ini: Navigasi ke OrderSuccess per item
-                onNavigateToMaps = { orderId, paymentGroupId ->
-                    navController.navigate(
-                        Screen.OrderSuccess.createRoute(
-                            orderId = orderId,
-                            paymentGroupId = paymentGroupId
+            RequireAuth(sessionManager, navController) {
+                TransactionGroupScreen(
+                    paymentGroupId = groupId,
+                    themeSetting = themeSetting,
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToOrderDetail = { orderId ->
+                        navController.navigate(Screen.DetailOrder.createRoute(orderId))
+                    },
+                    onNavigateToMaps = { orderId, paymentGroupId ->
+                        navController.navigate(
+                            Screen.OrderSuccess.createRoute(
+                                orderId = orderId,
+                                paymentGroupId = paymentGroupId
+                            )
                         )
-                    )
-                }
-            )
+                    }
+                )
+            }
         }
 
+        // [PROTEKSI 7] Detail Order Wajib Login
         composable(
             route = Screen.DetailOrder.route,
             arguments = listOf(navArgument("orderId") { type = NavType.StringType })
@@ -340,29 +350,30 @@ fun AppNavGraph(
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
+            val sessionManager: SessionManager = get()
 
-            DetailOrderPage(
-                orderId = orderId,
-                themeSetting = themeSetting,
-                onBackClick = { navController.popBackStack() },
-                // [PERBAIKAN] Menerima 3 parameter: url, id, groupId
-                onNavigateToPayment = { snapUrl, id, groupId ->
-                    val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
-                    // Gunakan createRoute yang aman
-                    navController.navigate(Screen.Payment.createRoute(encodedUrl, id, groupId))
-                },
-                onNavigateToMaps = { id ->
-                    navController.navigate(Screen.OrderSuccess.createRoute(orderId = id))
-                }
-            )
+            RequireAuth(sessionManager, navController) {
+                DetailOrderPage(
+                    orderId = orderId,
+                    themeSetting = themeSetting,
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToPayment = { snapUrl, id, groupId ->
+                        val encodedUrl = URLEncoder.encode(snapUrl, StandardCharsets.UTF_8.toString())
+                        navController.navigate(Screen.Payment.createRoute(encodedUrl, id, groupId))
+                    },
+                    onNavigateToMaps = { id ->
+                        navController.navigate(Screen.OrderSuccess.createRoute(orderId = id))
+                    }
+                )
+            }
         }
 
+        // [PROTEKSI 8] Payment Screen Wajib Login
         composable(
             route = Screen.Payment.route,
             arguments = listOf(
                 navArgument("paymentUrl") { type = NavType.StringType },
                 navArgument("orderId") { type = NavType.StringType },
-                // Tambahkan argumen optional untuk Group ID
                 navArgument("paymentGroupId") {
                     type = NavType.StringType; nullable = true; defaultValue = null
                 }
@@ -371,30 +382,31 @@ fun AppNavGraph(
             val url = backStackEntry.arguments?.getString("paymentUrl") ?: ""
             val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
             val paymentGroupId = backStackEntry.arguments?.getString("paymentGroupId")
+            val sessionManager: SessionManager = get()
 
-            PaymentScreen(
-                paymentUrl = url,
-                orderId = orderId,
-                onPaymentFinished = { _ ->
-                    val targetRoute = Screen.OrderSuccess.createRoute(
-                        orderId = if (paymentGroupId == null) orderId else null,
-                        paymentGroupId = paymentGroupId
-                    )
+            RequireAuth(sessionManager, navController) {
+                PaymentScreen(
+                    paymentUrl = url,
+                    orderId = orderId,
+                    onPaymentFinished = { _ ->
+                        val targetRoute = Screen.OrderSuccess.createRoute(
+                            orderId = if (paymentGroupId == null) orderId else null,
+                            paymentGroupId = paymentGroupId
+                        )
 
-                    navController.navigate(targetRoute) {
-                        // Hapus PaymentScreen dari stack agar kalau di-back tidak balik ke webview
-                        popUpTo(Screen.Payment.route) { inclusive = true }
-                    }
-                },
-                onBackClick = { navController.popBackStack() }
-            )
+                        navController.navigate(targetRoute) {
+                            popUpTo(Screen.Payment.route) { inclusive = true }
+                        }
+                    },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.Chat.route) {
             val sessionManager: SessionManager = get()
             val themeManager: ThemeManager = get()
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
-
             val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState(initial = false)
 
             ChatScreen(
@@ -414,19 +426,15 @@ fun AppNavGraph(
             ) { EditProfilePage(onBack = { navController.popBackStack() }) }
         }
         composable(Screen.Settings.route) {
-            // 1. Ambil ThemeManager
             val themeManager: ThemeManager = get()
-            // 2. Observasi state tema
             val themeSetting by themeManager.themeSettingFlow.collectAsState(initial = ThemeSetting.SYSTEM)
-
-            // 3. Masukkan themeSetting ke dalam SettingsPage
             SettingsPage(
                 onBack = { navController.popBackStack() },
                 themeSetting = themeSetting
             )
         }
 
-        // --- ADDRESS CRUD ---
+        // --- ADDRESS CRUD (Sudah Terproteksi RequireAuth) ---
         composable(Screen.AddressList.route) {
             val sessionManager: SessionManager = get()
             RequireAuth(sessionManager, navController) {
@@ -434,11 +442,7 @@ fun AppNavGraph(
                     onBackClick = { navController.popBackStack() },
                     onNavigateToAdd = { navController.navigate(Screen.AddressCreate.route) },
                     onNavigateToEdit = { id ->
-                        navController.navigate(
-                            Screen.AddressEdit.createRoute(
-                                id
-                            )
-                        )
+                        navController.navigate(Screen.AddressEdit.createRoute(id))
                     }
                 )
             }
@@ -451,11 +455,7 @@ fun AppNavGraph(
                     onBackClick = { navController.popBackStack() },
                     onNavigateToAdd = { navController.navigate(Screen.AddressCreate.route) },
                     onNavigateToEdit = { id ->
-                        navController.navigate(
-                            Screen.AddressEdit.createRoute(
-                                id
-                            )
-                        )
+                        navController.navigate(Screen.AddressEdit.createRoute(id))
                     }
                 )
             }
@@ -467,11 +467,7 @@ fun AppNavGraph(
                 AddressFormScreen(
                     addressId = null,
                     onBack = { navController.popBackStack() },
-
-                    // [BARU] Pass NavController
                     navController = navController,
-
-                    // [BARU] Aksi buka Map Picker
                     onNavigateToMapPicker = { lat, long ->
                         navController.navigate(Screen.MapPicker.createRoute(lat, long))
                     }
@@ -490,8 +486,6 @@ fun AppNavGraph(
                 AddressFormScreen(
                     addressId = addressId,
                     onBack = { navController.popBackStack() },
-
-                    // [PERBAIKAN] Tambahkan 2 parameter ini:
                     navController = navController,
                     onNavigateToMapPicker = { lat, long ->
                         navController.navigate(Screen.MapPicker.createRoute(lat, long))
@@ -500,6 +494,7 @@ fun AppNavGraph(
             }
         }
 
+        // --- SUCCESS SCREEN ---
         composable(
             route = Screen.OrderSuccess.route,
             arguments = listOf(
@@ -514,7 +509,6 @@ fun AppNavGraph(
                 orderId = orderId,
                 paymentGroupId = groupId,
                 onNavigateToHistory = {
-                    // Saat klik selesai, baru ke history/group detail
                     if (groupId != null) {
                         navController.navigate(Screen.TransactionGroupDetail.createRoute(groupId)) {
                             popUpTo(Screen.Dashboard.route)
@@ -528,8 +522,6 @@ fun AppNavGraph(
             )
         }
 
-
-
         // --- AUTH GRAPH ---
         authGraph(
             navController,
@@ -537,7 +529,7 @@ fun AppNavGraph(
     }
 }
 
-// --- AUTH GRAPH BUILDER ---
+// ... (authGraph tetap sama)
 fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerms: () -> Unit) {
     navigation(startDestination = Screen.Welcome.route, route = Graph.Auth) {
         composable(Screen.Welcome.route) {
@@ -560,9 +552,7 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
                 viewModel = viewModel,
                 onSignInSuccess = {
                     navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0) {
-                            inclusive = true
-                        }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
@@ -578,16 +568,12 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
                 RegisterScreen(
                     onNavigateToLogin = {
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(
-                                Screen.Register.route
-                            ) { inclusive = true }
+                            popUpTo(Screen.Register.route) { inclusive = true }
                         }
                     },
                     onContinue = {
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Register.route) {
-                                inclusive = true
-                            }
+                            popUpTo(Screen.Register.route) { inclusive = true }
                         }
                     },
                     onNavigateToTerms = onNavigateToTerms,
@@ -601,11 +587,7 @@ fun NavGraphBuilder.authGraph(navController: NavHostController, onNavigateToTerm
             ForgotPasswordStepEmailScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToOtp = { email ->
-                    navController.navigate(
-                        Screen.ForgotPasswordOtp.createRoute(
-                            email
-                        )
-                    )
+                    navController.navigate(Screen.ForgotPasswordOtp.createRoute(email))
                 },
                 themeSetting = themeSetting
             )

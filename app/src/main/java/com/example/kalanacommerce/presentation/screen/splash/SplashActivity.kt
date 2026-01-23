@@ -5,24 +5,24 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Color // Import Color
-import android.os.Build // Import Build
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import android.view.WindowManager // Import WindowManager
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.WindowManager
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat // Import WindowCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.kalanacommerce.MainActivity
 import com.example.kalanacommerce.R
 import com.example.kalanacommerce.data.local.datastore.ThemeManager
 import com.example.kalanacommerce.data.local.datastore.ThemeSetting
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -35,30 +35,21 @@ class SplashActivity : AppCompatActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // --- TAMBAHAN: KONFIGURASI FULL SCREEN (EDGE-TO-EDGE) ---
-        // Letakkan kode ini SEBELUM setContentView agar efeknya langsung terasa saat layout dimuat
-
-        // 1. Izinkan konten digambar di belakang system bar (Status Bar & Nav Bar)
+        // --- KONFIGURASI FULL SCREEN ---
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // 2. Ubah warna bar menjadi transparan
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
 
-        // 3. Khusus HP berponi (Notch) - Android 9 (Pie) ke atas
-        // Agar gambar background melebar memenuhi area poni
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
-        // ---------------------------------------------------------
+        // -------------------------------
 
         setContentView(R.layout.activity_splash)
-
         supportActionBar?.hide()
 
         setupThemeBackground()
-
         playAnimation()
 
         Handler(Looper.getMainLooper()).postDelayed({
@@ -69,14 +60,12 @@ class SplashActivity : AppCompatActivity() {
         }, SPLASH_SCREEN_DELAY)
     }
 
-    // SplashActivity.kt
-
     private fun setupThemeBackground() {
         val background = findViewById<ImageView>(R.id.splash_background)
-        val splashText = findViewById<android.widget.TextView>(R.id.splash_text)
+        val footer = findViewById<TextView>(R.id.splash_footer)
+        // Kita tidak lagi mengubah warna teks logo karena sekarang berupa Gambar (Image)
 
         lifecycleScope.launch {
-            // Gunakan collect untuk memastikan kita mendapat nilai terbaru
             themeManager.themeSettingFlow.collect { themeSetting ->
                 val isSystemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                         Configuration.UI_MODE_NIGHT_YES
@@ -87,13 +76,14 @@ class SplashActivity : AppCompatActivity() {
                     ThemeSetting.SYSTEM -> isSystemDark
                 }
 
-                // Update UI berdasarkan hasil evaluasi tema
                 if (isDarkTheme) {
                     background.setImageResource(R.drawable.profile_background_black)
-                    splashText.setTextColor(Color.WHITE)
+                    footer.setTextColor(Color.WHITE)
+                    // Catatan: Jika logo kamu teksnya warna hitam, pastikan kamu punya versi logo
+                    // warna putih untuk dark mode, atau gunakan background yang tetap terang.
                 } else {
-                    background.setImageResource(R.drawable.profile_background_white)
-                    splashText.setTextColor(Color.BLACK)
+                    background.setImageResource(R.drawable.splash_background_white)
+                    footer.setTextColor(Color.BLACK)
                 }
             }
         }
@@ -101,26 +91,46 @@ class SplashActivity : AppCompatActivity() {
 
     private fun playAnimation() {
         val background = findViewById<View>(R.id.splash_background)
-        val logo = findViewById<View>(R.id.splash_logo)
-        val text = findViewById<View>(R.id.splash_text)
+        val mainLogo = findViewById<View>(R.id.iv_main_logo) // Logo Utuh
+        val footer = findViewById<View>(R.id.splash_footer)
 
-        text.alpha = 0f
-        text.translationY = 50f
+        // --- 1. SET POSISI AWAL (INVISIBLE) ---
 
-        val logoScaleX = ObjectAnimator.ofFloat(logo, View.SCALE_X, 0.5f, 1f).setDuration(1000)
-        val logoScaleY = ObjectAnimator.ofFloat(logo, View.SCALE_Y, 0.5f, 1f).setDuration(1000)
-        val logoAlpha = ObjectAnimator.ofFloat(logo, View.ALPHA, 0f, 1f).setDuration(1000)
+        // Logo: Kecil & transparan
+        mainLogo.alpha = 0f
+        mainLogo.scaleX = 0.0f
+        mainLogo.scaleY = 0.0f
 
-        val textAlpha = ObjectAnimator.ofFloat(text, View.ALPHA, 1f).setDuration(800)
-        val textTransY = ObjectAnimator.ofFloat(text, View.TRANSLATION_Y, 0f).setDuration(800)
+        // Footer: Turun ke bawah
+        footer.alpha = 0f
+        footer.translationY = 80f
 
-        val bgScaleX = ObjectAnimator.ofFloat(background, View.SCALE_X, 1.2f, 1f).setDuration(2500)
-        val bgScaleY = ObjectAnimator.ofFloat(background, View.SCALE_Y, 1.2f, 1f).setDuration(2500)
+        // --- 2. DEFINISI ANIMASI ---
 
+        // Background: Zoom Out perlahan
+        val bgScaleX = ObjectAnimator.ofFloat(background, View.SCALE_X, 1.3f, 1f).setDuration(2500)
+        val bgScaleY = ObjectAnimator.ofFloat(background, View.SCALE_Y, 1.3f, 1f).setDuration(2500)
+
+        // Logo: Pop Up Effect (Membal)
+        val logoAlpha = ObjectAnimator.ofFloat(mainLogo, View.ALPHA, 0f, 1f).setDuration(800)
+        val logoScaleX = ObjectAnimator.ofFloat(mainLogo, View.SCALE_X, 0f, 1f).setDuration(800)
+        val logoScaleY = ObjectAnimator.ofFloat(mainLogo, View.SCALE_Y, 0f, 1f).setDuration(800)
+
+        // Footer: Naik & Fade In
+        val footerAlpha = ObjectAnimator.ofFloat(footer, View.ALPHA, 1f).setDuration(600)
+        val footerTransY = ObjectAnimator.ofFloat(footer, View.TRANSLATION_Y, 0f).setDuration(600)
+
+        // --- 3. EKSEKUSI ANIMASI ---
         AnimatorSet().apply {
-            playTogether(logoScaleX, logoScaleY, logoAlpha, bgScaleX, bgScaleY)
-            play(textAlpha).with(textTransY).after(logoAlpha)
-            interpolator = AccelerateDecelerateInterpolator()
+            play(bgScaleX).with(bgScaleY)
+
+            // Logo muncul
+            play(logoScaleX).with(logoScaleY).with(logoAlpha)
+
+            // Footer muncul setelah logo mulai (delayed 300ms)
+            play(footerAlpha).with(footerTransY).after(300)
+
+            interpolator = OvershootInterpolator(1.2f)
             start()
         }
     }
